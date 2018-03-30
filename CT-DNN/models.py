@@ -23,27 +23,26 @@ class DataManage(object):
                  enrollment_frames=None, enrollment_targets=None):
         assert len(raw_frames) == len(raw_labels)
         # must be one-hot encoding
-        assert len(np.array(raw_labels).shape) == 2
 
-        self.raw_frames = raw_frames
-        self.raw_labels = raw_labels
+        self.raw_frames = np.array(raw_frames, dtype=np.float32)
+        self.raw_labels = np.array(raw_labels, dtype=np.float32)
         self.batch_size = batch_size
         self.epoch_size = len(raw_frames) / batch_size
-        self.enrollment_frames = enrollment_frames
-        self.enrollment_targets = enrollment_targets
+        self.enrollment_frames = np.array(enrollment_frames, dtype=np.float32)
+        self.enrollment_targets = np.array(enrollment_targets, dtype=np.float32)
         self.batch_counter = 0
 
     def next_batch(self):
         if (self.batch_counter+1) * self.batch_size < len(self.raw_frames):
-            batch_frames = self.raw_frames[self.batch_counter * self.batch_size,
-                                           (self.batch_counter+1) * self.batch_size]
-            batch_labels = self.raw_labels[self.batch_counter * self.batch_size,
-                                           (self.batch_counter+1) * self.batch_size]
+            batch_frames = self.raw_frames[self.batch_counter * self.batch_size:
+                                           (self.batch_counter+1) * self.batch_size+1]
+            batch_labels = self.raw_labels[self.batch_counter * self.batch_size:
+                                           (self.batch_counter+1) * self.batch_size+1]
             self.batch_counter += 1
-            spkr_num = np.array(batch_labels).shape[1]
+            spkr_num = len(self.raw_labels)
             return batch_frames, batch_labels, spkr_num
         else:
-            spkr_num = np.array(self.raw_labels).shape[1]
+            spkr_num = len(self.raw_labels)
             return self.raw_frames, self.raw_labels, spkr_num
 
     @property
@@ -67,6 +66,7 @@ class Model:
     @lazy_property
     def prediction(self):
         n_speaker = self.n_speaker
+        print(self.batch_frames)
         conv1 = self.conv2d(self.batch_frames, 'conv1', [6, 33, 1, 128], [1, 2, 3, 1], 'SAME')
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 11, 1], strides=[1, 2, 2, 1], padding='SAME')
         conv1 = self.conv2d(pool1, 'conv2', [6, 33, 1, 128], [1, 2, 3, 1], 'SAME')
@@ -97,20 +97,20 @@ class Model:
         loss = np.sum(np.array(loss))
         return loss
 
-    def train(self, x, y, n_speaker, lr):
+    def train(self, train_data, lr):
         grads = []
         for i in range(self.n_gpu):
             with tf.device("/gpu:%d" % i):
-                self.batch_frames = x
-                self.batch_target = y
-                self.n_speaker = n_speaker
+                self.batch_frames, self.batch_target, self.n_speaker = train_data.next_batch()
+                print(self.batch_frames)
+                print(train_data.raw_frames)
                 grad = tf.gradients(self.loss, tf.trainable_variables())
                 grads.append(grad)
         with tf.device("/cpu:0"):
             average_gradient = self.average_gradients(grads)
             opt = tf.train.AdamOptimizer(lr)
             train_op = opt.apply_gradients(average_gradient)
-        return train_op
+        return train_op,
 
     def run(self, train_data, predict_data, lr):
         assert type(train_data) == DataManage
@@ -121,8 +121,7 @@ class Model:
                 sess.run(initializer)
                 start_time = time.time()
                 for step in range(self.max_step):
-                    x, y, n_speaker = train_data.next_batch()
-                    _, loss = sess.run([self.train(x, y, n_speaker, lr), ])
+                    _, loss = sess.run(self.train(train_data, lr))
                     saver = tf.train.Saver()
                     if not step % 10:
                         string = ("%d steps in %d sec. loss= %.2f" % step, time.time()-start_time, loss)
