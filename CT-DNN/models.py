@@ -218,7 +218,7 @@ def run(train_frames,
     with tf.Graph().as_default():
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True,
-                log_device_placement=True,
+                log_device_placement=False,
         )) as sess:
             train_data = DataManage(train_frames, train_targets, batch_size)
             model = Model(n_gpu=n_gpu, model_name='ctdnn', n_speaker=train_data.spkr_num)
