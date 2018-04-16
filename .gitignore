@@ -47,3 +47,12 @@ Temporary Items
 .apdisk
 workspace.xml
 .idea
+CT-DNN/1.py
+CT-DNN/11.py
+CT-DNN/111.py
+CT-DNN/Rotation.py
+CT-DNN/FeatureExtractor.py
+CT-DNN/MFCC.py
+CT-DNN/Model.py
+CT-DNN/data_url.py
+CT-DNN/main.py
