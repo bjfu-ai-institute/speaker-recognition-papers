@@ -1,5 +1,5 @@
 import sys
-sys.path.append("G:\\Cs\\github\\speaker-verification-papers\\DeepSpeaker")
+sys.path.append("..")
 
 import tensorflow as tf
 import config
