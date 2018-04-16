@@ -56,6 +56,7 @@ class Model(object):
     def loss(self):
         return self._loss
 
+    @property
     def vector(self):
         return self._vector
 
