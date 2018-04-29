@@ -1,38 +1,9 @@
 import tensorflow as tf
+import sys
+sys.path.append("..")
+import config
 import numpy as np
-
-
-class DataManage(object):
-    def __init__(self, raw_frames, raw_labels, batch_size,
-                 enrollment_frames=None, enrollment_targets=None):
-        assert len(raw_frames) == len(raw_labels)
-        # must be one-hot encoding
-        self.raw_frames = np.array(raw_frames, dtype=np.float32)
-        self.raw_labels = np.array(raw_labels, dtype=np.float32)
-        self.batch_size = batch_size
-        self.epoch_size = len(raw_frames) / batch_size
-        self.enrollment_frames = np.array(enrollment_frames, dtype=np.float32)
-        self.enrollment_targets = np.array(enrollment_targets, dtype=np.float32)
-        self.batch_counter = 0
-        self.enroll_vector = []
-        self.spkr_num = np.array(self.raw_labels).shape[-1]
-
-    def next_batch(self):
-        if (self.batch_counter+1) * self.batch_size < len(self.raw_frames):
-            batch_frames = self.raw_frames[self.batch_counter * self.batch_size:
-                                           (self.batch_counter+1) * self.batch_size+1]
-            batch_labels = self.raw_labels[self.batch_counter * self.batch_size:
-                                           (self.batch_counter+1) * self.batch_size+1]
-            self.batch_counter += 1
-
-            return batch_frames, batch_labels
-        else:
-            spkr_num = len(self.raw_labels)
-            return self.raw_frames, self.raw_labels, spkr_num
-
-    @property
-    def pred_data(self):
-        return self.enrollment_frames, self.enrollment_targets, self.raw_frames, self.raw_labels
+import DataManage
 
 
 class Model:
@@ -43,12 +14,13 @@ class Model:
 
         self.n_speaker = n_speaker
         self.name = model_name
-        self.batch_frames = tf.constant(value=0.0, shape=[65, 9, 40, 1], dtype=tf.float32)
-        self.batch_target = tf.constant(value=0.0, shape=[65, n_speaker], dtype=tf.float32)
+        self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32)
+        self.batch_target = tf.constant(value=0.0, shape=[1, n_speaker], dtype=tf.float32)
         self.n_gpu = n_gpu
         self._prediction = None
         vector = np.zeros(shape=[n_speaker, 400])
         self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
+        self._feature = None
         self._loss = None
 
         with tf.variable_scope(model_name):
@@ -101,6 +73,8 @@ class Model:
         p_norm2 = self.full_connect(td2_flat, name='P_norm2', units=400)
 
         feature_layer = self.full_connect(p_norm2, name='feature_layer', units=400)
+
+        self._feature = feature_layer
 
         output = self.full_connect(feature_layer, name='output', units=self.n_speaker)
 
@@ -176,7 +150,7 @@ class Model:
             y_norm = tf.sqrt(tf.reduce_sum(tf.square(vector2), axis=1))
             x_y = tf.reduce_sum(tf.multiply(vector1, vector2), axis=1)
             cos_similarity = tf.divide(x_y, tf.multiply(x_norm, y_norm))
-            tf.exp(tf.add(exp_sum, cos_similarity))
+            tf.add(exp_sum, tf.exp(cos_similarity))
             return exp_sum
         else:
             for i in range(self.n_speaker):
@@ -198,8 +172,8 @@ class Model:
                 frames, targets = train_data.next_batch()
                 frames = tf.constant(frames, dtype=tf.float32)
                 targets = tf.constant(targets, dtype=tf.float32)
-                self.batch_frames.assign(frames)
-                self.batch_target.assign(targets)
+                self.batch_frames = frames
+                self.batch_target = targets
                 gradient_all = opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
@@ -215,12 +189,18 @@ def run(train_frames,
         save_path,
         n_gpu,
         lr):
+    lr = config.LR
+    n_gpu = config.N_GPU
+    save_path = config.SAVE_PATH
+    max_step = config.MAX_STEP
+    batch_size = config.BATCH_SIZE
+    
     with tf.Graph().as_default():
         with tf.Session(config=tf.ConfigProto(
-                allow_soft_placement=True,
+                allow_soft_placement=False,
                 log_device_placement=False,
         )) as sess:
-            train_data = DataManage(train_frames, train_targets, batch_size)
+            train_data = DataManage.DataManage(train_frames, train_targets, batch_size)
             model = Model(n_gpu=n_gpu, model_name='ctdnn', n_speaker=train_data.spkr_num)
             initial = tf.global_variables_initializer()
             sess.run(initial)
