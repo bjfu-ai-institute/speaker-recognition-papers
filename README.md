@@ -18,7 +18,7 @@ If you want run these codes on your computer, you only need to modify config.oy 
 import PaperName.models as model
 
 M = models.model()
-M.run(train_data, train_label, test_data=None, test_label=None)=
+M.run(train_data, train_label, test_data=None, test_label=None)
 
 # If the test_data or test_label is none, you will only get the trained model. 
 # You can do this when you needn't the ACC/EER information.
