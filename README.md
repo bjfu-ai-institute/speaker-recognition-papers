@@ -1,27 +1,53 @@
 # Speaker recognition papers' implementation
-These are the slightly modified tensorflow/python implementation of recent SR papers.
+These are the slightly modified tensorflow/python implementation of recent speaker recognition papers.
 
 These codes do not include feature extraction and main program. If you want to use some models, you need to write the extraction and main program by yourself.
 
+The file structure is as follows：
+```
+---PaperName (folder)
 
-## Deep Speaker Feature Learning for Text-Independent Speaker Verification & Full-info Training for Deep Speaker Feature Learning
+------Model (folder)
+---------DataManage.py (Class of batch managing.)
+---------model.py (Class of this model)
 
-* **Author:**
-    Lantian Li, Zhiyuan Tang,  
-    Dong Wang, Thomas Fang Zheng  
+------config.py (Settings. e.g. data path, learning rate)
+```
+If you want run these codes on your computer, you only need to modify config.oy and write code as follow:
+```python
+import PaperName.model as model
 
-* **Organization:**
+M = model.model()
+M.run()
+
+```
+
+## [Deep Speaker Feature Learning for Text-Independent Speaker Verification](https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/CT-DNN/Deep_Speaker_Feature_Learning_for_Text-Independent.pdf) & [Full-info Training for Deep Speaker Feature Learning](https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/CT-DNN/Full_info_deep_speaker_feature_learning.pdf)
+
+- Author:
+```
+    Lantian Li,
+    Zhiyuan Tang,  
+    Dong Wang, 
+    Thomas Fang Zheng  
+```
+- Organization:
+```
     Center for Speech and Language Technologies.
     Research Institute of Information Technology.
     Department of Computer Science and Technology.
     Tsinghua University.
+```
+## [Deep Speaker: an End-to-End Neural Speaker Embedding System](https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/DeepSpeaker/Deep%20Speaker%20an%20End-to-End%20Neural%20Speaker%20Embedding%20System.pdf)
 
-## Deep Speaker: an End-to-End Neural Speaker Embedding System
-
-* **Author:**
+- Author:
+```
     Chao Li, Xiaokong Ma,
     Bing Jiang, Xiangang Li,
     Xuewei Zhang, Xiao Liu,
     Ying Cao, Ajay Kannan, Zhenyao Zhu
-* **Organization:** 
+```
+- Organization:
+```
     Baidu Inc.
+```
