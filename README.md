@@ -7,19 +7,21 @@ The file structure is as follows：
 ```
 ---PaperName (folder)
 
-------Model (folder)
+------models (folder)
 ---------DataManage.py (Class of batch managing.)
 ---------model.py (Class of this model)
 
-------config.py (Settings. e.g. data path, learning rate)
+------config.py (Settings. e.g. save path, learning rate)
 ```
 If you want run these codes on your computer, you only need to modify config.oy and write code as follow:
 ```python
-import PaperName.model as model
+import PaperName.models as model
 
-M = model.model()
-M.run()
+M = models.model()
+M.run(train_data, train_label, test_data=None, test_label=None)=
 
+# If the test_data or test_label is none, you will only get the trained model. 
+# You can do this when you needn't the ACC/EER information.
 ```
 
 ## [Deep Speaker Feature Learning for Text-Independent Speaker Verification](https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/CT-DNN/Deep_Speaker_Feature_Learning_for_Text-Independent.pdf) & [Full-info Training for Deep Speaker Feature Learning](https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/CT-DNN/Full_info_deep_speaker_feature_learning.pdf)
