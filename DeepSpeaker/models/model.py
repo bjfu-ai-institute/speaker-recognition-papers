@@ -6,15 +6,21 @@ import config
 
 class Model(object):
     def __init__(self):
-        # import setting from config
+        assert len(config.OUT_CHANNEL) == config.N_RES_BLOCKS, """
+        assert len(config.OUT_CHANNEL) == config.N_RES_BLOCKS,
+        OUT_CHANNEL is the array represents number of out channel of each residual block. 
+        So the length of OUT_CHANNEL must equal to the N_RES_BLOCKS 
+        """
+
         self.n_speaker = config.N_SPEAKER
         self.n_blocks = config.N_RES_BLOCK
+        self.max_step = config.MAX_STEP
         self.n_gpu = config.N_GPU
         self.conv_weight_decay = config.CONV_WEIGHT_DECAY
         self.fc_weight_dacay = config.FC_WEIGHT_DECAY
         self.bn_epsilon = config.BN_EPSILON
         self.out_channel = config.OUT_CHANNEL
-        
+        self.learning_rate = config.LEARNING_RATE
         self.build_graph()
         
     def build_graph(self):
@@ -139,3 +145,57 @@ class Model(object):
         new_var = tf.get_variable(name, shape=shape, initializer=init,
                                   regularizer=regularizer)
         return new_var
+
+    @staticmethod
+    def average_gradients(grads):  # grads:[[grad0, grad1,..], [grad0,grad1,..]..]
+        averaged_grads = []
+        for grads_per_var in zip(*grads):
+            grads = []
+            for grad in grads_per_var:
+                expanded_grad = tf.expand_dims(grad, 0)
+                grads.append(expanded_grad)
+            grads = tf.concat(grads, 0)
+            grads = tf.reduce_mean(grads, 0)
+            averaged_grads.append(grads)
+        return averaged_grads
+
+    def train_step(self, train_data):
+        assert type(train_data) == DataManage
+        grads = []
+        opt = tf.train.AdamOptimizer(self.lr)
+        for i in range(self.n_gpu):
+            with tf.device("/gpu:%d" % i):
+                frames, targets = train_data.next_batch()
+                frames = tf.constant(frames, dtype=tf.float32)
+                targets = tf.constant(targets, dtype=tf.float32)
+                self.batch_frames = frames
+                self.batch_target = targets
+                gradient_all = opt.compute_gradients(self.loss)
+                grads.append(gradient_all)
+        with tf.device("/cpu:0"):
+            ave_grads = self.average_gradients(grads)
+            train_op = opt.apply_gradients(ave_grads)
+        return train_op, tf.reduce_sum(grads)
+
+    def run(self,
+            train_frames, 
+            train_targets, 
+            batch_size, 
+            max_step, 
+            save_path, 
+            n_gpu)
+        
+        with tf.Graph().as_default():
+            with tf.Session(config=tf.ConfigProto(
+                    allow_soft_placement=False,
+                    log_device_placement=False,
+            )) as sess:
+                train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size)
+                initial = tf.global_variables_initializer()
+                sess.run(initial)
+                saver = tf.train.Saver()
+                for i in range(self.max_step):
+                    _, loss = sess.run(self.train_step(train_data, lr))
+                    print(i, " loss:", loss)
+                    if i % 25 == 0 or i + 1 == self.max_step:
+                        saver.save(sess, save_path)

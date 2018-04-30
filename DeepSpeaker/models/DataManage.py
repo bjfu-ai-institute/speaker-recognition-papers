@@ -15,3 +15,19 @@ class DataManage(object):
         self.batch_counter = 0
         self.enroll_vector = []
         self.spkr_num = np.array(self.raw_labels).shape[-1]
+
+    def next_batch(self):
+        if (self.batch_counter+1) * self.batch_size < len(self.raw_frames):
+            batch_frames = self.raw_frames[self.batch_counter * self.batch_size:
+                                           (self.batch_counter+1) * self.batch_size+1]
+            batch_labels = self.raw_labels[self.batch_counter * self.batch_size:
+                                           (self.batch_counter+1) * self.batch_size+1]
+            self.batch_counter += 1
+            return batch_frames, batch_labels
+        else:
+            return self.raw_frames[self.batch_counter * self.batch_size:-1], \
+            self.raw_labels[self.batch_counter * self.batch_size:-1]
+
+    @property
+    def pred_data(self):
+        return self.enrollment_frames, self.enrollment_targets, self.raw_frames, self.raw_labels

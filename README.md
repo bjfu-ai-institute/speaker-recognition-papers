@@ -11,6 +11,7 @@ The file structure is as follows：
 ---------DataManage.py (Class of batch managing.)
 ---------model.py (Class of this model)
 
+------PaperName.pdf 
 ------config.py (Settings. e.g. save path, learning rate)
 ```
 If you want run these codes on your computer, you only need to modify config.oy and write code as follow:
