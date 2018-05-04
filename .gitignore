@@ -56,3 +56,5 @@ CT-DNN/MFCC.py
 CT-DNN/Model.py
 CT-DNN/data_url.py
 CT-DNN/main.py
+DeepSpeaker/main.py
+data_url.py
