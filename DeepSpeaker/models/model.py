@@ -2,6 +2,8 @@ import sys
 sys.path.append("..")
 
 import tensorflow as tf
+import numpy as np
+from scipy.spatial.distance import cosine
 import config
 
 class Model(object):
@@ -13,6 +15,7 @@ class Model(object):
         """
 
         self.n_speaker = config.N_SPEAKER
+        self.embeddings = []
         self.n_blocks = config.N_RES_BLOCK
         self.max_step = config.MAX_STEP
         self.n_gpu = config.N_GPU
@@ -179,7 +182,11 @@ class Model(object):
 
     def run(self,
             train_frames, 
-            train_targets, 
+            train_targets,
+            enroll_frames,
+            enroll_label,
+            test_frames,
+            test_label, 
             batch_size, 
             max_step, 
             save_path, 
@@ -199,3 +206,39 @@ class Model(object):
                     print(i, " loss:", loss)
                     if i % 25 == 0 or i + 1 == self.max_step:
                         saver.save(sess, save_path)
+
+                self.batch_frames = enroll_frames
+
+                embeddings = sess.run(self.vector)
+
+                self.vector_dict = dict()
+                for i in range(len(enroll_label):
+                    if vector_dict[np.argmax(enroll_label[i])]
+                        vector_dict[np.argmax(enroll_label[i])] = embeddings[i]
+                    else:
+                        vector_dict[np.argmax(enroll_label)[i]] += embeddings[i]
+                        vector_dict[np.argmax(enroll_label)[i]] /= 2
+                
+                self.batch_frames = test_frames
+                
+                embeddings = sess.run(self.vector)
+                support = 0
+                for i in range(len(embeddings)):
+                    keys = self.vector_dict.keys()
+                    score = 0
+                    for key in keys:
+                        new_score = cosine(self.vector_dict[key], embeddings[i])
+                        if new_score > score:
+                            label = key
+                    if label == np.argmax(test_label[i]):
+                        support += 1
+                with open('/media/data/result/deep_speaker_in_c863', 'w') as f:
+                    s = "Acc is %f" % (support/len(embeddings))
+                    f.writelines(s)
+
+
+                
+
+
+
+
