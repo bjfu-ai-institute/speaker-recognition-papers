@@ -58,3 +58,4 @@ CT-DNN/data_url.py
 CT-DNN/main.py
 DeepSpeaker/main.py
 data_url.py
+__pycache__

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import sys
 sys.path.append("..")
+from scipy.spatial.distance import cosine
 import config
 import numpy as np
 import DataManage
@@ -184,6 +185,10 @@ class Model:
 
 def run(train_frames,
         train_targets,
+        enroll_frames,
+        enroll_targets,
+        test_frames,
+        test_label,
         batch_size,
         max_step,
         save_path,
@@ -210,3 +215,30 @@ def run(train_frames,
                 print(i, " loss:", loss)
                 if i % 25 == 0 or i + 1 == max_step:
                     saver.save(sess, save_path)
+            run_predict(sess, enroll_frames, enroll_targets, test_frames, test_label)
+
+    def run_predict(self, sess, enroll_frames, enroll_targets, test_frames, test_label):
+        self.batch_frames = enroll_frames
+        embeddings = sess.run(self.prediction)
+        self.vector_dict = dict()
+        for i in len(enroll_targets):
+            index = np.argmax(enroll_targets)
+            if self.vector_dict[index]:
+                self.vector_dict[index] = 0.5*(self.vector_dict[index]+embeddings[i])
+            else:
+                self.vector_dict[index] = embeddings
+            
+        self.batch_frames = test_frames
+        support = 0
+        true_key = np.argmax(test_label[i])
+        embeddings = sess.run(self.prediction)
+        keys = self.vector_dict.keys()
+        for i in len(embeddings):
+            score = 0
+            label = -1
+            for key in keys:
+                if cosine(embeddings[i], self.vector_dict[key]) > score:
+                    score = cosine(embeddings[i], self.vector_dict[key])
+                    label = key
+            if label == true_key[i]:
+                support += 1
