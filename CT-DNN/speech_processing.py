@@ -48,7 +48,7 @@ def ext_fbank_feature(url_path):
     Return the fbank feature
     """
     with open(url_path, 'r') as urls:
-        mfccs = []
+        fbanks = []
         labels = []
         for url in list(urls):
             url, label = str(url).split(" ")
@@ -59,6 +59,6 @@ def ext_fbank_feature(url_path):
             fbank = librosa.feature.melspectrogram(y, sr)
             fbank = slide_windows(fbank)
             for i in fbank:
-                mfccs.append(i)
+                fbanks.append(i)
                 labels.append(label)
-        return mfccs, labels
+        return fbanks, labels

@@ -4,7 +4,7 @@ sys.path.append("..")
 from scipy.spatial.distance import cosine
 import config
 import numpy as np
-import DataManage
+import models.DataManage as DataManage
 
 
 class Model:
