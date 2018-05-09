@@ -8,23 +8,26 @@ import DataManage
 
 
 class Model:
-    def __init__(self,
-                 n_gpu,
-                 n_speaker,
-                 model_name):
+    def __init__(self):
 
-        self.n_speaker = n_speaker
-        self.name = model_name
+        # import setting from ../config.py
+        self.batch_size = config.BATCH_SIZE
+        self.n_gpu = config.N_GPU
+        self.name = config.MODEL_NAME
+        self.n_speaker = config.N_SPEAKER
+        self.max_step = config.MAX_STEP
+        self.lr = config.LR
+        self.save_path = config.SAVE_PATH
+
         self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32)
-        self.batch_target = tf.constant(value=0.0, shape=[1, n_speaker], dtype=tf.float32)
-        self.n_gpu = n_gpu
+        self.batch_target = tf.constant(value=0.0, shape=[1, self.n_speaker], dtype=tf.float32)
         self._prediction = None
-        vector = np.zeros(shape=[n_speaker, 400])
+        vector = np.zeros(shape=[self.n_speaker, 400])
         self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
         self._feature = None
         self._loss = None
 
-        with tf.variable_scope(model_name):
+        with tf.variable_scope(self.name):
             self.build_graph()
 
     @property
@@ -86,16 +89,16 @@ class Model:
         true_index = tf.argmax(self.batch_target, axis=1)
         for i in range(self.n_speaker):
             vec_index = tf.where(tf.equal(true_index, i))
-            vector = tf.reduce_mean(tf.gather_nd(feature_layer, vec_index), axis=0)
-            self.vectors[i].assign(vector)
+            vector = tf.reduce_mean(tf.gather(feature_layer, vec_index), axis=0)
+            tf.scatter_update(self.vectors, [i], vector)
 
         # Compute loss
         loss = tf.Variable(0, dtype=tf.float32)
         for i in range(pred_index.get_shape().as_list()[0]):
-            vec_ind = tf.gather_nd(pred_index, [i])
-            pred_vector = tf.gather_nd(self.vectors, [vec_ind])
-            vec_ind = tf.gather_nd(true_index, [i])
-            true_vector = tf.gather_nd(self.vectors, [vec_ind])
+            vec_ind = tf.gather(pred_index, i)
+            pred_vector = tf.gather(self.vectors, vec_ind)
+            vec_ind = tf.gather(true_index, i)
+            true_vector = tf.gather(self.vectors, vec_ind)
             distance_1 = self.compute_exp_cosine(pred_vector, true_vector)
             distance_2 = self.compute_exp_cosine(pred_vector)
             loss = tf.add(tf.negative(tf.log(tf.divide(distance_1, distance_2))), loss)
@@ -155,7 +158,7 @@ class Model:
             return exp_sum
         else:
             for i in range(self.n_speaker):
-                vector = tf.gather_nd(self.vectors, [i])
+                vector = tf.gather(self.vectors, [i])
                 vector = tf.expand_dims(vector, dim=1)
                 x_norm = tf.sqrt(tf.reduce_sum(tf.square(vector1), axis=1))
                 y_norm = tf.sqrt(tf.reduce_sum(tf.square(vector), axis=1))
@@ -182,42 +185,35 @@ class Model:
             train_op = opt.apply_gradients(ave_grads)
         return train_op, tf.reduce_sum(grads)
 
+    def run(self,
+            train_frames, 
+            train_targets,
+            enroll_frames,
+            enroll_label,
+            test_frames,
+            test_label):
+        
+        with tf.Graph().as_default():
+            with tf.Session(config=tf.ConfigProto(
+                    allow_soft_placement=False,
+                    log_device_placement=False,
+            )) as sess:
+                train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size)
+                initial = tf.global_variables_initializer()
+                sess.run(initial)
+                saver = tf.train.Saver()
+                for i in range(self.max_step):
+                    sess.run(self.train_step(train_data, self.lr))
+                    if i % 10 == 0 or i + 1 ==self.max_step:
+                        saver.save(sess, self.save_path)
+                self.run_predict(sess, enroll_frames, enroll_label, test_frames, test_label)
 
-def run(train_frames,
-        train_targets,
-        enroll_frames,
-        enroll_targets,
-        test_frames,
-        test_label,
-        batch_size,
-        max_step,
-        save_path,
-        n_gpu,
-        lr):
-    lr = config.LR
-    n_gpu = config.N_GPU
-    save_path = config.SAVE_PATH
-    max_step = config.MAX_STEP
-    batch_size = config.BATCH_SIZE
-    
-    with tf.Graph().as_default():
-        with tf.Session(config=tf.ConfigProto(
-                allow_soft_placement=False,
-                log_device_placement=False,
-        )) as sess:
-            train_data = DataManage.DataManage(train_frames, train_targets, batch_size)
-            model = Model(n_gpu=n_gpu, model_name='ctdnn', n_speaker=train_data.spkr_num)
-            initial = tf.global_variables_initializer()
-            sess.run(initial)
-            saver = tf.train.Saver()
-            for i in range(max_step):
-                _, loss = sess.run(model.train_step(train_data, lr))
-                print(i, " loss:", loss)
-                if i % 25 == 0 or i + 1 == max_step:
-                    saver.save(sess, save_path)
-            run_predict(sess, enroll_frames, enroll_targets, test_frames, test_label)
-
-    def run_predict(self, sess, enroll_frames, enroll_targets, test_frames, test_label):
+    def run_predict(self, 
+                    sess, 
+                    enroll_frames,
+                    enroll_targets, 
+                    test_frames,
+                    test_label):
         self.batch_frames = enroll_frames
         embeddings = sess.run(self.prediction)
         self.vector_dict = dict()

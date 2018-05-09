@@ -3,6 +3,7 @@ sys.path.append("..")
 
 import tensorflow as tf
 import numpy as np
+import models.DataManage as DataManage
 from scipy.spatial.distance import cosine
 import config
 
@@ -16,7 +17,7 @@ class Model(object):
 
         self.n_speaker = config.N_SPEAKER
         self.embeddings = []
-        self.n_blocks = config.N_RES_BLOCK
+        self.n_blocks = config.N_RES_BLOCKS
         self.max_step = config.MAX_STEP
         self.n_gpu = config.N_GPU
         self.conv_weight_decay = config.CONV_WEIGHT_DECAY
@@ -24,6 +25,7 @@ class Model(object):
         self.bn_epsilon = config.BN_EPSILON
         self.out_channel = config.OUT_CHANNEL
         self.learning_rate = config.LEARNING_RATE
+        self.batch_size = config.BATCH_SIZE
         self.build_graph()
         
     def build_graph(self):
@@ -102,7 +104,7 @@ class Model(object):
         return conv2 + padded_inp
 
     def triplet_loss(self, inp, targets):
-        loss = tf.contrib.triplet_semihard_loss(targets, inp, 1.0)
+        loss = tf.contrib.losses.metric_learning.triplet_semihard_loss(targets, inp, 1.0)
         return loss
 
     def batch_normalization(self, inp):
@@ -165,7 +167,7 @@ class Model(object):
     def train_step(self, train_data):
         assert type(train_data) == DataManage
         grads = []
-        opt = tf.train.AdamOptimizer(self.lr)
+        opt = tf.train.AdamOptimizer(self.learning_rate)
         for i in range(self.n_gpu):
             with tf.device("/gpu:%d" % i):
                 frames, targets = train_data.next_batch()
@@ -190,7 +192,7 @@ class Model(object):
             batch_size, 
             max_step, 
             save_path, 
-            n_gpu)
+            n_gpu):
         
         with tf.Graph().as_default():
             with tf.Session(config=tf.ConfigProto(
@@ -202,7 +204,7 @@ class Model(object):
                 sess.run(initial)
                 saver = tf.train.Saver()
                 for i in range(self.max_step):
-                    _, loss = sess.run(self.train_step(train_data, lr))
+                    _, loss = sess.run(self.train_step(train_data))
                     print(i, " loss:", loss)
                     if i % 25 == 0 or i + 1 == self.max_step:
                         saver.save(sess, save_path)
@@ -212,12 +214,12 @@ class Model(object):
                 embeddings = sess.run(self.vector)
 
                 self.vector_dict = dict()
-                for i in range(len(enroll_label):
-                    if vector_dict[np.argmax(enroll_label[i])]
-                        vector_dict[np.argmax(enroll_label[i])] = embeddings[i]
+                for i in range(len(enroll_label)):
+                    if self.vector_dict[np.argmax(enroll_label[i])]:
+                        self.vector_dict[np.argmax(enroll_label[i])] = embeddings[i]
                     else:
-                        vector_dict[np.argmax(enroll_label)[i]] += embeddings[i]
-                        vector_dict[np.argmax(enroll_label)[i]] /= 2
+                        self.vector_dict[np.argmax(enroll_label)[i]] += embeddings[i]
+                        self.vector_dict[np.argmax(enroll_label)[i]] /= 2
                 
                 self.batch_frames = test_frames
                 
