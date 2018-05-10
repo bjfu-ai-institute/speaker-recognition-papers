@@ -2,6 +2,7 @@ import tensorflow as tf
 import sys
 sys.path.append("..")
 from scipy.spatial.distance import cosine
+import os
 import config
 import numpy as np
 import models.DataManage as DataManage
@@ -18,17 +19,18 @@ class Model:
         self.max_step = config.MAX_STEP
         self.lr = config.LR
         self.save_path = config.SAVE_PATH
-
-        self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32)
-        self.batch_target = tf.constant(value=0.0, shape=[1, self.n_speaker], dtype=tf.float32)
-        self._prediction = None
-        vector = np.zeros(shape=[self.n_speaker, 400])
-        self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
-        self._feature = None
-        self._loss = None
+        
         with tf.variable_scope(self.name):
-            self.opt = tf.train.AdamOptimizer(self.lr)
+            self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32, name='input_frames')
+            self.batch_target = tf.constant(value=0.0, shape=[1, self.n_speaker], dtype=tf.float32, name='input_labels')
+            self._prediction = None
+            vector = np.zeros(shape=[self.n_speaker, 400])
+            self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
+            self._feature = None
+            self._loss = None    
             self.build_graph()
+            self.opt = tf.train.AdamOptimizer(self.lr)
+            
 
     @property
     def loss(self):
@@ -103,6 +105,7 @@ class Model:
             distance_2 = self.compute_exp_cosine(pred_vector)
             loss = tf.add(tf.negative(tf.log(tf.divide(distance_1, distance_2))), loss)
         self._loss = loss
+        self.saver = tf.train.Saver()
 
     def t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
@@ -168,7 +171,7 @@ class Model:
             return exp_sum
 
     def train_step(self, train_data):
-        assert type(train_data) == DataManage
+        assert type(train_data) == DataManage.DataManage
         grads = []
         for i in range(self.n_gpu):
             with tf.device("/gpu:%d" % i):
@@ -190,7 +193,8 @@ class Model:
             enroll_frames,
             enroll_label,
             test_frames,
-            test_label):
+            test_label,
+            need_prediction_now=False):
         
         with tf.Graph().as_default():
             with tf.Session(config=tf.ConfigProto(
@@ -200,40 +204,47 @@ class Model:
                 train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size)
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
-                saver = tf.train.Saver()
                 for i in range(self.max_step):
                     sess.run(self.train_step(train_data))
+                    print("You did it!")
                     if i % 10 == 0 or i + 1 ==self.max_step:
-                        saver.save(sess, self.save_path)
-                self.run_predict(sess, enroll_frames, enroll_label, test_frames, test_label)
+                        self.saver.save(sess, self.save_path)
+        if need_prediction_now:
+            self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
 
     def run_predict(self, 
-                    sess, 
+                    save_path, 
                     enroll_frames,
                     enroll_targets, 
                     test_frames,
                     test_label):
-        self.batch_frames = enroll_frames
-        embeddings = sess.run(self.prediction)
-        self.vector_dict = dict()
-        for i in len(enroll_targets):
-            index = np.argmax(enroll_targets)
-            if self.vector_dict[index]:
-                self.vector_dict[index] = 0.5*(self.vector_dict[index]+embeddings[i])
-            else:
-                self.vector_dict[index] = embeddings
+        with tf.Session() as sess:
+            self.build_graph
+            graph = tf.get_default_graph()
+            self.batch_frames = enroll_frames
+            vectors = sess.run(self.feature)
+            vector_dict = dict()
+            for i in len(enroll_targets):
+                if vector_dict[np.argmax(enroll_targets[i])]:
+                    vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
+                    vector_dict[np.argmax(enroll_targets[i])] /= 2
+                else:
+                    vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
             
-        self.batch_frames = test_frames
-        support = 0
-        true_key = np.argmax(test_label[i])
-        embeddings = sess.run(self.prediction)
-        keys = self.vector_dict.keys()
-        for i in len(embeddings):
-            score = 0
-            label = -1
-            for key in keys:
-                if cosine(embeddings[i], self.vector_dict[key]) > score:
-                    score = cosine(embeddings[i], self.vector_dict[key])
-                    label = key
-            if label == true_key[i]:
-                support += 1
+            batch_frames = test_frames
+            vectors = sess.run(self.feature)
+            keys = vector_dict.keys()
+            true_key = test_label
+            support = 0
+            for i in len(vectors):
+                score = 0
+                label = -1
+                for key in keys:
+                    if cosine(vectors[i], vector_dict[key]) > score:
+                        score = cosine(vectors[i], vector_dict[key])
+                        label = key
+                if label == true_key[i]:
+                    support += 1
+            with open(os.path.join(save_path, 'log.txt'), 'w') as f:
+                s = "Acc = %f"%(support / len(vectors))
+                f.writelines(s)
