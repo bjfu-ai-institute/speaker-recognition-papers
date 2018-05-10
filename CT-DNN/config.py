@@ -2,7 +2,7 @@
 Setting
 """
 
-LR = 0.0001
+LR = 1e4
 
 N_GPU = 4
 

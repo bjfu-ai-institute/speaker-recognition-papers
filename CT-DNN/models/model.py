@@ -26,8 +26,8 @@ class Model:
         self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
         self._feature = None
         self._loss = None
-
         with tf.variable_scope(self.name):
+            self.opt = tf.train.AdamOptimizer(self.lr)
             self.build_graph()
 
     @property
@@ -167,10 +167,9 @@ class Model:
                 tf.add(exp_sum, tf.exp(cos_similarity))
             return exp_sum
 
-    def train_step(self, train_data, lr):
+    def train_step(self, train_data):
         assert type(train_data) == DataManage
         grads = []
-        opt = tf.train.AdamOptimizer(lr)
         for i in range(self.n_gpu):
             with tf.device("/gpu:%d" % i):
                 frames, targets = train_data.next_batch()
@@ -178,11 +177,11 @@ class Model:
                 targets = tf.constant(targets, dtype=tf.float32)
                 self.batch_frames = frames
                 self.batch_target = targets
-                gradient_all = opt.compute_gradients(self.loss)
+                gradient_all = self.opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
             ave_grads = self.average_gradients(grads)
-            train_op = opt.apply_gradients(ave_grads)
+            train_op = self.opt.apply_gradients(ave_grads)
         return train_op, tf.reduce_sum(grads)
 
     def run(self,
@@ -203,7 +202,7 @@ class Model:
                 sess.run(initial)
                 saver = tf.train.Saver()
                 for i in range(self.max_step):
-                    sess.run(self.train_step(train_data, self.lr))
+                    sess.run(self.train_step(train_data))
                     if i % 10 == 0 or i + 1 ==self.max_step:
                         saver.save(sess, self.save_path)
                 self.run_predict(sess, enroll_frames, enroll_label, test_frames, test_label)
