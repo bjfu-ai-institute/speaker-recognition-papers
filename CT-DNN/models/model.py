@@ -19,18 +19,6 @@ class Model:
         self.max_step = config.MAX_STEP
         self.lr = config.LR
         self.save_path = config.SAVE_PATH
-        
-        with tf.variable_scope(self.name):
-            self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32, name='input_frames')
-            self.batch_target = tf.constant(value=0.0, shape=[1, self.n_speaker], dtype=tf.float32, name='input_labels')
-            self._prediction = None
-            vector = np.zeros(shape=[self.n_speaker, 400])
-            self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
-            self._feature = None
-            self._loss = None    
-            self.build_graph()
-            self.opt = tf.train.AdamOptimizer(self.lr)
-            
 
     @property
     def loss(self):
@@ -48,7 +36,11 @@ class Model:
         """
         Build the compute graph.
         """
-
+        self.batch_frames = tf.constant(value=0.0, shape=[1, 9, 40, 1], dtype=tf.float32, name='input_frames')
+        self.batch_target = tf.constant(value=0.0, shape=[1, self.n_speaker], dtype=tf.float32, name='input_labels')
+        vector = np.zeros(shape=[self.n_speaker, 400])
+        self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
+            
         # Inference
         conv1 = self.conv2d(self.batch_frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
 
@@ -105,7 +97,10 @@ class Model:
             distance_2 = self.compute_exp_cosine(pred_vector)
             loss = tf.add(tf.negative(tf.log(tf.divide(distance_1, distance_2))), loss)
         self._loss = loss
+        self.opt = tf.train.AdamOptimizer(self.lr)
+        self.opt.minimize(self._loss)
         self.saver = tf.train.Saver()
+
 
     def t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
@@ -181,6 +176,7 @@ class Model:
                 self.batch_frames = frames
                 self.batch_target = targets
                 gradient_all = self.opt.compute_gradients(self.loss)
+                print(gradient_all)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
             ave_grads = self.average_gradients(grads)
@@ -201,9 +197,14 @@ class Model:
                     allow_soft_placement=False,
                     log_device_placement=False,
             )) as sess:
+                self.build_graph()
                 train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size)
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
+                v = sess.run(tf.trainable_variables())
+                print(v)
+                v = sess.run(tf.all_variables())
+                print(v)
                 for i in range(self.max_step):
                     sess.run(self.train_step(train_data))
                     print("You did it!")
@@ -218,33 +219,35 @@ class Model:
                     enroll_targets, 
                     test_frames,
                     test_label):
-        with tf.Session() as sess:
-            self.build_graph
-            graph = tf.get_default_graph()
-            self.batch_frames = enroll_frames
-            vectors = sess.run(self.feature)
-            vector_dict = dict()
-            for i in len(enroll_targets):
-                if vector_dict[np.argmax(enroll_targets[i])]:
-                    vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
-                    vector_dict[np.argmax(enroll_targets[i])] /= 2
-                else:
-                    vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
-            
-            batch_frames = test_frames
-            vectors = sess.run(self.feature)
-            keys = vector_dict.keys()
-            true_key = test_label
-            support = 0
-            for i in len(vectors):
-                score = 0
-                label = -1
-                for key in keys:
-                    if cosine(vectors[i], vector_dict[key]) > score:
-                        score = cosine(vectors[i], vector_dict[key])
-                        label = key
-                if label == true_key[i]:
-                    support += 1
-            with open(os.path.join(save_path, 'log.txt'), 'w') as f:
-                s = "Acc = %f"%(support / len(vectors))
-                f.writelines(s)
+        with tf.Graph().as_default():
+            with tf.Session() as sess:
+                self.build_graph()
+                new_saver = tf.train.import_meta_graph('./checkpoint_dir/MyModel-1000.meta')
+                new_saver.restore(sess, tf.train.latest_checkpoint(save_path))
+                self.batch_frames = enroll_frames
+                vectors = sess.run(self.feature)
+                vector_dict = dict()
+                for i in len(enroll_targets):
+                    if vector_dict[np.argmax(enroll_targets[i])]:
+                        vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
+                        vector_dict[np.argmax(enroll_targets[i])] /= 2
+                    else:
+                        vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
+                
+                self.batch_frames = test_frames
+                vectors = sess.run(self.feature)
+                keys = vector_dict.keys()
+                true_key = test_label
+                support = 0
+                for i in len(vectors):
+                    score = 0
+                    label = -1
+                    for key in keys:
+                        if cosine(vectors[i], vector_dict[key]) > score:
+                            score = cosine(vectors[i], vector_dict[key])
+                            label = key
+                    if label == true_key[i]:
+                        support += 1
+                with open(os.path.join(save_path, 'log.txt'), 'w') as f:
+                    s = "Acc = %f"%(support / len(vectors))
+                    f.writelines(s)
