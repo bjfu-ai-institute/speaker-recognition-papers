@@ -78,13 +78,15 @@ class Model:
 
         self._prediction = tf.nn.softmax(output)
 
+
         # Update vectors
-        pred_index = tf.argmax(output, axis=1)
-        true_index = tf.argmax(self.batch_target, axis=1)
+        # pred_index = tf.argmax(output, axis=1)
+        # true_index = tf.argmax(self.batch_target, axis=1)
         for i in range(self.n_speaker):
             vec_index = tf.where(tf.equal(true_index, i))
             vector = tf.reduce_mean(tf.gather(feature_layer, vec_index), axis=0)
-            tf.scatter_update(self.vectors, [i], vector)
+            self.vectors[i].assign(vector)
+            # tf.scatter_update(self.vectors, [i], vector)
 
         # Compute loss
         loss = tf.Variable(0, dtype=tf.float32)
@@ -95,12 +97,15 @@ class Model:
             true_vector = tf.gather(self.vectors, vec_ind)
             distance_1 = self.compute_exp_cosine(pred_vector, true_vector)
             distance_2 = self.compute_exp_cosine(pred_vector)
-            loss = tf.add(tf.negative(tf.log(tf.divide(distance_1, distance_2))), loss)
-        self._loss = loss
+            if loss:
+                loss += tf.negative(tf.log(tf.divide(distance_1, distance_2)))
+            else:
+                loss = tf.negative(tf.log(tf.divide(distance_1, distance_2)))
+    
         self.opt = tf.train.AdamOptimizer(self.lr)
         self.opt.minimize(self._loss)
         self.saver = tf.train.Saver()
-
+        
 
     def t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
@@ -131,17 +136,19 @@ class Model:
         return tf.Variable(initial, name=name)
 
     @staticmethod
-    def average_gradients(grads):  # grads:[[grad0, grad1,..], [grad0,grad1,..]..]
-        averaged_grads = []
-        for grads_per_var in zip(*grads):
+    def average_gradients(tower_grads):
+        average_grads = []
+        for grad_and_vars in zip(*tower_grads):
             grads = []
-            for grad in grads_per_var:
-                expanded_grad = tf.expand_dims(grad, 0)
-                grads.append(expanded_grad)
-            grads = tf.concat(grads, 0)
-            grads = tf.reduce_mean(grads, 0)
-            averaged_grads.append(grads)
-        return averaged_grads
+            for g,_ in grad_and_vars:
+                expanded_g = tf.expand_dims(g, 0)
+                grads.append(expanded_g)
+                grad = tf.concat(axis=0, values=grads)
+                grad = tf.reduce_mean(grad, 0)
+                v = grad_and_vars[0][1]
+                grad_and_var = (grad, v)
+                average_grads.append(grad_and_var)
+        return average_grads
 
     def compute_exp_cosine(self, vector1, vector2=None):
         exp_sum = tf.Variable(0, trainable=False, dtype=np.float32)
@@ -181,15 +188,15 @@ class Model:
         with tf.device("/cpu:0"):
             ave_grads = self.average_gradients(grads)
             train_op = self.opt.apply_gradients(ave_grads)
-        return train_op, tf.reduce_sum(grads)
+        return train_op
 
     def run(self,
             train_frames, 
             train_targets,
-            enroll_frames,
-            enroll_label,
-            test_frames,
-            test_label,
+            enroll_frames=None,
+            enroll_label=None,
+            test_frames=None,
+            test_label=None,
             need_prediction_now=False):
         
         with tf.Graph().as_default():
@@ -209,7 +216,7 @@ class Model:
                     sess.run(self.train_step(train_data))
                     print("You did it!")
                     if i % 10 == 0 or i + 1 ==self.max_step:
-                        self.saver.save(sess, self.save_path)
+                        self.saver.save(sess, os.path._join(self.save_path + 'model.meta'))
         if need_prediction_now:
             self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
 
@@ -222,7 +229,7 @@ class Model:
         with tf.Graph().as_default():
             with tf.Session() as sess:
                 self.build_graph()
-                new_saver = tf.train.import_meta_graph('./checkpoint_dir/MyModel-1000.meta')
+                new_saver = tf.train.import_meta_graph( os.path._join(self.save_path + 'model.meta'))
                 new_saver.restore(sess, tf.train.latest_checkpoint(save_path))
                 self.batch_frames = enroll_frames
                 vectors = sess.run(self.feature)
