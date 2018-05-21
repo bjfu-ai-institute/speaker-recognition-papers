@@ -78,7 +78,8 @@ class Model:
 
         self._prediction = tf.nn.softmax(output)
 
-
+        self._loss = -tf.reduce_mean(self.batch_target * tf.log(output))
+        """
         # Update vectors
         # pred_index = tf.argmax(output, axis=1)
         # true_index = tf.argmax(self.batch_target, axis=1)
@@ -101,7 +102,7 @@ class Model:
                 loss += tf.negative(tf.log(tf.divide(distance_1, distance_2)))
             else:
                 loss = tf.negative(tf.log(tf.divide(distance_1, distance_2)))
-    
+        """
         self.opt = tf.train.AdamOptimizer(self.lr)
         self.opt.minimize(self._loss)
         self.saver = tf.train.Saver()
@@ -216,7 +217,7 @@ class Model:
                     sess.run(self.train_step(train_data))
                     print("You did it!")
                     if i % 10 == 0 or i + 1 ==self.max_step:
-                        self.saver.save(sess, os.path._join(self.save_path + 'model.meta'))
+                        self.saver.save(sess, os.path.join(self.save_path + 'model'))
         if need_prediction_now:
             self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
 
@@ -226,12 +227,14 @@ class Model:
                     enroll_targets, 
                     test_frames,
                     test_label):
-        with tf.Graph().as_default():
+        with tf.Graph().as_default() as graph:
             with tf.Session() as sess:
                 self.build_graph()
-                new_saver = tf.train.import_meta_graph( os.path._join(self.save_path + 'model.meta'))
-                new_saver.restore(sess, tf.train.latest_checkpoint(save_path))
-                self.batch_frames = enroll_frames
+                new_saver = tf.train.import_meta_graph(os.path.join(self.save_path + 'model-0000.meta'))
+                new_saver.restore(sess, tf.train.latest_checkpoint(os.path.join(self.save_path, 'model-0000.data-00000-of-00001')))
+                batch_frames = graph.get_tensor_by_name("input_frames:0")
+                batch_labels = graph.get_tensor_by_name("input_labels:0")
+                batch_frames = enroll_frames
                 vectors = sess.run(self.feature)
                 vector_dict = dict()
                 for i in len(enroll_targets):
@@ -241,7 +244,7 @@ class Model:
                     else:
                         vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
                 
-                self.batch_frames = test_frames
+                batch_frames = test_frames
                 vectors = sess.run(self.feature)
                 keys = vector_dict.keys()
                 true_key = test_label
