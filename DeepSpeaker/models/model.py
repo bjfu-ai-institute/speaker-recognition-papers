@@ -22,6 +22,7 @@ class Model(object):
         self.n_gpu = config.N_GPU
         self.conv_weight_decay = config.CONV_WEIGHT_DECAY
         self.fc_weight_dacay = config.FC_WEIGHT_DECAY
+        self.save_path = config.SAVE_PATH
         self.bn_epsilon = config.BN_EPSILON
         self.out_channel = config.OUT_CHANNEL
         self.learning_rate = config.LEARNING_RATE
@@ -188,11 +189,7 @@ class Model(object):
             enroll_frames,
             enroll_label,
             test_frames,
-            test_label, 
-            batch_size, 
-            max_step, 
-            save_path, 
-            n_gpu):
+            test_label):
         
         with tf.Graph().as_default():
             with tf.Session(config=tf.ConfigProto(
@@ -206,8 +203,8 @@ class Model(object):
                 for i in range(self.max_step):
                     _, loss = sess.run(self.train_step(train_data))
                     print(i, " loss:", loss)
-                    if i % 25 == 0 or i + 1 == self.max_step:
-                        saver.save(sess, save_path)
+                    if i % 25 == 0 or i+1 == self.max_step:
+                        saver.save(sess, self.save_path)
 
                 self.batch_frames = enroll_frames
 

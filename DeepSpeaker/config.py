@@ -17,6 +17,8 @@ LEARNING_RATE = 0.001
 
 BATCH_SIZE = 100
 
+SAVE_PATH = '/media/data/'
+
 N_SPEAKER = 1000
 
 N_RES_BLOCKS = 4
