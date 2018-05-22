@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 
 import tensorflow as tf
+import os
 import numpy as np
 import models.DataManage as DataManage
 from scipy.spatial.distance import cosine
@@ -33,20 +34,20 @@ class Model(object):
         
         self.create_input()
         
-        inp = self.batch_frames
+        inp = self.batch_frames[self.gpu_ind]
         
-        targets = self.batch_targets
+        targets = self.batch_targets[self.gpu_ind]
         
         for i in range(self.n_blocks):
             if i > 0:
                 inp = self.residual_block(inp,
                 self.out_channel[i], "residual_block_%d"%i,
-                is_first_layer=True)
+                is_first_layer=False)
         
             else:     
                 inp = self.residual_block(inp,
                 self.out_channel[i], "residual_block_%d"%i,
-                is_first_layer=False)
+                is_first_layer=True)
         
         inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1], 
                              stride=[1, 1, 1, 1], padding='SAME')
@@ -63,6 +64,8 @@ class Model(object):
         self._vector = output
 
         self._loss = self.triplet_loss(output, targets)
+
+        self.opt = tf.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
     
     @property
     def loss(self):
@@ -73,11 +76,10 @@ class Model(object):
         return self._vector
 
     def create_input(self):
-        self.batch_frames = tf.constant([None, 400, 400, 1])
-        self.batch_targets = tf.constant([None, self.n_speaker])
-
-    def sess_init(self):
-        return
+        self.batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 100, 64, 1])
+        self.batch_targets = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker])
+        self.gpu_ind = tf.get_variable('gpu_ind', shape=[], dtype=tf.float32, 
+                                       initializer=tf.constant_initializer(value=0))
 
     def residual_block(self, inp, out_channel, name, is_first_layer=0):
         inp_channel = inp.get_shape().as_list()[-1]
@@ -112,9 +114,9 @@ class Model(object):
         dims = inp.get_shape()[-1]
         mean, variance = tf.nn.moments(inp, axes=[0, 1, 2])
         beta = tf.get_variable('beta', dims, tf.float32,
-                               initializer=tf.constant(0.0, tf.float32))
+                               initializer=tf.constant_initializer(value=0.0))
         gamma = tf.get_variable('gamma', dims, tf.float32,
-                                initializer=tf.constant(1.0, tf.float32))
+                                initializer=tf.constant_initializer(value=0.0))
         bn_layer = tf.nn.batch_normalization(inp, mean, variance, beta, gamma, self.bn_epsilon)
         return bn_layer
 
@@ -165,23 +167,17 @@ class Model(object):
             averaged_grads.append(grads)
         return averaged_grads
 
-    def train_step(self, train_data):
-        assert type(train_data) == DataManage
+    def train_step(self):
         grads = []
-        opt = tf.train.AdamOptimizer(self.learning_rate)
         for i in range(self.n_gpu):
             with tf.device("/gpu:%d" % i):
-                frames, targets = train_data.next_batch()
-                frames = tf.constant(frames, dtype=tf.float32)
-                targets = tf.constant(targets, dtype=tf.float32)
-                self.batch_frames = frames
-                self.batch_target = targets
-                gradient_all = opt.compute_gradients(self.loss)
+                self.gpu_ind.assign(i)
+                gradient_all = self.opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
             ave_grads = self.average_gradients(grads)
-            train_op = opt.apply_gradients(ave_grads)
-        return train_op, tf.reduce_sum(grads)
+            train_op = self.opt.apply_gradients(ave_grads)
+        return train_op
 
     def run(self,
             train_frames, 
@@ -201,14 +197,26 @@ class Model(object):
                 sess.run(initial)
                 saver = tf.train.Saver()
                 for i in range(self.max_step):
-                    _, loss = sess.run(self.train_step(train_data))
-                    print(i, " loss:", loss)
+                    inp_frames = []
+                    inp_labels = []
+                    for i in range(self.n_gpu):
+                        frames,labels = train_data.next_batch()
+                        inp_frames.append(frames)
+                        inp_labels.append(labels)
+                    train_op = self.train_step()
+                    sess.run(train_op, feed_dict={'x:0':inp_frames, 'y_:0':inp_labels})
                     if i % 25 == 0 or i+1 == self.max_step:
-                        saver.save(sess, self.save_path)
+                        saver.save(sess, os.path.join(self.save_path, 'model'), global_step=i)
 
-                self.batch_frames = enroll_frames
 
-                embeddings = sess.run(self.vector)
+                INF = 0x3f3f3f3f
+                self.n_gpu = 1
+                enroll_data = DataManage.DataManage(enroll_frames, enroll_label, INF)
+                test_data = DataManage.DataManage(test_frames, test_label, INF)
+
+                get_vector = self.vector                
+                frames, labels = enroll_data.next_batch()
+                embeddings = sess.run(get_vector, feed_dict={'x:0':frames, 'y_:0':labels})
 
                 self.vector_dict = dict()
                 for i in range(len(enroll_label)):
@@ -218,9 +226,9 @@ class Model(object):
                         self.vector_dict[np.argmax(enroll_label)[i]] += embeddings[i]
                         self.vector_dict[np.argmax(enroll_label)[i]] /= 2
                 
-                self.batch_frames = test_frames
+                frames, labels = test_data.next_batch()
+                embeddings = sess.run(get_vector, feed_dict={'x:0':frames, 'y_:0':labels})
                 
-                embeddings = sess.run(self.vector)
                 support = 0
                 for i in range(len(embeddings)):
                     keys = self.vector_dict.keys()

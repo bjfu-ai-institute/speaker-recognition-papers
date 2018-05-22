@@ -6,7 +6,7 @@ LR = 1e4
 
 N_GPU = 4
 
-SAVE_PATH = '/home/user1/fhq/ctdnn/save/'
+SAVE_PATH = '/home/fang-hq/Documents/result/ctdnn'
 
 MAX_STEP = 75
 
