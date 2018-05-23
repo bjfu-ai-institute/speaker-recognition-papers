@@ -36,7 +36,7 @@ class Model(object):
         
         inp = self.batch_frames[self.gpu_ind]
         
-        targets = self.batch_targets[self.gpu_ind]
+        targets = tf.squeeze(self.batch_targets[self.gpu_ind])
         
         for i in range(self.n_blocks):
             if i > 0:
@@ -50,23 +50,36 @@ class Model(object):
                 is_first_layer=True)
         
         inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1], 
-                             stride=[1, 1, 1, 1], padding='SAME')
-        
-        weight_affine = self.new_variable("affine_weight", [inp.get_shape[-1], 512],
+                             strides=[1, 1, 1, 1], padding='SAME')
+        inp = tf.reshape(inp, [inp.get_shape().as_list()[0]*inp.get_shape().as_list()[1]*inp.get_shape().as_list()[2],
+                                inp.get_shape().as_list()[-1]])
+        weight_affine = self.new_variable("affine_weight", [inp.get_shape().as_list()[-1], 512],
                                           weight_type="FC")
         
         bias_affine = self.new_variable("affine_bias", [512], "FC")
 
         inp = tf.nn.relu(tf.matmul(inp, weight_affine) + bias_affine)
 
-        output = self.batch_normalization(inp)
+        print(inp.get_shape().as_list())
 
+        dims = inp.get_shape()[-1]
+        mean, variance = tf.nn.moments(inp, axes=[0])
+        beta = tf.get_variable('output_beta', dims, tf.float32,
+                               initializer=tf.constant_initializer(value=0.0))
+        gamma = tf.get_variable('output_gamma', dims, tf.float32,
+                                initializer=tf.constant_initializer(value=0.0))
+        output = tf.nn.batch_normalization(inp, mean, variance, beta, gamma, self.bn_epsilon)
+        
         self._vector = output
 
+        print(output.get_shape().as_list())
+        print(targets.get_shape().as_list())
         self._loss = self.triplet_loss(output, targets)
 
+        exit()
+
         self.opt = tf.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
-    
+
     @property
     def loss(self):
         return self._loss
@@ -77,11 +90,13 @@ class Model(object):
 
     def create_input(self):
         self.batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 100, 64, 1])
-        self.batch_targets = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker])
-        self.gpu_ind = tf.get_variable('gpu_ind', shape=[], dtype=tf.float32, 
+        self.batch_targets = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 1])
+        self.gpu_ind = tf.get_variable('gpu_ind', shape=[], dtype=tf.int32, 
                                        initializer=tf.constant_initializer(value=0))
 
     def residual_block(self, inp, out_channel, name, is_first_layer=0):
+        print(name)
+        print(inp.get_shape().as_list())
         inp_channel = inp.get_shape().as_list()[-1]
         if inp_channel*2 == out_channel:
             increased = True
@@ -90,17 +105,17 @@ class Model(object):
             increased = False
             stride = 1
         if is_first_layer:
-            weight = self.new_variable(name=name+"conv", shape=[3, 3, inp_channel, out_channel],
+            weight = self.new_variable(name=name+"_conv", shape=[3, 3, inp_channel, out_channel],
                                        weight_type="Conv")
             conv1 = tf.nn.conv2d(inp, weight, strides=[1, 1, 1, 1], padding='SAME')
         else:
-            conv1 = self.relu_conv_layer(inp, [3, 3, inp_channel, out_channel], name=name+"conv1",
+            conv1 = self.relu_conv_layer(inp, [3, 3, inp_channel, out_channel], name=name+"_conv1",
                                          stride=stride, padding='SAME', bn_after_conv=False)
-        conv2 = self.relu_conv_layer(conv1, [3, 3, out_channel, out_channel], name+"conv2",
-                                     stride, 'SAME', bn_after_conv=False)
+        conv2 = self.relu_conv_layer(conv1, [3, 3, out_channel, out_channel], name=name+"_conv2",
+                                     stride= 1, padding='SAME', bn_after_conv=False)
         if increased:
             pool_inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1],
-                                      strides=[1, 2, 2, 1], padding='VALID')
+                                      strides=[1, 2, 2, 1], padding='SAME')
             padded_inp = tf.pad(pool_inp, [[0, 0], [0, 0], [0, 0], [inp_channel//2, inp_channel//2]])
         else:
             padded_inp = inp
@@ -110,12 +125,12 @@ class Model(object):
         loss = tf.contrib.losses.metric_learning.triplet_semihard_loss(targets, inp, 1.0)
         return loss
 
-    def batch_normalization(self, inp):
+    def batch_normalization(self, inp, name):
         dims = inp.get_shape()[-1]
         mean, variance = tf.nn.moments(inp, axes=[0, 1, 2])
-        beta = tf.get_variable('beta', dims, tf.float32,
+        beta = tf.get_variable(name+'_beta', dims, tf.float32,
                                initializer=tf.constant_initializer(value=0.0))
-        gamma = tf.get_variable('gamma', dims, tf.float32,
+        gamma = tf.get_variable(name+'_gamma', dims, tf.float32,
                                 initializer=tf.constant_initializer(value=0.0))
         bn_layer = tf.nn.batch_normalization(inp, mean, variance, beta, gamma, self.bn_epsilon)
         return bn_layer
@@ -135,11 +150,11 @@ class Model(object):
         if bn_after_conv:
             conv_layer = tf.nn.conv2d(inp, weight,
                                       strides=[1, stride, stride, 1], padding=padding)
-            bn_layer = self.batch_normalization(conv_layer)
+            bn_layer = self.batch_normalization(conv_layer, name)
             output = tf.nn.relu(bn_layer)
             return output
         else:
-            bn_layer = self.batch_normalization(inp)
+            bn_layer = self.batch_normalization(inp, name)
             relu_layer = tf.nn.relu(bn_layer)
             conv_layer = tf.nn.conv2d(relu_layer, weight,
                                       strides=[1, stride, stride, 1], padding=padding)
@@ -200,7 +215,7 @@ class Model(object):
                     inp_frames = []
                     inp_labels = []
                     for i in range(self.n_gpu):
-                        frames,labels = train_data.next_batch()
+                        frames,labels = train_data.next_batch
                         inp_frames.append(frames)
                         inp_labels.append(labels)
                     train_op = self.train_step()
@@ -215,7 +230,7 @@ class Model(object):
                 test_data = DataManage.DataManage(test_frames, test_label, INF)
 
                 get_vector = self.vector                
-                frames, labels = enroll_data.next_batch()
+                frames, labels = enroll_data.next_batch
                 embeddings = sess.run(get_vector, feed_dict={'x:0':frames, 'y_:0':labels})
 
                 self.vector_dict = dict()
@@ -226,7 +241,7 @@ class Model(object):
                         self.vector_dict[np.argmax(enroll_label)[i]] += embeddings[i]
                         self.vector_dict[np.argmax(enroll_label)[i]] /= 2
                 
-                frames, labels = test_data.next_batch()
+                frames, labels = test_data.next_batch
                 embeddings = sess.run(get_vector, feed_dict={'x:0':frames, 'y_:0':labels})
                 
                 support = 0
@@ -242,10 +257,3 @@ class Model(object):
                 with open('/media/data/result/deep_speaker_in_c863', 'w') as f:
                     s = "Acc is %f" % (support/len(embeddings))
                     f.writelines(s)
-
-
-                
-
-
-
-

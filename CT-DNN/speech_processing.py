@@ -69,6 +69,7 @@ def ext_fbank_feature(url_path):
             fbank = slide_windows(fbank)
             """
             fbank = calc_fbank(url)
+            fbank = slide_windows(fbank)
             for i in fbank:
                 fbanks.append(i)
                 labels.append(label)

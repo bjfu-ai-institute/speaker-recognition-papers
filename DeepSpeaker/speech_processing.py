@@ -57,8 +57,8 @@ def ext_fbank_feature(url_path):
         for url in list(urls):
             url, label = str(url).split(" ")
             index = eval(str(label).split("\n")[0])
-            label = np.zeros(config.N_SPEAKER)
-            label[index] = 1
+            #label = np.zeros(config.N_SPEAKER)
+            #label[index] = 1
             """
             # I am not sure I use librosa in right way.
             y, sr = librosa.load(url)
@@ -69,9 +69,10 @@ def ext_fbank_feature(url_path):
             fbank = slide_windows(fbank)
             """
             fbank = calc_fbank(url)
+            fbank = slide_windows(fbank)
             for i in fbank:
                 fbanks.append(i)
-                labels.append(label)
+                labels.append(index)
         return fbanks, labels
 
 

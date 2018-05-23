@@ -17,13 +17,13 @@ class Model:
         self.name = config.MODEL_NAME
         self.n_speaker = config.N_SPEAKER
         self.max_step = config.MAX_STEP
+        self.is_big_dataset = config.IS_BIG_DATASET
+        if self.is_big_dataset:
+            self.url_of_big_dataset = config.URL_OF_BIG_DATASET
         self.lr = config.LR
         self.is_built = False
-        self.gpu_ind = tf.get_variable(name='gpu_ind', shape=[], initializer=tf.constant_initializer(value=0, dtype=tf.int32))
         self.save_path = config.SAVE_PATH
-        self.batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 9, 40, 1],name='x')
-        self.batch_target = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker],name='y_')
-
+        
     @property
     def loss(self):
         return self._loss
@@ -40,6 +40,11 @@ class Model:
         """
         Build the compute graph.
         """
+        self.gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
+                            ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
+        self.batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 9, 40, 1],name='x')
+        self.batch_target = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker],name='y_')
+
         vector = np.zeros(shape=[self.n_speaker, 400])
         self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
             
@@ -182,7 +187,6 @@ class Model:
             with tf.device("/gpu:%d" % i):
                 self.gpu_ind.assign(i)
                 gradient_all = self.opt.compute_gradients(self.loss)
-                print(gradient_all)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
             ave_grads = self.average_gradients(grads)
@@ -203,20 +207,28 @@ class Model:
                     allow_soft_placement=False,
                     log_device_placement=False,
             )) as sess:
-                self.build_graph()
-                train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size)
+                if self.is_big_dataset:
+                    train_data = DataManage.DataManage4BigData(url = self.url_of_big_dataset)
+                    if not train_data.file_is_exist:
+                        train_data.write_file(train_frames, train_targets)
+                    del train_frames, train_targets
+                    self.build_graph()
+                else:
+                    self.build_graph()
+                    train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size-1)
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
                 train_op = self.train_step()
                 for i in range(self.max_step):
                     input_frames = []
                     input_labels = []
-                    for i in range(self.n_gpu):
-                        frames, labels = train_data.next_batch()
+                    for x in range(self.n_gpu):
+                        frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)
-                    input_frames = np.array(input_frames)
-                    input_labels = np.array(input_labels)
+                    input_frames = np.array(input_frames).reshape([4, self.batch_size, 9, 40, 1])
+                    input_labels = np.array(input_labels).reshape([4, self.batch_size, self.n_speaker])
+                    print(i)
                     sess.run(train_op, feed_dict={'x:0':input_frames, 'y_:0':input_labels})
                     if i % 10 == 0 or i + 1 ==self.max_step:
                         self.saver.save(sess, os.path.join(self.save_path + 'model'))
@@ -242,9 +254,11 @@ class Model:
                 new_saver = tf.train.import_meta_graph(os.path.join(self.save_path + 'model-0000.meta'))
                 new_saver.restore(sess, tf.train.latest_checkpoint(os.path.join(self.save_path, 'model-0000.data-00000-of-00001')))
                 feature_op = self.feature
-                frames, labels = enroll_data.next_batch()
-                vectors = sess.run(feature_op, feed_dict={'x:0':np.expand_dims(frames, axis=0), 
-                                                        'y_:0':np.expand_dims(labels, axis=0)})
+                frames, labels = enroll_data.next_batch
+                frames = np.array(frames).reshape([1, -1, 9, 40])
+                labels = np.array(labels).reshape([1, -1, self.n_speaker])
+                vectors = sess.run(feature_op, feed_dict={'x:0':frames, 
+                                                        'y_:0':labels})
                 vector_dict = dict()
                 for i in len(enroll_targets):
                     if vector_dict[np.argmax(enroll_targets[i])]:
@@ -252,9 +266,11 @@ class Model:
                         vector_dict[np.argmax(enroll_targets[i])] /= 2
                     else:
                         vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
-                frames, labels = test_data.next_batch()
-                vectors = sess.run(feature_op, feed_dict={'x:0':np.expand_dims(frames, axis=0), 
-                                                        'y_:0':np.expand_dims(labels, axis=0)})
+                frames, labels = test_data.next_batch
+                frames = np.array(frames).reshape([1, -1, 9, 40])
+                labels = np.array(labels).reshape([1, -1, self.n_speaker])
+                vectors = sess.run(feature_op, feed_dict={'x:0':frames, 
+                                                        'y_:0':labels})
                 keys = vector_dict.keys()
                 true_key = test_label
                 support = 0
