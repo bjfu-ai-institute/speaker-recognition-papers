@@ -3,6 +3,7 @@ import sys
 sys.path.append("..")
 from scipy.spatial.distance import cosine
 import os
+import time
 import config
 import numpy as np
 import models.DataManage as DataManage
@@ -219,6 +220,7 @@ class Model:
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
                 train_op = self.train_step()
+                last_time = time.time()                
                 for i in range(self.max_step):
                     input_frames = []
                     input_labels = []
@@ -228,10 +230,12 @@ class Model:
                         input_labels.append(labels)
                     input_frames = np.array(input_frames).reshape([4, self.batch_size, 9, 40, 1])
                     input_labels = np.array(input_labels).reshape([4, self.batch_size, self.n_speaker])
-                    print(i)
                     sess.run(train_op, feed_dict={'x:0':input_frames, 'y_:0':input_labels})
+                    current_time = time.time()
+                    print("No.%d step use %f sec"%(i,current_time-last_time))
+                    last_time = time.time()
                     if i % 10 == 0 or i + 1 ==self.max_step:
-                        self.saver.save(sess, os.path.join(self.save_path + 'model'))
+                        self.saver.save(sess, os.path.join(self.save_path,'model'))
         if need_prediction_now:
             self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
 
@@ -251,8 +255,8 @@ class Model:
                 self.n_gpu = 1
                 enroll_data = DataManage.DataManage(enroll_frames, enroll_targets, INF)
                 test_data = DataManage.DataManage(test_frames, test_label, INF)
-                new_saver = tf.train.import_meta_graph(os.path.join(self.save_path + 'model-0000.meta'))
-                new_saver.restore(sess, tf.train.latest_checkpoint(os.path.join(self.save_path, 'model-0000.data-00000-of-00001')))
+                new_saver = tf.train.import_meta_graph(os.path.join(self.save_path, 'model.meta'))
+                new_saver.restore(sess, tf.train.latest_checkpoint(os.path.join(self.save_path, 'model.data-00000-of-00001')))
                 feature_op = self.feature
                 frames, labels = enroll_data.next_batch
                 frames = np.array(frames).reshape([1, -1, 9, 40])
