@@ -13,6 +13,7 @@ class DataManage(object):
         self.batch_size = batch_size
         self.epoch_size = len(raw_frames) / batch_size
         self.batch_counter = 0
+        self.is_eof = False
         self.spkr_num = np.array(self.raw_labels).shape[-1]
 
     @property
@@ -25,6 +26,7 @@ class DataManage(object):
             self.batch_counter += 1
             return batch_frames, batch_labels
         else:
+            self.is_eof = True
             return self.raw_frames[self.batch_counter * self.batch_size:-1], \
             self.raw_labels[self.batch_counter * self.batch_size:-1]
 
