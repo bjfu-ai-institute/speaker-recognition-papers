@@ -6,6 +6,7 @@ import os
 import numpy as np
 import models.DataManage as DataManage
 from scipy.spatial.distance import cosine
+import triplet_loss
 import config
 
 class Model(object):
@@ -122,7 +123,7 @@ class Model(object):
         return conv2 + padded_inp
 
     def triplet_loss(self, inp, targets):
-        loss = tf.contrib.losses.metric_learning.triplet_semihard_loss(targets, inp, 1.0)
+        loss = triplet_loss.batch_all_triplet_loss(targets, inp, 1.0)
         return loss
 
     def batch_normalization(self, inp, name):

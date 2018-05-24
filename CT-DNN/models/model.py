@@ -9,7 +9,7 @@ import numpy as np
 import models.DataManage as DataManage
 
 
-class Model:
+class Model(object):
     def __init__(self):
 
         # import setting from ../config.py
@@ -22,8 +22,8 @@ class Model:
         if self.is_big_dataset:
             self.url_of_big_dataset = config.URL_OF_BIG_DATASET
         self.lr = config.LR
-        self.is_built = False
         self.save_path = config.SAVE_PATH
+        self.is_pred = False
         
     @property
     def loss(self):
@@ -37,20 +37,63 @@ class Model:
     def feature(self):
         return self._feature
 
+    def build_pred_graph(self):
+        pred_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1], name='pred_x')
+        
+        frames = pred_frames
+        vector = np.zeros(shape=[self.n_speaker, 400])
+        self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
+            
+        # Inference
+        conv1 = self.conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
+
+        pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
+
+        conv2 = self.conv2d(pool1, 'conv2', [2, 4, 128, 128], [1, 1, 1, 1], 'VALID')
+
+        pool2 = tf.nn.max_pool(conv2, ksize=[1, 1, 2, 1], strides=[1, 1, 2, 1], padding='VALID')
+
+        pool2_flat = tf.reshape(pool2, [-1,
+                                        pool2.get_shape().as_list()[1] *
+                                        pool2.get_shape().as_list()[2] *
+                                        pool2.get_shape().as_list()[3]])
+
+        bottleneck = self.full_connect(pool2_flat, 'bottleneck', 512)
+
+        bottleneck_t = tf.reshape(bottleneck, [-1, 512, 1])
+
+        td1 = self.t_dnn(bottleneck_t, name='td1', shape=[5, 1, 128], strides=1)
+        td1_flat = tf.reshape(td1, [-1, td1.get_shape().as_list()[1] * td1.get_shape().as_list()[2]])
+
+        p_norm1 = self.full_connect(td1_flat, name='P_norm1', units=2000)
+        p_norm1_t = tf.reshape(p_norm1, [-1, 2000, 1])
+
+        td2 = self.t_dnn(p_norm1_t, name='td2', shape=[9, 1, 128], strides=1)
+        td2_flat = tf.reshape(td2, [-1, td2.get_shape().as_list()[1] * td2.get_shape().as_list()[2]])
+
+        p_norm2 = self.full_connect(td2_flat, name='P_norm2', units=400)
+
+        feature_layer = self.full_connect(p_norm2, name='feature_layer', units=400)
+
+        self._feature = feature_layer
+
+
     def build_graph(self):
         """
         Build the compute graph.
         """
         self.gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
                             ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
-        self.batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 9, 40, 1],name='x')
-        self.batch_target = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker],name='y_')
-
+        batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 9, 40, 1],name='x')
+        batch_target = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker],name='y_')
+        
+        frames = batch_frames[self.gpu_ind]
+        target = batch_target[self.gpu_ind]
         vector = np.zeros(shape=[self.n_speaker, 400])
         self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
             
         # Inference
-        conv1 = self.conv2d(self.batch_frames[self.gpu_ind], 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
+        conv1 = self.conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
 
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
 
@@ -86,7 +129,7 @@ class Model:
 
         self._prediction = tf.nn.softmax(output)
 
-        self._loss = -tf.reduce_mean(self.batch_target[self.gpu_ind] * tf.log(output))
+        self._loss = -tf.reduce_mean(target * tf.log(output))
         """
         # Update vectors
         # pred_index = tf.argmax(output, axis=1)
@@ -120,20 +163,20 @@ class Model:
     def t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
             weights = self.weights_variable(shape)
-            return tf.nn.conv1d(x, weights, stride=strides, padding='SAME')
+        return tf.nn.conv1d(x, weights, stride=strides, padding='SAME', name=name+"_output")
 
     def conv2d(self, x, name, shape, strides, padding='SAME'):
         with tf.name_scope(name):
             weights = self.weights_variable(shape)
             biases = self.bias_variable(shape[-1])
-            return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(x, weights,
-                                                          strides=strides, padding=padding), biases))
+        return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(x, weights,
+                                                      strides=strides, padding=padding), biases, name=name+"_output"))
 
     def full_connect(self, x, name, units):
         with tf.name_scope(name):
             weights = self.weights_variable([x.get_shape().as_list()[-1], units])
             biases = self.bias_variable(units)
-            return tf.nn.relu(tf.nn.bias_add(tf.matmul(x, weights), biases))
+        return tf.nn.relu(tf.nn.bias_add(tf.matmul(x, weights), biases), name=name+"_output")
 
     @staticmethod
     def weights_variable(shape, name='weights', stddev=0.1):
@@ -228,8 +271,8 @@ class Model:
                         frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)
-                    input_frames = np.array(input_frames).reshape([4, self.batch_size, 9, 40, 1])
-                    input_labels = np.array(input_labels).reshape([4, self.batch_size, self.n_speaker])
+                    input_frames = np.array(input_frames).reshape([self.n_gpu, self.batch_size, 9, 40, 1])
+                    input_labels = np.array(input_labels).reshape([self.n_gpu, self.batch_size, self.n_speaker])
                     sess.run(train_op, feed_dict={'x:0':input_frames, 'y_:0':input_labels})
                     current_time = time.time()
                     print("No.%d step use %f sec"%(i,current_time-last_time))
@@ -240,29 +283,33 @@ class Model:
             self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
 
     def run_predict(self, 
-                    save_path, 
+                    save_path,
                     enroll_frames,
                     enroll_targets, 
                     test_frames,
                     test_label):
-        with tf.Graph().as_default():
+        with tf.Graph().as_default() as graph:
             with tf.Session() as sess:
-                if not self.is_built:
-                    self.build_graph()
-                
+                self.build_pred_graph()
+                new_saver = tf.train.Saver()
+        
                 # needn't batch and gpu in prediction
                 INF = 0x3f3f3f3f
                 self.n_gpu = 1
                 enroll_data = DataManage.DataManage(enroll_frames, enroll_targets, INF)
                 test_data = DataManage.DataManage(test_frames, test_label, INF)
-                new_saver = tf.train.import_meta_graph(os.path.join(self.save_path, 'model.meta'))
-                new_saver.restore(sess, tf.train.latest_checkpoint(os.path.join(self.save_path, 'model.data-00000-of-00001')))
-                feature_op = self.feature
+                new_saver.restore(sess, tf.train.latest_checkpoint(self.save_path))
+                self.is_pred = True
+                """
+                with open('/opt/fhq/log.txt', 'w') as f:
+                    for op in tf.get_default_graph().get_operations():
+                        f.writelines(str(op.name)) 
+                """
+                feature_op = graph.get_operation_by_name('feature_layer_output')
                 frames, labels = enroll_data.next_batch
-                frames = np.array(frames).reshape([1, -1, 9, 40])
-                labels = np.array(labels).reshape([1, -1, self.n_speaker])
-                vectors = sess.run(feature_op, feed_dict={'x:0':frames, 
-                                                        'y_:0':labels})
+                frames = np.array(frames).reshape([-1, 9, 40, 1])
+                labels = np.array(labels).reshape([-1, self.n_speaker])
+                vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
                 vector_dict = dict()
                 for i in len(enroll_targets):
                     if vector_dict[np.argmax(enroll_targets[i])]:
@@ -271,10 +318,9 @@ class Model:
                     else:
                         vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
                 frames, labels = test_data.next_batch
-                frames = np.array(frames).reshape([1, -1, 9, 40])
-                labels = np.array(labels).reshape([1, -1, self.n_speaker])
-                vectors = sess.run(feature_op, feed_dict={'x:0':frames, 
-                                                        'y_:0':labels})
+                frames = np.array(frames).reshape([-1, 9, 40, 1])
+                labels = np.array(labels).reshape([-1, self.n_speaker])
+                vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
                 keys = vector_dict.keys()
                 true_key = test_label
                 support = 0
