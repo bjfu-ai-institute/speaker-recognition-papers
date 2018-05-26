@@ -5,6 +5,7 @@ import config
 from scipy import signal
 import scipy
 from scipy.fftpack import dct
+import resampy
 
 
 def slide_windows(feature):
@@ -126,3 +127,20 @@ def calc_fbank(url):
     filter_banks = 20 * np.log10(filter_banks)
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
     return filter_banks
+
+def calc_cqcc(url):
+    y, sr = librosa.load(url)
+    constant_q = librosa.cqt(y=y, sr=sr)
+    cqt_abs = np.abs(constant_q)
+    cqt_abs_square = cqt_abs ** 2
+    cqt_spec = librosa.amplitude_to_db(cqt_abs_square).astype('float32')
+    cqt_resampy_spec = cqcc_resample(cqt_spec, sr, 44000)
+    cqcc = scipy.fftpack.dct(cqt_resampy_spec, norm='ortho', axis=0)
+    return cqcc
+
+
+def cqcc_resample(s, fs_orig, fs_new, axis=0):
+    if int(fs_orig) != int(fs_new):
+        s = resampy.resample(s, sr=fs_orig, sr_new=fs_new,
+                             axis=axis)
+    return s

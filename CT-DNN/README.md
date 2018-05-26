@@ -1,0 +1,1 @@
+The code for calculating CQCC feature is a reference from [Anotherother](https://github.com/Anotherother/voice_spoofing/blob/master/feature/cqcc.ipynb)

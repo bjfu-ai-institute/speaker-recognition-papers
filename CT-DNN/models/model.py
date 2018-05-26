@@ -265,7 +265,7 @@ class Model(object):
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self.n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
-                    for i in len(enroll_targets):
+                    for i in range(len(enroll_targets)):
                         if vector_dict[np.argmax(enroll_targets[i])]:
                             vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
                             vector_dict[np.argmax(enroll_targets[i])] /= 2
