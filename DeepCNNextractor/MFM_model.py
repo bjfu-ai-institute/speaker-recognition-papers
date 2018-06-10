@@ -115,7 +115,7 @@ class Model(object):
         out_softmax, feature = tf.nn.softmax(out)
         self._feature = feature
         self._prediction = out_softmax
-        self._loss = -tf.reduce_mean(labels * tf.log(out_softmax))
+        self._loss = tf.negative(tf.reduce_mean(labels * tf.log(out_softmax)))
         self.opt = tf.train.AdamOptimizer(self.lr)
         self.opt.minimize(self._loss)
         self.saver = tf.train.Saver()

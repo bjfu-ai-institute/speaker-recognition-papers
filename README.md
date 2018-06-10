@@ -36,3 +36,4 @@ M.run(train_data, train_label,
 * L. Li, Z. Tang, D. Wang, T. Zheng, "Deep Speaker Feature Learning for Text-Independent Speaker Verification." 
 * L. Li, Z. Tang, D. Wang, T. Zheng, "Full-info Training for Deep Speaker Feature Learning," ICASSP 2018.
 * C. Li, X. Ma, B. Jiang, X. Li, X. Zhang, X. Liu, Y. Cao, A. Kannan, Z. Zhu, "Deep Speaker: an End-to-End Neural Speaker Embedding System."
+* Sergey Novoselov, Oleg Kudashev, Vadim Shchemelinin, Ivan Kremnev, Galina Lavrentyeva, "DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKERRECOGNITION."
