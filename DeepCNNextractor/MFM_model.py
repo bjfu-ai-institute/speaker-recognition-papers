@@ -90,7 +90,7 @@ class Model(object):
         self.save_path = config.SAVE_PATH
         
     @property
-    def loss(self): 
+    def loss(self):
         return self._loss
 
     @property
@@ -107,10 +107,12 @@ class Model(object):
         _, self._feature = self.inference(frames)   
 
     def build_train_graph(self):
+        self.gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
+                            ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
         frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 64], name='x')
         labels = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker], name='y_')
-        out = inference(frames)
-        out_softmax, feature = tf.softmax(out)
+        out = self.inference(frames)
+        out_softmax, feature = tf.nn.softmax(out)
         self._feature = feature
         self._prediction = out_softmax
         self._loss = -tf.reduce_mean(labels * tf.log(out_softmax))
@@ -150,16 +152,16 @@ class Model(object):
 
         conv_5_a = self.conv2d(mfm_4_b, 'Conv5_a', shape=[1, 1, 64, 128], 
                                strides=[1, 1, 1, 1], padding='VALID')
-        mfm_5_a = self.max_feature_map(conv_2)
-        conv_5_b = self.conv2d(mfm_2_a, 'Conv5_b', shape=[3, 3, 64, 128], 
+        mfm_5_a = self.max_feature_map(conv_5_a)
+        conv_5_b = self.conv2d(mfm_5_a, 'Conv5_b', shape=[3, 3, 64, 128], 
                                strides=[1, 1, 1, 1], padding='VALID')
         mfm_5_b = self.max_feature_map(conv_2_b)
-        pool_5 = tf.nn.max_pool(mfm_2_b, [1, 2, 2, 1], [1, 2, 2, 1], 'SAME')
+        pool_5 = tf.nn.max_pool(mfm_5_b, [1, 2, 2, 1], [1, 2, 2, 1], 'SAME')
         
         pool_5_flat = tf.reshape(pool_5, [-1,
-                                        pool2.get_shape().as_list()[1] *
-                                        pool2.get_shape().as_list()[2] *
-                                        pool2.get_shape().as_list()[3]])
+                                        pool_5.get_shape().as_list()[1] *
+                                        pool_5.get_shape().as_list()[2] *
+                                        pool_5.get_shape().as_list()[3]])
         fc_1 = self.full_connect(pool_5_flat, name='fc_1', units=2048)
         mfm_6 = self.max_feature_map(fc_1, netType='fc')
         
@@ -245,14 +247,14 @@ class Model(object):
                     log_device_placement=False,
             )) as sess:
                 if self.is_big_dataset:
-                    train_data = DataManage.DataManage4BigData(url = self.url_of_big_dataset)
+                    train_data = DataManage4BigData(url = self.url_of_big_dataset)
                     if not train_data.file_is_exist:
                         train_data.write_file(train_frames, train_targets)
                     del train_frames, train_targets
                     self.build_train_graph()
                 else:
                     self.build_train_graph()
-                    train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size-1)
+                    train_data = DataManage(train_frames, train_targets, self.batch_size-1)
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
                 train_op = self.train_step()
@@ -288,8 +290,8 @@ class Model(object):
 
                 # needn't batch and gpu in prediction
                 
-                enroll_data = DataManage.DataManage(enroll_frames, enroll_targets, self.batch_size)
-                test_data = DataManage.DataManage(test_frames, test_label, self.batch_size)
+                enroll_data = DataManage(enroll_frames, enroll_targets, self.batch_size)
+                test_data = DataManage(test_frames, test_label, self.batch_size)
                 new_saver.restore(sess, tf.train.latest_checkpoint(self.save_path))
                 feature_op = graph.get_operation_by_name('feature_layer_output')
                 vector_dict = dict()
