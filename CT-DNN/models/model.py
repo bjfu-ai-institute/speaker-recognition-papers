@@ -228,6 +228,7 @@ class Model(object):
                     input_frames = []
                     input_labels = []
                     for x in range(self.n_gpu):
+                        print(x)
                         frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)

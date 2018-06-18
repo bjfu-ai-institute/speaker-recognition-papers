@@ -115,7 +115,7 @@ class Model(object):
         out_softmax, feature = tf.nn.softmax(out)
         self._feature = feature
         self._prediction = out_softmax
-        self._loss = tf.negative(tf.reduce_mean(labels * tf.log(out_softmax)))
+        self._loss = -tf.reduce_mean(labels * tf.log(tf.clip_by_value( self._prediction, 1e-8, tf.reduce_max(self._prediction))))
         self.opt = tf.train.AdamOptimizer(self.lr)
         self.opt.minimize(self._loss)
         self.saver = tf.train.Saver()
@@ -155,7 +155,7 @@ class Model(object):
         mfm_5_a = self.max_feature_map(conv_5_a)
         conv_5_b = self.conv2d(mfm_5_a, 'Conv5_b', shape=[3, 3, 64, 128], 
                                strides=[1, 1, 1, 1], padding='VALID')
-        mfm_5_b = self.max_feature_map(conv_2_b)
+        mfm_5_b = self.max_feature_map(conv_5_b)
         pool_5 = tf.nn.max_pool(mfm_5_b, [1, 2, 2, 1], [1, 2, 2, 1], 'SAME')
         
         pool_5_flat = tf.reshape(pool_5, [-1,
@@ -263,6 +263,7 @@ class Model(object):
                     input_frames = []
                     input_labels = []
                     for x in range(self.n_gpu):
+                        print(x)
                         frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)
