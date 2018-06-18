@@ -52,7 +52,7 @@ class Model(object):
         frames = batch_frames[self.gpu_ind]
         target = batch_target[self.gpu_ind]
         self._prediction, self._feature = self.inference(frames)
-        self._loss = -tf.reduce_mean(target * tf.log(self._prediction))
+        self._loss = -tf.reduce_mean(target * tf.log(tf.clip_by_value( self._prediction, 1e-8, tf.reduce_max(self._prediction))))
         """
         # Update vectors
         # pred_index = tf.argmax(output, axis=1)
