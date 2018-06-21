@@ -6,7 +6,7 @@ IS_BIG_DATASET = True
 
 URL_OF_BIG_DATASET = '/opt/fhq/data/ctdnn'
 
-LR = 1e4
+LR = 1e-4
 
 N_GPU = 4
 
