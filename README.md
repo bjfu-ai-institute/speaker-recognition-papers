@@ -1,16 +1,16 @@
 ## Introduction
 
-These are the slightly modified tensorflow/python implementation of recent speaker recognition papers. Please tell me if it is copyright infringement, I'll delete this repo as soon as I can. Thx.
+These are the slightly modified tensorflow/python implementation of recent speaker recognition papers. Please tell me if it is copyright infringement, I'll delete these paper as soon as I can. Thx.
 
 The file structure is as follows：
 ```
 |———src
 |
-|—————models (folder, contain the model)
+|—————model (folder, contain the model)
 |
 |—————loss (folder, contain the customized loss function)
 |
-|—————paper (folder, contain the origin paper of most of method)
+|—————papers (folder, contain the origin paper of most of method)
 |
 |—————backend(TODO: folder, contain the method of backend)
 |
