@@ -1,8 +1,6 @@
 import numpy as np
-import sys
-sys.path.append('..')
 import os
-import config
+
 
 class DataManage(object):
     def __init__(self, raw_frames, raw_labels, batch_size):
@@ -34,7 +32,8 @@ class DataManage4BigData(object):
     """
     Use this for huge dataset
     """
-    def __init__(self, url):
+    def __init__(self, url, config):
+        self.batch_size = config.BATCH_SIZE
         self.url = url
         self.batch_count = 0
         if os.path.exists(self.url) and os.listdir(self.url):
@@ -43,7 +42,7 @@ class DataManage4BigData(object):
             self.file_is_exist = False
 
     def write_file(self, raw_frames, raw_labels):
-        batch_size = config.BATCH_SIZE
+        batch_size = self.batch_size
         local_batch_count = 0
         if type(raw_frames) == np.ndarray:
             data_length = raw_frames.shape[0]
@@ -70,4 +69,3 @@ class DataManage4BigData(object):
         labels = loaded['labels']
         self.batch_count += 1
         return frames, labels
-        

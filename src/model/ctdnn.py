@@ -4,25 +4,24 @@ sys.path.append("..")
 from scipy.spatial.distance import cosine
 import os
 import time
-import config
 import numpy as np
-import models.DataManage as DataManage
+from src.data_manage import DataManage
+from src.data_manage import DataManage4BigData
 
+class CTDnn:
+    def __init__(self, config):
 
-class Model(object):
-    def __init__(self):
-
-        # import setting from ../config.py
-        self.batch_size = config.BATCH_SIZE
-        self.n_gpu = config.N_GPU
-        self.name = config.MODEL_NAME
-        self.n_speaker = config.N_SPEAKER
-        self.max_step = config.MAX_STEP
-        self.is_big_dataset = config.IS_BIG_DATASET
-        if self.is_big_dataset:
-            self.url_of_big_dataset = config.URL_OF_BIG_DATASET
-        self.lr = config.LR
-        self.save_path = config.SAVE_PATH
+        self._config = config
+        self._batch_size = config.BATCH_SIZE
+        self._n_gpu = config.N_GPU
+        self._name = config.MODEL_NAME
+        self._n_speaker = config.N_SPEAKER
+        self._max_step = config.MAX_STEP
+        self._is_big_dataset = config.IS_BIG_DATASET
+        if self._is_big_dataset:
+            self._url_of_big_dataset = config.URL_OF_BIG_DATASET
+        self._lr = config.LR
+        self._save_path = config.SAVE_PATH
         
     @property
     def loss(self):
@@ -36,22 +35,22 @@ class Model(object):
     def feature(self):
         return self._feature
 
-    def build_pred_graph(self):
+    def _build_pred_graph(self):
         pred_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1], name='pred_x')
         frames = pred_frames
-        _, self._feature = self.inference(frames)   
+        _, self._feature = self._inference(frames)   
 
-    def build_train_graph(self):
+    def _build_train_graph(self):
         """
         Build the compute graph.
         """
-        self.gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
+        self._gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
                             ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
-        batch_frames = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, 9, 40, 1],name='x')
-        batch_target = tf.placeholder(tf.float32, shape=[self.n_gpu, self.batch_size, self.n_speaker],name='y_')
-        frames = batch_frames[self.gpu_ind]
-        target = batch_target[self.gpu_ind]
-        self._prediction, self._feature = self.inference(frames)
+        batch_frames = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, 9, 40, 1],name='x')
+        batch_target = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, self._n_speaker],name='y_')
+        frames = batch_frames[self._gpu_ind]
+        target = batch_target[self._gpu_ind]
+        self._prediction, self._feature = self._inference(frames)
         self._loss = -tf.reduce_mean(target * tf.log(tf.clip_by_value( self._prediction, 1e-8, tf.reduce_max(self._prediction))))
         """
         # Update vectors
@@ -77,20 +76,20 @@ class Model(object):
             else:
                 loss = tf.negative(tf.log(tf.divide(distance_1, distance_2)))
         """
-        self.opt = tf.train.AdamOptimizer(self.lr)
-        self.opt.minimize(self._loss)
-        self.saver = tf.train.Saver()
+        self._opt = tf.train.AdamOptimizer(self._lr)
+        self._opt.minimize(self._loss)
+        self._saver = tf.train.Saver()
         
-    def inference(self, frames):
-        vector = np.zeros(shape=[self.n_speaker, 400])
-        self.vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
+    def _inference(self, frames):
+        vector = np.zeros(shape=[self._n_speaker, 400])
+        self._vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
             
         # Inference
-        conv1 = self.conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
+        conv1 = self._conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
 
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
 
-        conv2 = self.conv2d(pool1, 'conv2', [2, 4, 128, 128], [1, 1, 1, 1], 'VALID')
+        conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 128], [1, 1, 1, 1], 'VALID')
 
         pool2 = tf.nn.max_pool(conv2, ksize=[1, 1, 2, 1], strides=[1, 1, 2, 1], padding='VALID')
 
@@ -99,57 +98,57 @@ class Model(object):
                                         pool2.get_shape().as_list()[2] *
                                         pool2.get_shape().as_list()[3]])
 
-        bottleneck = self.full_connect(pool2_flat, 'bottleneck', 512)
+        bottleneck = self._full_connect(pool2_flat, 'bottleneck', 512)
 
         bottleneck_t = tf.reshape(bottleneck, [-1, 512, 1])
 
-        td1 = self.t_dnn(bottleneck_t, name='td1', shape=[5, 1, 128], strides=1)
+        td1 = self._t_dnn(bottleneck_t, name='td1', shape=[5, 1, 128], strides=1)
         td1_flat = tf.reshape(td1, [-1, td1.get_shape().as_list()[1] * td1.get_shape().as_list()[2]])
 
-        p_norm1 = self.full_connect(td1_flat, name='P_norm1', units=2000)
+        p_norm1 = self._full_connect(td1_flat, name='P_norm1', units=2000)
         p_norm1_t = tf.reshape(p_norm1, [-1, 2000, 1])
 
-        td2 = self.t_dnn(p_norm1_t, name='td2', shape=[9, 1, 128], strides=1)
+        td2 = self._t_dnn(p_norm1_t, name='td2', shape=[9, 1, 128], strides=1)
         td2_flat = tf.reshape(td2, [-1, td2.get_shape().as_list()[1] * td2.get_shape().as_list()[2]])
 
-        p_norm2 = self.full_connect(td2_flat, name='P_norm2', units=400)
+        p_norm2 = self._full_connect(td2_flat, name='P_norm2', units=400)
 
-        feature_layer = self.full_connect(p_norm2, name='feature_layer', units=400)
+        feature_layer = self._full_connect(p_norm2, name='feature_layer', units=400)
 
-        output = self.full_connect(feature_layer, name='output', units=self.n_speaker)
+        output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
 
         return tf.nn.softmax(output), feature_layer, 
         
-    def t_dnn(self, x, shape, strides, name):
+    def _t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
-            weights = self.weights_variable(shape)
+            weights = self._weights_variable(shape)
         return tf.nn.conv1d(x, weights, stride=strides, padding='SAME', name=name+"_output")
 
-    def conv2d(self, x, name, shape, strides, padding='SAME'):
+    def _conv2d(self, x, name, shape, strides, padding='SAME'):
         with tf.name_scope(name):
-            weights = self.weights_variable(shape)
-            biases = self.bias_variable(shape[-1])
+            weights = self._weights_variable(shape)
+            biases = self._bias_variable(shape[-1])
         return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(x, weights,
                                                       strides=strides, padding=padding), biases, name=name+"_output"))
 
-    def full_connect(self, x, name, units):
+    def _full_connect(self, x, name, units):
         with tf.name_scope(name):
-            weights = self.weights_variable([x.get_shape().as_list()[-1], units])
-            biases = self.bias_variable(units)
+            weights = self._weights_variable([x.get_shape().as_list()[-1], units])
+            biases = self._bias_variable(units)
         return tf.nn.relu(tf.nn.bias_add(tf.matmul(x, weights), biases), name=name+"_output")
 
     @staticmethod
-    def weights_variable(shape, name='weights', stddev=0.1):
+    def _weights_variable(shape, name='weights', stddev=0.1):
         initial = tf.truncated_normal(shape, stddev=stddev)
         return tf.Variable(initial, name=name)
 
     @staticmethod
-    def bias_variable(shape, name='bias', stddev=0.1):
+    def _bias_variable(shape, name='bias', stddev=0.1):
         initial = tf.truncated_normal([shape], stddev=stddev)
         return tf.Variable(initial, name=name)
 
     @staticmethod
-    def average_gradients(tower_grads):
+    def _average_gradients(tower_grads):
         average_grads = []
         for grad_and_vars in zip(*tower_grads):
             grads = []
@@ -163,7 +162,7 @@ class Model(object):
                 average_grads.append(grad_and_var)
         return average_grads
 
-    def compute_exp_cosine(self, vector1, vector2=None):
+    def _compute_exp_cosine(self, vector1, vector2=None):
         exp_sum = tf.Variable(0, trainable=False, dtype=np.float32)
         vector1 = tf.expand_dims(vector1, dim=1)
         if vector2 is not None:
@@ -175,8 +174,8 @@ class Model(object):
             tf.add(exp_sum, tf.exp(cos_similarity))
             return exp_sum
         else:
-            for i in range(self.n_speaker):
-                vector = tf.gather(self.vectors, [i])
+            for i in range(self._n_speaker):
+                vector = tf.gather(self._vectors, [i])
                 vector = tf.expand_dims(vector, dim=1)
                 x_norm = tf.sqrt(tf.reduce_sum(tf.square(vector1), axis=1))
                 y_norm = tf.sqrt(tf.reduce_sum(tf.square(vector), axis=1))
@@ -185,16 +184,16 @@ class Model(object):
                 tf.add(exp_sum, tf.exp(cos_similarity))
             return exp_sum
 
-    def train_step(self):
+    def _train_step(self):
         grads = []
-        for i in range(self.n_gpu):
+        for i in range(self._n_gpu):
             with tf.device("/gpu:%d" % i):
-                self.gpu_ind.assign(i)
-                gradient_all = self.opt.compute_gradients(self.loss)
+                self._gpu_ind.assign(i)
+                gradient_all = self._opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
-            ave_grads = self.average_gradients(grads)
-            train_op = self.opt.apply_gradients(ave_grads)
+            ave_grads = self._average_gradients(grads)
+            train_op = self._opt.apply_gradients(ave_grads)
         return train_op
 
     def run(self,
@@ -211,37 +210,37 @@ class Model(object):
                     allow_soft_placement=False,
                     log_device_placement=False,
             )) as sess:
-                if self.is_big_dataset:
-                    train_data = DataManage.DataManage4BigData(url = self.url_of_big_dataset)
+                if self._is_big_dataset:
+                    train_data = DataManage4BigData(self._url_of_big_dataset, self._config)
                     if not train_data.file_is_exist:
                         train_data.write_file(train_frames, train_targets)
                     del train_frames, train_targets
-                    self.build_train_graph()
+                    self._build_train_graph()
                 else:
-                    self.build_train_graph()
-                    train_data = DataManage.DataManage(train_frames, train_targets, self.batch_size-1)
+                    self._build_train_graph()
+                    train_data = DataManage(train_frames, train_targets, self._batch_size-1)
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
-                train_op = self.train_step()
+                train_op = self._train_step()
                 last_time = time.time()                
-                for i in range(self.max_step):
+                for i in range(self._max_step):
                     input_frames = []
                     input_labels = []
-                    for x in range(self.n_gpu):
+                    for x in range(self._n_gpu):
                         print(x)
                         frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)
-                    input_frames = np.array(input_frames).reshape([self.n_gpu, self.batch_size, 9, 40, 1])
-                    input_labels = np.array(input_labels).reshape([self.n_gpu, self.batch_size, self.n_speaker])
+                    input_frames = np.array(input_frames).reshape([self._n_gpu, self._batch_size, 9, 40, 1])
+                    input_labels = np.array(input_labels).reshape([self._n_gpu, self._batch_size, self._n_speaker])
                     sess.run(train_op, feed_dict={'x:0':input_frames, 'y_:0':input_labels})
                     current_time = time.time()
                     print("No.%d step use %f sec"%(i,current_time-last_time))
                     last_time = time.time()
-                    if i % 10 == 0 or i + 1 ==self.max_step:
-                        self.saver.save(sess, os.path.join(self.save_path,'model'))
+                    if i % 10 == 0 or i + 1 ==self._max_step:
+                        self._saver.save(sess, os.path.join(self._save_path,'model'))
         if need_prediction_now:
-            self.run_predict(self.save_path, enroll_frames, enroll_label, test_frames, test_label)
+            self.run_predict(self._save_path, enroll_frames, enroll_label, test_frames, test_label)
 
     def run_predict(self, 
                     save_path,
@@ -251,20 +250,20 @@ class Model(object):
                     test_label):
         with tf.Graph().as_default() as graph:
             with tf.Session() as sess:
-                self.build_pred_graph()
+                self._build_pred_graph()
                 new_saver = tf.train.Saver()
 
                 # needn't batch and gpu in prediction
                 
-                enroll_data = DataManage.DataManage(enroll_frames, enroll_targets, self.batch_size)
-                test_data = DataManage.DataManage(test_frames, test_label, self.batch_size)
-                new_saver.restore(sess, tf.train.latest_checkpoint(self.save_path))
+                enroll_data = DataManage(enroll_frames, enroll_targets, self._batch_size)
+                test_data = DataManage(test_frames, test_label, self._batch_size)
+                new_saver.restore(sess, tf.train.latest_checkpoint(self._save_path))
                 feature_op = graph.get_operation_by_name('feature_layer_output')
                 vector_dict = dict()
                 while not enroll_data.is_eof:
                     frames, labels = enroll_data.next_batch
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
-                    labels = np.array(labels).reshape([-1, self.n_speaker])
+                    labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
                     for i in range(len(enroll_targets)):
                         if vector_dict[np.argmax(enroll_targets[i])]:
@@ -275,7 +274,7 @@ class Model(object):
                 while not test_data.is_eof:
                     frames, labels = test_data.next_batch
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
-                    labels = np.array(labels).reshape([-1, self.n_speaker])
+                    labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
                     keys = vector_dict.keys()
                     true_key = test_label

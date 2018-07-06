@@ -1,9 +1,10 @@
 import librosa
 import os
 import numpy as np
-import config
 from scipy import signal
 import scipy
+import resampy
+from scipy.io.wavfile import read
 from scipy.fftpack import dct
 
 
@@ -23,7 +24,7 @@ def slide_windows(feature):
     return result
         
 
-def ext_mfcc_feature(url_path):
+def ext_mfcc_feature(url_path, config):
     """
     Return the MFCC feature
     """
@@ -77,7 +78,7 @@ def ext_fbank_feature(url_path):
 
 
 def calc_fbank(url):
-    sample_rate, signal = scipy.io.wavfile.read(url)
+    sample_rate, signal = read(url)
     pre_emphasis = 0.97
     frame_size = 0.025
     frame_stride = 0.010
@@ -126,3 +127,20 @@ def calc_fbank(url):
     filter_banks = 20 * np.log10(filter_banks)
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
     return filter_banks
+
+def calc_cqcc(url):
+    y, sr = librosa.load(url)
+    constant_q = librosa.cqt(y=y, sr=sr)
+    cqt_abs = np.abs(constant_q)
+    cqt_abs_square = cqt_abs ** 2
+    cqt_spec = librosa.amplitude_to_db(cqt_abs_square).astype('float32')
+    cqt_resampy_spec = cqcc_resample(cqt_spec, sr, 44000)
+    cqcc = scipy.fftpack.dct(cqt_resampy_spec, norm='ortho', axis=0)
+    return cqcc
+
+
+def cqcc_resample(s, fs_orig, fs_new, axis=0):
+    if int(fs_orig) != int(fs_new):
+        s = resampy.resample(s, sr_orig=fs_orig, sr_new=fs_new,
+                             axis=axis)
+    return s
