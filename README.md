@@ -4,26 +4,45 @@ These are the slightly modified tensorflow/python implementation of recent speak
 
 The file structure is as follows：
 ```
----FolderName (folder)
-
-------models (folder)
----------DataManage.py (Class of batch managing.)
----------model.py (Class of this model)
-
-------PaperName.pdf 
-------config.py (Settings. e.g. save path, learning rate)
+|———src
+|
+|—————models (folder, contain the model)
+|
+|—————loss (folder, contain the customized loss function)
+|
+|—————paper (folder, contain the origin paper of most of method)
+|
+|—————backend(TODO: folder, contain the method of backend)
+|
+|———data_manage.py (contain some method to manage data)
+|
+|———speech_processing.py (contain some method to extractfeature and process audio)
+|
+|———config.py (settings. e.g. save path, learning rate)
 ```
-If you want run these code on your computer, you only need to modify config.py and write code as follow:
+If you want run these code on your computer, you only need to write code like this:
 
 ```python
-import FolderName.models as model
+import src
+# haven't given this project a name.
 
-M = model.Model()
-M.run(train_data, train_label, 
-      enroll_data=None, enroll_label=None, test_data=None, test_label=None)
+config = src.Config(name='my_ctdnn_model',
+                    n_speaker=1e3,
+                    batch_size=64,
+                    n_gpu=2,
+                    max_step=100,
+                    is_big_dataset=False,
+                    url_of_bigdataset_temp_file=None,
+                    learning_rate=1e-3,
+                    save_path='/home/my_path').save('./my_config_path')
 
-# If the enroll_data or test_data is none, you will only get the trained model. 
-# You can do this when you needn't the ACC/EER information.
+config_deep_speaker = src.Config(config_path='./my_config_path').set(name='my_deep_speaker_model',
+                                                                     conv_weight_decay=1e-3,
+                                                                     fc_weight_dacay=1e-3,
+                                                                     bn_epsilon=1e-3)
+
+m1 = src.model.CTDnn(config)
+m2 = src.model.DeepSpeaker(config_deep_speaker)
 ```
 
 ## TODO

@@ -13,8 +13,10 @@ class Config:
         is_big_dataset=None,
         url_of_bigdataset_temp_file=None,
         learning_rate=None,
-        save_path=None
-    ):
+        save_path=None,
+        conv_weight_decay=None,
+        fc_weight_dacay=None,
+        bn_epsilon=None):
         if config_path:
             f = h5py.File(config_path)
             self = f['config']
@@ -30,6 +32,9 @@ class Config:
                 self.URL_OF_BIG_DATASET = url_of_bigdataset_temp_file
             self.LR = learning_rate
             self.SAVE_PATH = save_path
+            self.CONV_WEIGHT_DECAY = conv_weight_decay
+            self.FC_WEIGHT_DECAY = fc_weight_dacay
+            self.BN_EPSILON = bn_epsilon
     
     def set(self,
         n_speaker=None,
@@ -39,7 +44,10 @@ class Config:
         is_big_dataset=None,
         url_of_bigdataset_temp_file=None,
         learning_rate=None,
-        save_path=None):
+        save_path=None,
+        conv_weight_decay=None,
+        fc_weight_dacay=None,
+        bn_epsilon=None):
         if n_speaker:
             self.N_SPEAKER = n_speaker
         if batch_size:
@@ -56,8 +64,14 @@ class Config:
             self.LR = learning_rate
         if save_path:
             self.SAVE_PATH = save_path
-
-    def write(self, path, name='global config'):
+        if conv_weight_decay:
+            self.CONV_WEIGHT_DECAY = conv_weight_decay
+        if fc_weight_dacay:
+            self.FC_WEIGHT_DECAY = fc_weight_dacay
+        if bn_epsilon:
+            self.BN_EPSILON = bn_epsilon
+        
+    def save(self, path, name='global config'):
         f = h5py.File(path, 'w')
         f.create_dataset('config', data=self)
         f.create_dataset('name', data=name)
