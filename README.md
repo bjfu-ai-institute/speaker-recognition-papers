@@ -34,12 +34,14 @@ config = src.Config(name='my_ctdnn_model',
                     is_big_dataset=False,
                     url_of_bigdataset_temp_file=None,
                     learning_rate=1e-3,
-                    save_path='/home/my_path').save('./my_config_path')
+                    save_path='/home/my_path')
+config.save('./my_config_path')
 
-config_deep_speaker = src.Config(config_path='./my_config_path').set(name='my_deep_speaker_model',
-                                                                     conv_weight_decay=1e-3,
-                                                                     fc_weight_dacay=1e-3,
-                                                                     bn_epsilon=1e-3)
+config_deep_speaker = src.Config(config_path='./my_config_path')
+config_deep_speaker.set(name='my_deep_speaker_model',
+                        conv_weight_decay=1e-3,
+                        fc_weight_dacay=1e-3,
+                        bn_epsilon=1e-3)
 
 m1 = src.model.CTDnn(config)
 m2 = src.model.DeepSpeaker(config_deep_speaker)

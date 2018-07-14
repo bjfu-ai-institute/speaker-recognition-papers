@@ -54,3 +54,7 @@ data
 .vscode
 log.txt
 test.py
+mydense*
+
+#
+src/model/dualpathnet.py

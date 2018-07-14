@@ -1,4 +1,4 @@
-import h5py
+import pickle as pkl
 
 
 class Config:
@@ -18,9 +18,10 @@ class Config:
         fc_weight_dacay=None,
         bn_epsilon=None):
         if config_path:
-            f = h5py.File(config_path)
-            self = f['config']
-            print("successfully load " + f[name])
+            f = open(config_path, 'rb')
+            dic = pkl.load(f)
+            self = dic['config']
+            print("successfully load " + dic[name])
         else:
             self.BATCH_SIZE = batch_size
             self.N_GPU = n_gpu
@@ -72,6 +73,8 @@ class Config:
             self.BN_EPSILON = bn_epsilon
         
     def save(self, path, name='global config'):
-        f = h5py.File(path, 'w')
-        f.create_dataset('config', data=self)
-        f.create_dataset('name', data=name)
+        f = open(path+'.pkl' , 'wb+')
+        dic = {'config':self, 'name':name}
+        pkl.dump(dic, f)
+        f.close()
+        

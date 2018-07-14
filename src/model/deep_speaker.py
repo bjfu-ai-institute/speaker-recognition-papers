@@ -28,6 +28,14 @@ class DeepSpeaker:
         self._batch_size = config.BATCH_SIZE
         self._build_graph()
         
+    def _build_pred_graph(self):
+        #TODO:
+        raise NotImplementedError
+
+    def _build_train_graph(self):
+        #TODO:
+        raise NotImplementedError
+
     def _build_graph(self):
         
         self._create_input()
@@ -178,6 +186,10 @@ class DeepSpeaker:
             grads = tf.reduce_mean(grads, 0)
             averaged_grads.append(grads)
         return averaged_grads
+
+    def _validation_acc(self):
+        #TODO:
+        raise NotImplementedError
 
     def _train_step(self):
         grads = []

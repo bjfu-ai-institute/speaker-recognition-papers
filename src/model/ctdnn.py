@@ -46,8 +46,8 @@ class CTDnn:
         """
         self._gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
                             ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
-        batch_frames = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, 9, 40, 1],name='x')
-        batch_target = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, self._n_speaker],name='y_')
+        batch_frames = tf.placeholder(tf.float32, shape=[self._n_gpu, None, 9, 40, 1],name='x')
+        batch_target = tf.placeholder(tf.float32, shape=[self._n_gpu, None, self._n_speaker],name='y_')
         frames = batch_frames[self._gpu_ind]
         target = batch_target[self._gpu_ind]
         self._prediction, self._feature = self._inference(frames)
@@ -60,7 +60,7 @@ class CTDnn:
             vec_index = tf.where(tf.equal(true_index, i))
             vector = tf.reduce_mean(tf.gather(feature_layer, vec_index), axis=0)
             self.vectors[i].assign(vector)
-            # tf.scatter_update(self.vectors, [i], vector)
+            # tf.scatter_update(    vectors, [i], vector)
 
         # Compute loss
         loss = tf.Variable(0, dtype=tf.float32)
@@ -194,15 +194,37 @@ class CTDnn:
         with tf.device("/cpu:0"):
             ave_grads = self._average_gradients(grads)
             train_op = self._opt.apply_gradients(ave_grads)
-        return train_op
+            loss = tf.reduce_sum(self.loss)
+        return train_op, loss
+
+    def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
+        enroll_frames = np.array(enroll_frames[:200])
+        enroll_labels = np.array(enroll_labels[:200])
+        enroll_f = [enroll_frames]
+        for i in range(self._n_gpu-1):
+            enroll_f.append(np.zeros(enroll_frames.shape))
+        enroll_l = []
+        for i in range(enroll_labels.shape[0]):
+            ids = np.zeros(self._n_speaker)
+            ids[np.max(enroll_labels[i])] = 1
+            enroll_l.append(ids)
+        for i in range((self._n_gpu-1) * enroll_labels.shape[0]):
+            enroll_l.append(np.zeros(self._n_speaker))
+        enroll_f = np.array(enroll_f)
+        enroll_l = np.array(enroll_l)
+        features = sess.run(self.feature, 
+                            feed_dict={'x:0':enroll_f.reshape([4, -1, 9, 40, 1]), 'y_:0':enroll_l.reshape([4, -1, self._n_speaker])})
+        print(features)
+        print(np.array(features).shape)
+        return features
 
     def run(self,
             train_frames, 
             train_targets,
             enroll_frames=None,
-            enroll_label=None,
+            enroll_labels=None,
             test_frames=None,
-            test_label=None,
+            test_labels=None,
             need_prediction_now=False):
         
         with tf.Graph().as_default():
@@ -210,6 +232,22 @@ class CTDnn:
                     allow_soft_placement=False,
                     log_device_placement=False,
             )) as sess:
+                # convert all data to np.ndarray
+                train_frames = np.array(train_frames)
+                train_targets = np.array(train_targets)
+                if enroll_frames is not None:
+                    enroll_frames = np.array(enroll_frames)
+                if enroll_labels is not None:
+                    enroll_labels = np.array(enroll_labels) 
+                if test_frames is not None:
+                   test_frames = np.array(test_frames)
+                if test_labels is not None:
+                    test_labels = np.array(test_labels)
+                # initial tensorboard
+                
+                writer = tf.summary.FileWriter(os.path.join(self._save_path, 'graph'),sess.graph)
+    
+                # prepare data
                 if self._is_big_dataset:
                     train_data = DataManage4BigData(self._url_of_big_dataset, self._config)
                     if not train_data.file_is_exist:
@@ -219,28 +257,63 @@ class CTDnn:
                 else:
                     self._build_train_graph()
                     train_data = DataManage(train_frames, train_targets, self._batch_size-1)
+                
+                # initial step
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
-                train_op = self._train_step()
-                last_time = time.time()                
+                train_op, loss = self._train_step()
+                if enroll_frames is not None:
+                    accuracy = self._validation_acc(sess, enroll_frames, enroll_labels, test_frames, test_labels)
+                
+                # record the memory usage and time of each step
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+
+                # define tensorboard steps
+                loss_summary = tf.summary.scalar('loss_summary', loss)
+                if enroll_frames is not None:
+                    acc_summary = tf.summary.scalar('accuracy', accuracy)
+                merged_summary = tf.summary.merge_all()
+
+                last_time = time.time()
+                
+                # train loop
                 for i in range(self._max_step):
+                    # get data
                     input_frames = []
                     input_labels = []
                     for x in range(self._n_gpu):
-                        print(x)
                         frames, labels = train_data.next_batch
+                        L = []
+                        for i in range(labels.shape[0]):
+                            ids = np.zeros(self._n_speaker)
+                            ids[np.max(enroll_labels[i])] = 1
+                            L.append(ids)
+                        labels = L
                         input_frames.append(frames)
                         input_labels.append(labels)
                     input_frames = np.array(input_frames).reshape([self._n_gpu, self._batch_size, 9, 40, 1])
                     input_labels = np.array(input_labels).reshape([self._n_gpu, self._batch_size, self._n_speaker])
-                    sess.run(train_op, feed_dict={'x:0':input_frames, 'y_:0':input_labels})
+                    
+                    _, summary_str = sess.run([train_op, merged_summary], feed_dict={'x:0':input_frames, 'y_:0':input_labels})
                     current_time = time.time()
+                    
+                    # print log
+                    print("-------")
                     print("No.%d step use %f sec"%(i,current_time-last_time))
+                    print("loss = %f" % loss)
                     last_time = time.time()
+                    
+                    # record
                     if i % 10 == 0 or i + 1 ==self._max_step:
                         self._saver.save(sess, os.path.join(self._save_path,'model'))
+                    
+                    writer.add_run_metadata(run_metadata,'step%d'%i)
+                    writer.add_summary(summary_str, i)
+        
         if need_prediction_now:
-            self.run_predict(self._save_path, enroll_frames, enroll_label, test_frames, test_label)
+            self.run_predict(self._save_path, enroll_frames, enroll_labels, test_frames, test_labels)
+        writer.close()
 
     def run_predict(self, 
                     save_path,
@@ -262,6 +335,12 @@ class CTDnn:
                 vector_dict = dict()
                 while not enroll_data.is_eof:
                     frames, labels = enroll_data.next_batch
+                    L = []
+                    for i in range(labels.shape[0]):
+                        ids = np.zeros(self._n_speaker)
+                        ids[np.max(labels[i])] = 1
+                        L.append(ids)
+                    labels = L
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
@@ -273,6 +352,12 @@ class CTDnn:
                             vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
                 while not test_data.is_eof:
                     frames, labels = test_data.next_batch
+                    L = []
+                    for i in range(labels.shape[0]):
+                        ids = np.zeros(self._n_speaker)
+                        ids[np.max(labels[i])] = 1
+                        L.append(ids)
+                    labels = L
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})

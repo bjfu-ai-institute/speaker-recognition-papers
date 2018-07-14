@@ -161,6 +161,10 @@ class MaxFeatureMapDnn:
                 average_grads.append(grad_and_var)
         return average_grads
 
+    def _validation_acc(self):
+        #TODO:
+        raise NotImplementedError
+
     def _train_step(self):
         grads = []
         for i in range(self._n_gpu):

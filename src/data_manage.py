@@ -58,6 +58,7 @@ class DataManage4BigData(object):
                 labels = raw_labels[local_batch_count * batch_size: (local_batch_count+1) * batch_size]
                 np.savez_compressed(os.path.join(self.url, "data_%d.npz"%local_batch_count), frames=frames, labels=labels)    
                 local_batch_count += 1
+        self.file_is_exist = True
 
     @property
     def next_batch(self):

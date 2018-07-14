@@ -34,8 +34,6 @@ def ext_mfcc_feature(url_path, config):
         for url in list(urls):
             url, label = str(url).split(" ")
             index = eval(str(label).split("\n")[0])
-            label = np.zeros(config.N_SPEAKER)
-            label[index] = 1
             y, sr = librosa.load(url)
             mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=13)
             mfcc_delta = librosa.feature.delta(mfcc_, width=3)
@@ -44,7 +42,7 @@ def ext_mfcc_feature(url_path, config):
             mfcc = slide_windows(mfcc)
             for i in mfcc:
                 mfccs.append(i)
-                labels.append(label)
+                labels.append(index)
         return mfccs, labels
 
 
