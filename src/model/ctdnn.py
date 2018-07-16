@@ -1,7 +1,6 @@
 import tensorflow as tf
 import sys
 sys.path.append("..")
-from scipy.spatial.distance import cosine
 import os
 import time
 import numpy as np
@@ -22,7 +21,8 @@ class CTDnn:
             self._url_of_big_dataset = config.URL_OF_BIG_DATASET
         self._lr = config.LR
         self._save_path = config.SAVE_PATH
-        
+        self._vectors = np.zeros(shape=(self._n_speaker, 400))
+
     @property
     def loss(self):
         return self._loss
@@ -81,8 +81,6 @@ class CTDnn:
         self._saver = tf.train.Saver()
         
     def _inference(self, frames):
-        vector = np.zeros(shape=[self._n_speaker, 400])
-        self._vectors = tf.Variable(vector, trainable=False, dtype=tf.float32)
             
         # Inference
         conv1 = self._conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
@@ -200,23 +198,42 @@ class CTDnn:
     def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
         enroll_frames = np.array(enroll_frames[:200])
         enroll_labels = np.array(enroll_labels[:200])
-        enroll_f = [enroll_frames]
-        for i in range(self._n_gpu-1):
-            enroll_f.append(np.zeros(enroll_frames.shape))
-        enroll_l = []
-        for i in range(enroll_labels.shape[0]):
-            ids = np.zeros(self._n_speaker)
-            ids[np.max(enroll_labels[i])] = 1
-            enroll_l.append(ids)
-        for i in range((self._n_gpu-1) * enroll_labels.shape[0]):
-            enroll_l.append(np.zeros(self._n_speaker))
-        enroll_f = np.array(enroll_f)
-        enroll_l = np.array(enroll_l)
+        
+        enroll_f = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 9, 40, 1))
+        enroll_l = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 1))
+
+        enroll_f[self._gpu_ind.eval()] = enroll_frames.reshape(-1, 9, 40 ,1)
+        enroll_l[self._gpu_ind.eval()] = enroll_labels.reshape(-1, self._n_speaker)
+
         features = sess.run(self.feature, 
-                            feed_dict={'x:0':enroll_f.reshape([4, -1, 9, 40, 1]), 'y_:0':enroll_l.reshape([4, -1, self._n_speaker])})
-        print(features)
-        print(np.array(features).shape)
-        return features
+                            feed_dict={'x:0':enroll_f, 'y_:0':enroll_l})
+        
+        for i in range(self._n_speaker):
+            self._vectors[i] = np.mean(features[np.max(enroll_labels) == i])
+
+        test_f = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 9, 40, 1))
+        test_l = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 1))
+
+        test_f[self._gpu_ind.eval()] = test_frames.reshape(-1, 9, 40 ,1)
+        test_l[self._gpu_ind.eval()] = test_labels.reshape(-1, self._n_speaker)
+
+        features = sess.run(self.feature, 
+                            feed_dict={'x:0':test_f, 'y_:0':test_l})
+        
+        tot = 0
+        acc = 0
+        for vec_id in range(features.shape[0]):
+            score = -1
+            pred = -1
+            tot += 1
+            for spkr_id in range(self._n_speaker):
+                if self._cosine(self._n_speaker[spkr_id], features[vec_id]) > score:
+                    score = self._cosine(self._n_speaker[spkr_id], features[vec_id])
+                    pred = spkr_id
+            if pred == np.argmax(enroll_labels)[vec_id]:
+                acc += 1
+
+        return acc / tot
 
     def run(self,
             train_frames, 
@@ -257,12 +274,15 @@ class CTDnn:
                 else:
                     self._build_train_graph()
                     train_data = DataManage(train_frames, train_targets, self._batch_size-1)
-                
+
                 # initial step
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
                 train_op, loss = self._train_step()
                 if enroll_frames is not None:
+                    tmp_enr = DataManage(enroll_frames, enroll_labels, self._batch_size-1)
+                    tmp_tst = DataManage(test_frames, test_labels, self._batch_size-1)
+                    
                     accuracy = self._validation_acc(sess, enroll_frames, enroll_labels, test_frames, test_labels)
                 
                 # record the memory usage and time of each step
@@ -292,8 +312,8 @@ class CTDnn:
                         labels = L
                         input_frames.append(frames)
                         input_labels.append(labels)
-                    input_frames = np.array(input_frames).reshape([self._n_gpu, self._batch_size, 9, 40, 1])
-                    input_labels = np.array(input_labels).reshape([self._n_gpu, self._batch_size, self._n_speaker])
+                    input_frames = np.array(input_frames).reshape([self._n_gpu, -1, 9, 40, 1])
+                    input_labels = np.array(input_labels).reshape([self._n_gpu, -1, self._n_speaker])
                     
                     _, summary_str = sess.run([train_op, merged_summary], feed_dict={'x:0':input_frames, 'y_:0':input_labels})
                     current_time = time.time()
@@ -314,6 +334,9 @@ class CTDnn:
         if need_prediction_now:
             self.run_predict(self._save_path, enroll_frames, enroll_labels, test_frames, test_labels)
         writer.close()
+    
+    def _cosine(self, vector1, vector2):
+        return np.dot(vector1,vector2)/(np.linalg.norm(vector1)*(np.linalg.norm(vector2)))
 
     def run_predict(self, 
                     save_path,
