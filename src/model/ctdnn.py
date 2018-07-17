@@ -198,9 +198,11 @@ class CTDnn:
     def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
         enroll_frames = np.array(enroll_frames[:200])
         enroll_labels = np.array(enroll_labels[:200])
+
+        # if the labels aren't one-hot encode, convert them to one-hot
         
         enroll_f = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 9, 40, 1))
-        enroll_l = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 1))
+        enroll_l = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], self._n_speaker))
 
         enroll_f[self._gpu_ind.eval()] = enroll_frames.reshape(-1, 9, 40 ,1)
         enroll_l[self._gpu_ind.eval()] = enroll_labels.reshape(-1, self._n_speaker)
@@ -212,7 +214,7 @@ class CTDnn:
             self._vectors[i] = np.mean(features[np.max(enroll_labels) == i])
 
         test_f = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 9, 40, 1))
-        test_l = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 1))
+        test_l = np.zeros(shape=(self._n_gpu, test_frames.shape[0], self._n_speaker))
 
         test_f[self._gpu_ind.eval()] = test_frames.reshape(-1, 9, 40 ,1)
         test_l[self._gpu_ind.eval()] = test_labels.reshape(-1, self._n_speaker)
@@ -222,15 +224,16 @@ class CTDnn:
         
         tot = 0
         acc = 0
+        # print(features.shape[0])
         for vec_id in range(features.shape[0]):
             score = -1
             pred = -1
             tot += 1
             for spkr_id in range(self._n_speaker):
-                if self._cosine(self._n_speaker[spkr_id], features[vec_id]) > score:
-                    score = self._cosine(self._n_speaker[spkr_id], features[vec_id])
+                if self._cosine(self._vectors[spkr_id], features[vec_id]) > score:
+                    score = self._cosine(self._vectors[spkr_id], features[vec_id])
                     pred = spkr_id
-            if pred == np.argmax(enroll_labels)[vec_id]:
+            if pred == np.argmax(test_labels, axis=1)[vec_id]:
                 acc += 1
 
         return acc / tot
@@ -252,14 +255,44 @@ class CTDnn:
                 # convert all data to np.ndarray
                 train_frames = np.array(train_frames)
                 train_targets = np.array(train_targets)
+                if train_targets.shape[-1] != self._n_speaker:
+                    tmp = []
+                    for i in range(train_targets.shape[0]):
+                        tmp_line = np.zeros((self._n_speaker, ))
+                        tmp_line[np.argmax(train_targets[i])] = 1
+                        tmp.append(tmp_line)
+                    train_targets = np.array(tmp)
+                else:  
+                    train_targets = np.array(train_targets)
+                
                 if enroll_frames is not None:
                     enroll_frames = np.array(enroll_frames)
                 if enroll_labels is not None:
-                    enroll_labels = np.array(enroll_labels) 
+                    enroll_labels = np.array(enroll_labels)
+                    if enroll_labels.shape[-1] != self._n_speaker:
+                        tmp = []
+                        for i in range(enroll_labels.shape[0]):
+                            tmp_line = np.zeros((self._n_speaker, ))
+                            tmp_line[np.argmax(enroll_labels[i])] = 1
+                            tmp.append(tmp_line)
+                        enroll_labels = np.array(tmp)
+                    else:  
+                        enroll_labels = np.array(test_labels)
+                
                 if test_frames is not None:
                    test_frames = np.array(test_frames)
                 if test_labels is not None:
                     test_labels = np.array(test_labels)
+                    if test_labels.shape[-1] != self._n_speaker:
+                        tmp = []
+                        for i in range(test_labels.shape[0]):
+                            tmp_line = np.zeros((self._n_speaker, ))
+                            tmp_line[np.argmax(test_labels[i])] = 1
+                            tmp.append(tmp_line)
+                        test_labels = np.array(tmp)
+                    else:  
+                        test_labels = np.array(test_labels)
+                
                 # initial tensorboard
                 
                 writer = tf.summary.FileWriter(os.path.join(self._save_path, 'graph'),sess.graph)
@@ -280,9 +313,6 @@ class CTDnn:
                 sess.run(initial)
                 train_op, loss = self._train_step()
                 if enroll_frames is not None:
-                    tmp_enr = DataManage(enroll_frames, enroll_labels, self._batch_size-1)
-                    tmp_tst = DataManage(test_frames, test_labels, self._batch_size-1)
-                    
                     accuracy = self._validation_acc(sess, enroll_frames, enroll_labels, test_frames, test_labels)
                 
                 # record the memory usage and time of each step
@@ -305,9 +335,9 @@ class CTDnn:
                     for x in range(self._n_gpu):
                         frames, labels = train_data.next_batch
                         L = []
-                        for i in range(labels.shape[0]):
+                        for m in range(labels.shape[0]):
                             ids = np.zeros(self._n_speaker)
-                            ids[np.max(enroll_labels[i])] = 1
+                            ids[np.argmax(enroll_labels[m])] = 1
                             L.append(ids)
                         labels = L
                         input_frames.append(frames)
@@ -321,7 +351,7 @@ class CTDnn:
                     # print log
                     print("-------")
                     print("No.%d step use %f sec"%(i,current_time-last_time))
-                    print("loss = %f" % loss)
+                    print("-------")
                     last_time = time.time()
                     
                     # record
@@ -391,8 +421,8 @@ class CTDnn:
                         score = 0
                         label = -1
                         for key in keys:
-                            if cosine(vectors[i], vector_dict[key]) > score:
-                                score = cosine(vectors[i], vector_dict[key])
+                            if self._cosine(vectors[i], vector_dict[key]) > score:
+                                score = self._cosine(vectors[i], vector_dict[key])
                                 label = key
                         if label == true_key[i]:
                             support += 1
