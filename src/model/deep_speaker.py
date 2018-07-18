@@ -114,7 +114,7 @@ class DeepSpeaker:
         return conv2 + padded_inp
 
     def _triplet_loss(self, inp, targets):
-        loss,_ = triplet_loss.batch_all_triplet_loss(targets, inp, 1.0)
+        loss = triplet_loss.batch_hard_triplet_loss(targets, inp, 1.0)
         return loss
 
     def _batch_normalization(self, inp, name):
