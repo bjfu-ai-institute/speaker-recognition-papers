@@ -58,3 +58,4 @@ mydense*
 
 #
 src/model/dualpathnet.py
+run_*.py

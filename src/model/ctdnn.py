@@ -240,7 +240,7 @@ class CTDnn:
 
     def run(self,
             train_frames, 
-            train_targets,
+            train_labels,
             enroll_frames=None,
             enroll_labels=None,
             test_frames=None,
@@ -254,7 +254,7 @@ class CTDnn:
             )) as sess:
                 # convert all data to np.ndarray
                 train_frames = np.array(train_frames)
-                train_targets = np.array(train_targets)
+                train_targets = np.array(train_labels)
                 if train_targets.shape[-1] != self._n_speaker:
                     tmp = []
                     for i in range(train_targets.shape[0]):
@@ -294,8 +294,7 @@ class CTDnn:
                         test_labels = np.array(test_labels)
                 
                 # initial tensorboard
-                
-                writer = tf.summary.FileWriter(os.path.join(self._save_path, 'graph'),sess.graph)
+                writer = tf.summary.FileWriter(os.path.join(self._save_path, 'graph'), sess.graph)
     
                 # prepare data
                 if self._is_big_dataset:
@@ -314,15 +313,14 @@ class CTDnn:
                 train_op, loss = self._train_step()
                 if enroll_frames is not None:
                     accuracy = self._validation_acc(sess, enroll_frames, enroll_labels, test_frames, test_labels)
-                
+                    acc_summary = tf.summary.scalar('accuracy', accuracy)
                 # record the memory usage and time of each step
                 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                 run_metadata = tf.RunMetadata()
 
                 # define tensorboard steps
+
                 loss_summary = tf.summary.scalar('loss_summary', loss)
-                if enroll_frames is not None:
-                    acc_summary = tf.summary.scalar('accuracy', accuracy)
                 merged_summary = tf.summary.merge_all()
 
                 last_time = time.time()
@@ -371,9 +369,9 @@ class CTDnn:
     def run_predict(self, 
                     save_path,
                     enroll_frames,
-                    enroll_targets, 
+                    enroll_labels,
                     test_frames,
-                    test_label):
+                    test_labels):
         with tf.Graph().as_default() as graph:
             with tf.Session() as sess:
                 self._build_pred_graph()
@@ -381,8 +379,8 @@ class CTDnn:
 
                 # needn't batch and gpu in prediction
                 
-                enroll_data = DataManage(enroll_frames, enroll_targets, self._batch_size)
-                test_data = DataManage(test_frames, test_label, self._batch_size)
+                enroll_data = DataManage(enroll_frames, enroll_labels, self._batch_size)
+                test_data = DataManage(test_frames, test_labels, self._batch_size)
                 new_saver.restore(sess, tf.train.latest_checkpoint(self._save_path))
                 feature_op = graph.get_operation_by_name('feature_layer_output')
                 vector_dict = dict()
@@ -397,12 +395,12 @@ class CTDnn:
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
-                    for i in range(len(enroll_targets)):
-                        if vector_dict[np.argmax(enroll_targets[i])]:
-                            vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
-                            vector_dict[np.argmax(enroll_targets[i])] /= 2
+                    for i in range(len(enroll_labels)):
+                        if vector_dict[np.argmax(enroll_labels[i])]:
+                            vector_dict[np.argmax(enroll_labels[i])] += vectors[i]
+                            vector_dict[np.argmax(enroll_labels[i])] /= 2
                         else:
-                            vector_dict[np.argmax(enroll_targets[i])] = vectors[i]
+                            vector_dict[np.argmax(enroll_labels[i])] = vectors[i]
                 while not test_data.is_eof:
                     frames, labels = test_data.next_batch
                     L = []
@@ -415,7 +413,7 @@ class CTDnn:
                     labels = np.array(labels).reshape([-1, self._n_speaker])
                     vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
                     keys = vector_dict.keys()
-                    true_key = test_label
+                    true_key = test_labels
                     support = 0
                     for i in len(vectors):
                         score = 0

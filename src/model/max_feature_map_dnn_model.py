@@ -11,12 +11,10 @@ from src.data_manage import DataManage4BigData
 """
 Paper: DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKER
 """
-        
+
+
 class MaxFeatureMapDnn:
     def __init__(self, config):
-
-        if config.BATCH_SIZE == None:
-            raise ImportError("You need ")
         self._config = config
         self._batch_size = config.BATCH_SIZE
         self._n_gpu = config.N_GPU
@@ -245,7 +243,7 @@ class MaxFeatureMapDnn:
                     frames, labels = enroll_data.next_batch
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self._n_speaker])
-                    vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
+                    vectors = sess.run(feature_op, feed_dict={'pred_x:0': frames})
                     for i in range(len(enroll_targets)):
                         if vector_dict[np.argmax(enroll_targets[i])]:
                             vector_dict[np.argmax(enroll_targets[i])] += vectors[i]
@@ -256,7 +254,7 @@ class MaxFeatureMapDnn:
                     frames, labels = test_data.next_batch
                     frames = np.array(frames).reshape([-1, 9, 40, 1])
                     labels = np.array(labels).reshape([-1, self._n_speaker])
-                    vectors = sess.run(feature_op, feed_dict={'pred_x:0':frames})
+                    vectors = sess.run(feature_op, feed_dict={'pred_x:0': frames})
                     keys = vector_dict.keys()
                     true_key = test_label
                     support = 0
