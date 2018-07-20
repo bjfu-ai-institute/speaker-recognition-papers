@@ -1,10 +1,12 @@
 ## Introduction
 
-These are the slightly modified tensorflow/python implementation of recent speaker recognition papers. Please tell me if it is copyright infringement, I'll delete these paper as soon as I can. Thx.
+These are the slightly modified tensorflow/python implementation of recent speaker recognition papers.
+Please tell me if it is copyright infringement, I'll delete these paper as soon as I can. Our license
+only apply to our code these paper is not included. Thx.
 
 The file structure is as follows：
 ```
-|———src
+|———pyasv
 |
 |—————model (folder, contain the model)
 |
@@ -20,11 +22,13 @@ The file structure is as follows：
 |
 |———config.py (settings. e.g. save path, learning rate)
 ```
+
+More info: [Doc](https://vzxxbacq.github.io/speaker-recognition-papers/html/index.html)
+
 If you want run these code on your computer, you only need to write code like this:
 
 ```python
-import src
-# haven't given this project a name.
+import pyasv
 
 config = src.Config(name='my_ctdnn_model',
                     n_speaker=1e3,
@@ -43,8 +47,8 @@ config_deep_speaker.set(name='my_deep_speaker_model',
                         fc_weight_dacay=1e-3,
                         bn_epsilon=1e-3)
 
-m1 = src.model.CTDnn(config)
-m2 = src.model.DeepSpeaker(config_deep_speaker)
+m1 = pyasv.model.CTDnn(config)
+m2 = pyasv.model.DeepSpeaker(config_deep_speaker)
 ```
 
 ## TODO
