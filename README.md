@@ -30,7 +30,7 @@ If you want run these code on your computer, you only need to write code like th
 ```python
 import pyasv
 
-config = src.Config(name='my_ctdnn_model',
+config = pyasv.Config(name='my_ctdnn_model',
                     n_speaker=1e3,
                     batch_size=64,
                     n_gpu=2,
