@@ -27,9 +27,7 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Speech Processing" href="speech_processing.html" />
-    <link rel="prev" title="Model" href="model.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -57,6 +55,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -82,7 +84,9 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Config</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Config</a><ul class="simple">
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="speech_processing.html">Speech Processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_manage.html">Data manager</a></li>
 </ul>
@@ -157,24 +161,58 @@ just need to set the needed parameters when we create a config class.</p>
 <dl class="class">
 <dt id="pyasv.Config">
 <em class="property">class </em><code class="descclassname">pyasv.</code><code class="descname">Config</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># The normal way to create a config.</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CTDnn-config&#39;</span><span class="p">,</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="mi">65</span><span class="p">,</span>
+                <span class="n">n_gpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                <span class="n">max_step</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">n_speaker</span><span class="o">=</span><span class="mi">166</span><span class="p">,</span>
+                <span class="n">is_big_dataset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">url_of_bigdataset_temp_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                <span class="n">save_path</span><span class="o">=</span><span class="s1">&#39;/opt/user1/fhq/save/ctdnn&#39;</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ctdnn-config&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p># Use config path to create a config
+config = Config(config_path=’/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl’)</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#pyasv.Config.save" title="pyasv.Config.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>([name])</td>
+<td>This method is used for save your config to save_path</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#pyasv.Config.set" title="pyasv.Config.set"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set</span></code></a>([n_speaker,&nbsp;batch_size,&nbsp;n_gpu,&nbsp;…])</td>
+<td>The <code class="docutils literal notranslate"><span class="pre">set</span></code> method is used for reset some config.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="pyasv.Config.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Param:</th><td class="field-body"><p class="first">config_path: The path of config which you want to restore,
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>config_path: ``str``</strong></dt>
+<dd><p class="first last">The path of config which you want to restore,
 If you want to create a new config, this param should
 be None.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>is_big_dataset</strong> – If we store the features to disk and restore a part of feature each step.
-The type is bool</li>
-<li><strong>url_of_bigdataset_temp_file</strong> – To decide the save path of the features you want to restore.
-If the param “is_big_dataset” is False, this param should be None.</li>
-</ul>
+</dd>
+<dt><strong>is_big_dataset: ``bool``</strong></dt>
+<dd><p class="first last">If we store the features to disk and restore a part of feature each step.</p>
+</dd>
+<dt><strong>url_of_bigdataset_temp_file: ``str``</strong></dt>
+<dd><p class="first last">To decide the save path of the features you want to restore.
+If the param “is_big_dataset” is False, this param should be None.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -189,8 +227,12 @@ If the param “is_big_dataset” is False, this param should be None.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> – <code class="docutils literal notranslate"><span class="pre">str</span></code>.
-the name of your config file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>name: ``str``.</strong></dt>
+<dd><p class="first last">the name of your config file.</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -211,15 +253,6 @@ the name of your config file.</td>
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="speech_processing.html" class="btn btn-neutral float-right" title="Speech Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="model.html" class="btn btn-neutral" title="Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

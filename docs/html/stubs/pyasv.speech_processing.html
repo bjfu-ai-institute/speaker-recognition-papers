@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Overview: module code &mdash; Python-ASV 0.1.0 documentation</title>
+  <title>pyasv.speech_processing &mdash; Python-ASV 0.1.0 documentation</title>
   
 
   
@@ -54,10 +54,6 @@
 
           
             
-            
-              <div class="version">
-                0.1
-              </div>
             
           
 
@@ -132,10 +128,14 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Overview: module code</li>
+      <li>pyasv.speech_processing</li>
     
     
       <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/stubs/pyasv.speech_processing.rst.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
     
@@ -147,15 +147,37 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="pyasv/config.html">pyasv.config</a></li>
-<li><a href="pyasv/data_manage.html">pyasv.data_manage</a></li>
-<li><a href="pyasv/loss/triplet_loss.html">pyasv.loss.triplet_loss</a></li>
-<li><a href="pyasv/model/ctdnn.html">pyasv.model.ctdnn</a></li>
-<li><a href="pyasv/model/deep_speaker.html">pyasv.model.deep_speaker</a></li>
-<li><a href="pyasv/model/max_feature_map_dnn_model.html">pyasv.model.max_feature_map_dnn_model</a></li>
-<li><a href="pyasv/speech_processing.html">pyasv.speech_processing</a></li>
-</ul>
+  <div class="section" id="module-pyasv.speech_processing">
+<span id="pyasv-speech-processing"></span><h1>pyasv.speech_processing<a class="headerlink" href="#module-pyasv.speech_processing" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Functions</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_cqcc</span></code>(url)</td>
+<td>Calculate CQCC feature of a audio file.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_fbank</span></code>(url)</td>
+<td>Calculate Fbank feature of a audio file.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">cqcc_resample</span></code>(s,&nbsp;fs_orig,&nbsp;fs_new[,&nbsp;axis])</td>
+<td>implement the resample operation of CQCC</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ext_fbank_feature</span></code>(url_path)</td>
+<td>This function is used for extract features of one dataset.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">ext_mfcc_feature</span></code>(url_path,&nbsp;config)</td>
+<td>This function is used for extract MFCC feature of a dataset.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">slide_windows</span></code>(feature)</td>
+<td>concat the feature with the frame before and after it.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
 
            </div>
            

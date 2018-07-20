@@ -27,7 +27,7 @@ copyright = '2018, Bjfu-AI-Lab Fang HuangQiang'
 author = 'Bjfu-AI-Lab Fang HuangQiang'
 
 # The short X.Y version
-version = ''
+version = '0.1'
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
 
@@ -52,7 +52,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.doctest',
-    'sphinx.ext.autosummary',
+    'numpydoc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -82,6 +82,27 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+
+default_role = 'autolink'
+# If true, '()' will be appended to :func: etc. cross-reference text.
+add_function_parentheses = False
+
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = True
+# -- RTD cruft ---
+import six
+
+if six.PY3:
+    from unittest.mock import MagicMock
+else:
+    from mock import Mock as MagicMock
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return Mock()
 
 # -- Options for HTML output -------------------------------------------------
 

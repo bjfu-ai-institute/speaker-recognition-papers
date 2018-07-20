@@ -56,6 +56,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -81,8 +85,15 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="speech_processing.html">Speech Processing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data manager</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data manager</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#datamanage">DataManage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datamanage4bigdata">DataManage4BigData</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             
@@ -149,39 +160,78 @@
             
   <div class="section" id="module-pyasv.data_manage">
 <span id="data-manager"></span><h1>Data manager<a class="headerlink" href="#module-pyasv.data_manage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="datamanage">
+<h2>DataManage<a class="headerlink" href="#datamanage" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pyasv.data_manage.DataManage">
 <em class="property">class </em><code class="descclassname">pyasv.data_manage.</code><code class="descname">DataManage</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use <code class="docutils literal notranslate"><span class="pre">DataManage</span></code> to manage normal dataset,
 we use next_batch to get batch data every step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference internal" href="#pyasv.data_manage.DataManage.next_batch" title="pyasv.data_manage.DataManage.next_batch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">next_batch</span></code></a></dt>
+<dd><p class="first last"><code class="docutils literal notranslate"><span class="pre">property</span></code> to get next batch data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="pyasv.data_manage.DataManage.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>raw_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the feature array of a dataset.</dd>
-<dt>raw_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the label array of a dataset.</dd>
-<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class</span></dt>
-<dd>The config of your model, we only need use its ‘batch_size’ member.</dd>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>raw_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the feature array of a dataset.</p>
+</dd>
+<dt><strong>raw_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the label array of a dataset.</p>
+</dd>
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class</span></dt>
+<dd><p class="first last">The config of your model, we only need use its ‘batch_size’ member.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.data_manage.DataManage.next_batch">
 <code class="descname">next_batch</code><a class="headerlink" href="#pyasv.data_manage.DataManage.next_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">property</span></code> to get next batch data.</p>
-<p>batch_frames: <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>.
-batch_labels: <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">the type of <code class="docutils literal notranslate"><span class="pre">batch_frames</span></code> and <code class="docutils literal notranslate"><span class="pre">batch_labels</span></code> is
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>batch_frames: ``list`` or ``np.ndarray``.</strong></dt>
+<dd></dd>
+<dt><strong>batch_labels: ``list`` or ``np.ndarray``.</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>the type of <code class="docutils literal notranslate"><span class="pre">batch_frames</span></code> and <code class="docutils literal notranslate"><span class="pre">batch_labels</span></code> is
 same as your input data.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
-</dd></dl>
-
-</dd></dl>
-
+<div class="section" id="datamanage4bigdata">
+<h2>DataManage4BigData<a class="headerlink" href="#datamanage4bigdata" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pyasv.data_manage.DataManage4BigData">
 <em class="property">class </em><code class="descclassname">pyasv.data_manage.</code><code class="descname">DataManage4BigData</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData" title="Permalink to this definition">¶</a></dt>
@@ -189,47 +239,100 @@ same as your input data.</p>
 we will save the dataset to disk, and restore a batch of them
 in each step we can still use next_batch to get batch data
 every step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference internal" href="#pyasv.data_manage.DataManage4BigData.next_batch" title="pyasv.data_manage.DataManage4BigData.next_batch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">next_batch</span></code></a></dt>
+<dd><p class="first last">Read a batch of data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#pyasv.data_manage.DataManage4BigData.write_file" title="pyasv.data_manage.DataManage4BigData.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(raw_frames,&nbsp;raw_labels)</td>
+<td>Save your data to save_path/data.</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="pyasv.data_manage.DataManage4BigData.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>config: <code class="docutils literal notranslate"><span class="pre">config</span></code> class</dt>
-<dd>the config of your model. we will use its batch_size to manage our data
-and save the data to save_path/data.</dd>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>config: ``config`` class</strong></dt>
+<dd><p class="first last">the config of your model. we will use its batch_size to manage our data
+and save the data to save_path/data.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.data_manage.DataManage4BigData.next_batch">
 <code class="descname">next_batch</code><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.next_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a batch of data.</p>
-<dl class="docutils">
-<dt>frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the feature array of your dataset.</dd>
-<dt>labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the label array of your dataset.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the feature array of your dataset.</p>
+</dd>
+<dt><strong>labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the label array of your dataset.</p>
+</dd>
 </dl>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">we will check if the data is saved. If you didn’t save the data
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>we will check if the data is saved. If you didn’t save the data
 you will get log and two empty array.</p>
-</div>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.data_manage.DataManage4BigData.write_file">
 <code class="descname">write_file</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData.write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.write_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save your data to save_path/data.</p>
-<dl class="docutils">
-<dt>raw_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the feature array of your dataset.</dd>
-<dt>raw_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>the label array of your dataset.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>raw_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the feature array of your dataset.</p>
+</dd>
+<dt><strong>raw_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the label array of your dataset.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
 
+</div>
 </div>
 
 

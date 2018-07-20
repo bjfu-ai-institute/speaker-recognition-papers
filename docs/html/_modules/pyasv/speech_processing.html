@@ -55,6 +55,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -147,19 +151,41 @@
             
   <h1>Source code for pyasv.speech_processing</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">.. automethod:: pyasv.speech_processing.ext_mfcc_feature</span>
+<span class="sd">ext_mfcc_feature</span>
+<span class="sd">----------------</span>
+<span class="sd">.. autofunction:: pyasv.speech_processing.ext_mfcc_feature</span>
 
-<span class="sd">.. automethod:: pyasv.speech_processing.ext_fbank_feature</span>
 
-<span class="sd">.. automethod:: pyasv.speech_processing.calc_fbank</span>
+<span class="sd">ext_fbank_feature</span>
+<span class="sd">-----------------</span>
 
-<span class="sd">.. automethod:: pyasv.speech_processing.calc_cqcc</span>
+<span class="sd">.. autofunction:: pyasv.speech_processing.ext_fbank_feature</span>
 
-<span class="sd">.. automethod:: pyasv.speech_processing.cqcc_resample</span>
 
-<span class="sd">.. automethod:: pyasv.speech_processing.slide_windows</span>
+<span class="sd">calc_fbank</span>
+<span class="sd">----------</span>
+
+<span class="sd">.. autofunction:: pyasv.speech_processing.calc_fbank</span>
+
+
+<span class="sd">calc_cqcc</span>
+<span class="sd">---------</span>
+
+<span class="sd">.. autofunction:: pyasv.speech_processing.calc_cqcc</span>
+
+
+<span class="sd">slide_windows</span>
+<span class="sd">-------------</span>
+
+<span class="sd">.. autofunction:: pyasv.speech_processing.slide_windows</span>
+
+
+<span class="sd">cqcc_resample</span>
+<span class="sd">-------------</span>
+
+<span class="sd">.. autofunction:: pyasv.speech_processing.cqcc_resample</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
-
 <span class="kn">import</span> <span class="nn">librosa</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -170,9 +196,18 @@
 <span class="kn">from</span> <span class="nn">scipy.fftpack</span> <span class="k">import</span> <span class="n">dct</span>
 
 
-<span class="k">def</span> <span class="nf">slide_windows</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
+<div class="viewcode-block" id="slide_windows"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.slide_windows">[docs]</a><span class="k">def</span> <span class="nf">slide_windows</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;concat the feature with the frame before and after it.</span>
-<span class="sd">    :param feature: feature of an audio file. The type is list ornp.ndarray</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature : ``list`` or ``np.ndarray``</span>
+<span class="sd">        feature array of an audio file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : ``list`` or ``np.ndarray``</span>
+<span class="sd">        the feature array after concat. The type is same as input.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">!=</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
@@ -183,24 +218,37 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">50</span><span class="p">]))</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result_</span><span class="p">)</span>  
-    <span class="k">return</span> <span class="n">result</span>
+    <span class="k">return</span> <span class="n">result</span></div>
         
 
-<span class="k">def</span> <span class="nf">ext_mfcc_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<div class="viewcode-block" id="ext_mfcc_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_mfcc_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_mfcc_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This function is used for extract MFCC feature of a dataset.</span>
 
-<span class="sd">    :param url_path: The path of the &#39;PATH&#39; file. The file contain the path</span>
-<span class="sd">                     to all audio and its number in the dataset.</span>
-<span class="sd">                     The contents of the file should be as follows:</span>
-<span class="sd">                     xxxxx/your_data_path/1_1.wav 0</span>
-<span class="sd">                     xxxxx/your_data_path/1_2.wav 0</span>
-<span class="sd">                     xxxxx/your_data_path/2_1.wav 1</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url_path : ``str``</span>
+<span class="sd">        The path of the &#39;PATH&#39; file.</span>
 
-<span class="sd">    :param config: The type is config class. We only need to know the save path, so we can use same config with model.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
+<span class="sd">    The contents of the file should be as follows:</span>
 
-<span class="sd">    :return mfccs: The mfcc feature of this dataset. Each frame concat with its before and after frames.</span>
+<span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
 
-<span class="sd">    :return labels: The labels of this dataset.</span>
+<span class="sd">    xxxxx/your_data_path/1_2.wav 0</span>
+
+<span class="sd">    xxxxx/your_data_path/2_1.wav 1</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fbank : ``list``</span>
+<span class="sd">        The feature array. each frame concat with the frame before and after it.</span>
+<span class="sd">    label : ``list``</span>
+<span class="sd">        The label of fbank feature.</span>
+
+<span class="sd">    ::</span>
+<span class="sd">        #TODO：changeable concat size.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
         <span class="n">mfccs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -217,22 +265,39 @@
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mfcc</span><span class="p">:</span>
                 <span class="n">mfccs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mfccs</span><span class="p">,</span> <span class="n">labels</span>
+        <span class="k">return</span> <span class="n">mfccs</span><span class="p">,</span> <span class="n">labels</span></div>
 
 
-<span class="k">def</span> <span class="nf">ext_fbank_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
+<div class="viewcode-block" id="ext_fbank_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_fbank_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_fbank_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This function is used for extract features of one dataset.</span>
 
-<span class="sd">    :param url_path: The path of the &#39;PATH&#39; file. The file contain the path</span>
-<span class="sd">                     to all audio and its number in the dataset.</span>
-<span class="sd">                     The contents of the file should be as follows:</span>
-<span class="sd">                     xxxxx/your_data_path/1_1.wav 0</span>
-<span class="sd">                     xxxxx/your_data_path/1_2.wav 0</span>
-<span class="sd">                     xxxxx/your_data_path/2_1.wav 1</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url_path : ``str``</span>
+<span class="sd">        The path of the &#39;PATH&#39; file.</span>
 
-<span class="sd">    :return: The feature array. each frame concat with the frame before and after it.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
+<span class="sd">    The contents of the file should be as follows:</span>
 
-<span class="sd">    :TODO：changeable concat size.</span>
+<span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
+
+<span class="sd">    xxxxx/your_data_path/1_2.wav 0</span>
+
+<span class="sd">    xxxxx/your_data_path/2_1.wav 1</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fbank : ``list``</span>
+<span class="sd">        The feature array. each frame concat with the frame before and after it.</span>
+<span class="sd">    label : ``list``</span>
+<span class="sd">        The label of fbank feature.</span>
+
+<span class="sd">    Todo</span>
+<span class="sd">    ----</span>
+<span class="sd">    changeable concat size.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
         <span class="n">fbanks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -256,15 +321,21 @@
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fbank</span><span class="p">:</span>
                 <span class="n">fbanks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">fbanks</span><span class="p">,</span> <span class="n">labels</span>
+        <span class="k">return</span> <span class="n">fbanks</span><span class="p">,</span> <span class="n">labels</span></div>
 
 
-<span class="k">def</span> <span class="nf">calc_fbank</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_fbank"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.calc_fbank">[docs]</a><span class="k">def</span> <span class="nf">calc_fbank</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculate Fbank feature of a audio file.</span>
 
-<span class="sd">    :param url: Path to the audio file.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : ``str``</span>
+<span class="sd">        Path to the audio file.</span>
 
-<span class="sd">    :return: Fbank feature of this audio.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fbank : ``np.ndarray``</span>
+<span class="sd">        Fbank feature of this audio.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sample_rate</span><span class="p">,</span> <span class="n">signal</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
     <span class="n">pre_emphasis</span> <span class="o">=</span> <span class="mf">0.97</span>
@@ -316,15 +387,21 @@
     <span class="n">filter_banks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">filter_banks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">filter_banks</span><span class="p">)</span>  <span class="c1"># Numerical Stability</span>
     <span class="n">filter_banks</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">)</span>
     <span class="n">filter_banks</span> <span class="o">-=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">filter_banks</span>
+    <span class="k">return</span> <span class="n">filter_banks</span></div>
 
 
-<span class="k">def</span> <span class="nf">calc_cqcc</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_cqcc"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.calc_cqcc">[docs]</a><span class="k">def</span> <span class="nf">calc_cqcc</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculate CQCC feature of a audio file.</span>
 
-<span class="sd">    :param url: path ot the audio file.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : ``str``</span>
+<span class="sd">        path ot the audio file.</span>
 
-<span class="sd">    :return: CQCC feature.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cqcc : ``np.ndarray``</span>
+<span class="sd">        CQCC feature.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">y</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
     <span class="n">constant_q</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">cqt</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">)</span>
@@ -333,21 +410,31 @@
     <span class="n">cqt_spec</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">amplitude_to_db</span><span class="p">(</span><span class="n">cqt_abs_square</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
     <span class="n">cqt_resampy_spec</span> <span class="o">=</span> <span class="n">cqcc_resample</span><span class="p">(</span><span class="n">cqt_spec</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="mi">44000</span><span class="p">)</span>
     <span class="n">cqcc</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">fftpack</span><span class="o">.</span><span class="n">dct</span><span class="p">(</span><span class="n">cqt_resampy_spec</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">cqcc</span>
+    <span class="k">return</span> <span class="n">cqcc</span></div>
 
 
-<span class="k">def</span> <span class="nf">cqcc_resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fs_orig</span><span class="p">,</span> <span class="n">fs_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="cqcc_resample"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.cqcc_resample">[docs]</a><span class="k">def</span> <span class="nf">cqcc_resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fs_orig</span><span class="p">,</span> <span class="n">fs_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;implement the resample operation of CQCC</span>
-<span class="sd">    :param s: spectrogram</span>
-<span class="sd">    :param fs_orig: origin sample rate</span>
-<span class="sd">    :param fs_new:  new sample rate</span>
-<span class="sd">    :param axis: the resample axis</span>
-<span class="sd">    :return: spectrogram after resample</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s : ``np.ndarray``</span>
+<span class="sd">        the input spectrogram.</span>
+<span class="sd">    fs_orig: ``int``</span>
+<span class="sd">        origin sample rate</span>
+<span class="sd">    fs_new: ``int``</span>
+<span class="sd">        new sample rate</span>
+<span class="sd">    axis: ``int``</span>
+<span class="sd">        the resample axis</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spec_res : spectrogram after resample</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_orig</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_new</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">resampy</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">sr_orig</span><span class="o">=</span><span class="n">fs_orig</span><span class="p">,</span> <span class="n">sr_new</span><span class="o">=</span><span class="n">fs_new</span><span class="p">,</span>
                              <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">s</span>
+    <span class="k">return</span> <span class="n">s</span></div>
 </pre></div>
 
            </div>

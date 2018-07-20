@@ -57,6 +57,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -166,21 +170,36 @@ Thanks for Olivier Moindrot.</p>
 <code class="descclassname">triplet_loss.</code><code class="descname">batch_all_triplet_loss</code><span class="sig-paren">(</span><em>embeddings</em>, <em>margin</em>, <em>squared=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.loss.triplet_loss.batch_all_triplet_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build the triplet loss over a batch of embeddings.
 We generate all the valid triplets and average the loss over the positive ones.</p>
-<dl class="docutils">
-<dt>labels: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>labels of the batch, of size (batch_size,)</dd>
-<dt>embeddings: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>tensor of shape (batch_size, embed_dim)</dd>
-<dt>margin: <code class="docutils literal notranslate"><span class="pre">float</span></code></dt>
-<dd>margin for triplet loss</dd>
-<dt>squared: <code class="docutils literal notranslate"><span class="pre">Bool</span></code></dt>
-<dd>If true, output is the pairwise squared euclidean distance matrix.
-If false, output is the pairwise euclidean distance matrix.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>labels: ``tf.tensor``</strong></dt>
+<dd><p class="first last">labels of the batch, of size (batch_size,)</p>
+</dd>
+<dt><strong>embeddings: ``tf.tensor``</strong></dt>
+<dd><p class="first last">tensor of shape (batch_size, embed_dim)</p>
+</dd>
+<dt><strong>margin: ``float``</strong></dt>
+<dd><p class="first last">margin for triplet loss</p>
+</dd>
+<dt><strong>squared: ``Bool``</strong></dt>
+<dd><p class="first last">If true, output is the pairwise squared euclidean distance matrix.
+If false, output is the pairwise euclidean distance matrix.</p>
+</dd>
 </dl>
-<dl class="docutils">
-<dt>triplet_loss: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>scalar tensor containing the triplet loss</dd>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>triplet_loss: ``tf.tensor``</strong></dt>
+<dd><p class="first last">scalar tensor containing the triplet loss</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -188,21 +207,36 @@ If false, output is the pairwise euclidean distance matrix.</dd>
 <code class="descclassname">triplet_loss.</code><code class="descname">batch_hard_triplet_loss</code><span class="sig-paren">(</span><em>embeddings</em>, <em>margin</em>, <em>squared=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.loss.triplet_loss.batch_hard_triplet_loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build the triplet loss over a batch of embeddings.
 For each anchor, we get the hardest positive and hardest negative to form a triplet.</p>
-<dl class="docutils">
-<dt>labels: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>labels of the batch, of size (batch_size,)</dd>
-<dt>embeddings: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>tensor of shape (batch_size, embed_dim)</dd>
-<dt>margin: <cite>float</cite></dt>
-<dd>margin for triplet loss</dd>
-<dt>squared: <code class="docutils literal notranslate"><span class="pre">Bool</span></code></dt>
-<dd>If true, output is the pairwise squared euclidean distance matrix.
-If false, output is the pairwise euclidean distance matrix.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>labels: ``tf.tensor``</strong></dt>
+<dd><p class="first last">labels of the batch, of size (batch_size,)</p>
+</dd>
+<dt><strong>embeddings: ``tf.tensor``</strong></dt>
+<dd><p class="first last">tensor of shape (batch_size, embed_dim)</p>
+</dd>
+<dt><strong>margin: `float`</strong></dt>
+<dd><p class="first last">margin for triplet loss</p>
+</dd>
+<dt><strong>squared: ``Bool``</strong></dt>
+<dd><p class="first last">If true, output is the pairwise squared euclidean distance matrix.
+If false, output is the pairwise euclidean distance matrix.</p>
+</dd>
 </dl>
-<dl class="docutils">
-<dt>triplet_loss: <code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></dt>
-<dd>scalar tensor containing the triplet loss</dd>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>triplet_loss: ``tf.tensor``</strong></dt>
+<dd><p class="first last">scalar tensor containing the triplet loss</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

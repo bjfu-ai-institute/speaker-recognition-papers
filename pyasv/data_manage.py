@@ -1,8 +1,14 @@
 """
+DataManage
+----------
+
 .. autoclass:: DataManage
     :members:
 
     .. automethod:: __init__
+
+DataManage4BigData
+------------------
 
 .. autoclass:: DataManage4BigData
     :members:
@@ -48,9 +54,10 @@ class DataManage(object):
         batch_frames: ``list`` or ``np.ndarray``.
         batch_labels: ``list`` or ``np.ndarray``.
 
-        .. note::
-            the type of ``batch_frames`` and ``batch_labels`` is
-            same as your input data.
+        Notes
+        -----
+        the type of ``batch_frames`` and ``batch_labels`` is
+        same as your input data.
         """
         if (self.batch_counter+1) * self.batch_size < len(self.raw_frames):
             batch_frames = self.raw_frames[self.batch_counter * self.batch_size:
@@ -127,9 +134,10 @@ class DataManage4BigData(object):
         labels : ``np.ndarray``
             the label array of your dataset.
 
-        .. note::
-            we will check if the data is saved. If you didn't save the data
-            you will get log and two empty array.
+        Notes
+        -----
+        we will check if the data is saved. If you didn't save the data
+        you will get log and two empty array.
 
         """
         if not self.file_is_exist:

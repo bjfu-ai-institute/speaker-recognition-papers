@@ -20,9 +20,9 @@ class CTDnn:
         config : ``config`` class.
             The config of ctdnn model, no extra need.
 
-        .. note::
-            The compute graph will not be created by ``__init__`` function.
-
+        Notes
+        -----
+        The compute graph will not be created by ``__init__`` function.
         """
         self._config = config
         self._batch_size = config.BATCH_SIZE

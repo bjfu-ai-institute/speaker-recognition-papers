@@ -22,8 +22,9 @@ class MaxFeatureMapDnn:
         config : ``config`` class.
             The config of MFM model, no extra need.
 
-        .. note::
-            The compute graph will not be created by ``__init__`` function.
+        Notes
+        -----
+        The compute graph will not be created by ``__init__`` function.
 
         """
         self._config = config

@@ -23,10 +23,11 @@ class DeepSpeaker:
             ::
                 out_channel = [64, 128, 256, 512]
 
-        .. note::
-            There is no predict operation in deep speaker model.
-            Because we use the output of last layer as speaker vector.
-            we can use DeepSpeaker.feature to get these vector.
+        Notes
+        -----
+        There is no predict operation in deep speaker model.
+        Because we use the output of last layer as speaker vector.
+        we can use DeepSpeaker.feature to get these vector.
         """
         self.n_blocks = len(out_channel)
         self.out_channel = out_channel

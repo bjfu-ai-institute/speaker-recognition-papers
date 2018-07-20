@@ -28,8 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Data manager" href="data_manage.html" />
-    <link rel="prev" title="Config" href="config.html" /> 
+    <link rel="next" title="Data manager" href="data_manage.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -57,6 +56,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -83,7 +86,15 @@
 <li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Speech Processing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Speech Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ext-mfcc-feature">ext_mfcc_feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ext-fbank-feature">ext_fbank_feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calc-fbank">calc_fbank</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calc-cqcc">calc_cqcc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#slide-windows">slide_windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cqcc-resample">cqcc_resample</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="data_manage.html">Data manager</a></li>
 </ul>
 
@@ -151,107 +162,209 @@
             
   <div class="section" id="module-pyasv.speech_processing">
 <span id="speech-processing"></span><h1>Speech Processing<a class="headerlink" href="#module-pyasv.speech_processing" title="Permalink to this headline">¶</a></h1>
-<dl class="method">
+<div class="section" id="ext-mfcc-feature">
+<h2>ext_mfcc_feature<a class="headerlink" href="#ext-mfcc-feature" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
 <dt id="pyasv.speech_processing.ext_mfcc_feature">
-<code class="descclassname">speech_processing.</code><code class="descname">ext_mfcc_feature</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.ext_mfcc_feature" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_mfcc_feature</code><span class="sig-paren">(</span><em>url_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_mfcc_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_mfcc_feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used for extract MFCC feature of a dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>url_path</strong> – The path of the ‘PATH’ file. The file contain the path
-to all audio and its number in the dataset.
-The contents of the file should be as follows:
-xxxxx/your_data_path/1_1.wav 0
-xxxxx/your_data_path/1_2.wav 0
-xxxxx/your_data_path/2_1.wav 1</li>
-<li><strong>config</strong> – The type is config class. We only need to know the save path, so we can use same config with model.</li>
-</ul>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>url_path</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
+<dd><p class="first last">The path of the ‘PATH’ file.</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return mfccs:</th><td class="field-body"><p class="first">The mfcc feature of this dataset. Each frame concat with its before and after frames.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return labels:</th><td class="field-body"><p class="first last">The labels of this dataset.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>fbank</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first last">The feature array. each frame concat with the frame before and after it.</p>
+</dd>
+<dt><strong>label</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first last">The label of fbank feature.</p>
+</dd>
+<dt><strong>::</strong></dt>
+<dd><p class="first last">#TODO：changeable concat size.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Notes</p>
+<p>The file contain the path to all audio and its number in the dataset.
+The contents of the file should be as follows:</p>
+<p>xxxxx/your_data_path/1_1.wav 0</p>
+<p>xxxxx/your_data_path/1_2.wav 0</p>
+<p>xxxxx/your_data_path/2_1.wav 1</p>
 </dd></dl>
 
-<dl class="method">
+</div>
+<div class="section" id="ext-fbank-feature">
+<h2>ext_fbank_feature<a class="headerlink" href="#ext-fbank-feature" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
 <dt id="pyasv.speech_processing.ext_fbank_feature">
-<code class="descclassname">speech_processing.</code><code class="descname">ext_fbank_feature</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.ext_fbank_feature" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_fbank_feature</code><span class="sig-paren">(</span><em>url_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_fbank_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_fbank_feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used for extract features of one dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url_path</strong> – The path of the ‘PATH’ file. The file contain the path
-to all audio and its number in the dataset.
-The contents of the file should be as follows:
-xxxxx/your_data_path/1_1.wav 0
-xxxxx/your_data_path/1_2.wav 0
-xxxxx/your_data_path/2_1.wav 1</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>url_path</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
+<dd><p class="first last">The path of the ‘PATH’ file.</p>
+</dd>
+</dl>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The feature array. each frame concat with the frame before and after it.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>fbank</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first last">The feature array. each frame concat with the frame before and after it.</p>
+</dd>
+<dt><strong>label</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first last">The label of fbank feature.</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
-<p>:TODO：changeable concat size.</p>
+<p class="rubric">Notes</p>
+<p>The file contain the path to all audio and its number in the dataset.
+The contents of the file should be as follows:</p>
+<p>xxxxx/your_data_path/1_1.wav 0</p>
+<p>xxxxx/your_data_path/1_2.wav 0</p>
+<p>xxxxx/your_data_path/2_1.wav 1</p>
 </dd></dl>
 
-<dl class="method">
+</div>
+<div class="section" id="calc-fbank">
+<h2>calc_fbank<a class="headerlink" href="#calc-fbank" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
 <dt id="pyasv.speech_processing.calc_fbank">
-<code class="descclassname">speech_processing.</code><code class="descname">calc_fbank</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.calc_fbank" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">calc_fbank</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#calc_fbank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.calc_fbank" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate Fbank feature of a audio file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> – Path to the audio file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>url</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
+<dd><p class="first last">Path to the audio file.</p>
+</dd>
+</dl>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Fbank feature of this audio.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>fbank</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">Fbank feature of this audio.</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
-<dl class="method">
+</div>
+<div class="section" id="calc-cqcc">
+<h2>calc_cqcc<a class="headerlink" href="#calc-cqcc" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
 <dt id="pyasv.speech_processing.calc_cqcc">
-<code class="descclassname">speech_processing.</code><code class="descname">calc_cqcc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.calc_cqcc" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">calc_cqcc</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#calc_cqcc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.calc_cqcc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate CQCC feature of a audio file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> – path ot the audio file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>url</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
+<dd><p class="first last">path ot the audio file.</p>
+</dd>
+</dl>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">CQCC feature.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>cqcc</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">CQCC feature.</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="pyasv.speech_processing.cqcc_resample">
-<code class="descclassname">speech_processing.</code><code class="descname">cqcc_resample</code><span class="sig-paren">(</span><em>fs_orig</em>, <em>fs_new</em>, <em>axis=0</em><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.cqcc_resample" title="Permalink to this definition">¶</a></dt>
-<dd><p>implement the resample operation of CQCC
-:param s: spectrogram
-:param fs_orig: origin sample rate
-:param fs_new:  new sample rate
-:param axis: the resample axis
-:return: spectrogram after resample</p>
-</dd></dl>
-
-<dl class="method">
+</div>
+<div class="section" id="slide-windows">
+<h2>slide_windows<a class="headerlink" href="#slide-windows" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
 <dt id="pyasv.speech_processing.slide_windows">
-<code class="descclassname">speech_processing.</code><code class="descname">slide_windows</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyasv.speech_processing.slide_windows" title="Permalink to this definition">¶</a></dt>
-<dd><p>concat the feature with the frame before and after it.
-:param feature: feature of an audio file. The type is list ornp.ndarray</p>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">slide_windows</code><span class="sig-paren">(</span><em>feature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#slide_windows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.slide_windows" title="Permalink to this definition">¶</a></dt>
+<dd><p>concat the feature with the frame before and after it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>feature</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">feature array of an audio file.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>result</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the feature array after concat. The type is same as input.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
+</div>
+<div class="section" id="cqcc-resample">
+<h2>cqcc_resample<a class="headerlink" href="#cqcc-resample" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pyasv.speech_processing.cqcc_resample">
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">cqcc_resample</code><span class="sig-paren">(</span><em>s</em>, <em>fs_orig</em>, <em>fs_new</em>, <em>axis=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#cqcc_resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.cqcc_resample" title="Permalink to this definition">¶</a></dt>
+<dd><p>implement the resample operation of CQCC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>s</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the input spectrogram.</p>
+</dd>
+<dt><strong>fs_orig: ``int``</strong></dt>
+<dd><p class="first last">origin sample rate</p>
+</dd>
+<dt><strong>fs_new: ``int``</strong></dt>
+<dd><p class="first last">new sample rate</p>
+</dd>
+<dt><strong>axis: ``int``</strong></dt>
+<dd><p class="first last">the resample axis</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>spec_res</strong> <span class="classifier-delimiter">:</span> <span class="classifier">spectrogram after resample</span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -264,8 +377,6 @@ xxxxx/your_data_path/2_1.wav 1</td>
       
         <a href="data_manage.html" class="btn btn-neutral float-right" title="Data manager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="config.html" class="btn btn-neutral" title="Config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

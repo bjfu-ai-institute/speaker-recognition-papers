@@ -55,6 +55,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -147,10 +151,16 @@
             
   <h1>Source code for pyasv.data_manage</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">DataManage</span>
+<span class="sd">----------</span>
+
 <span class="sd">.. autoclass:: DataManage</span>
 <span class="sd">    :members:</span>
 
 <span class="sd">    .. automethod:: __init__</span>
+
+<span class="sd">DataManage4BigData</span>
+<span class="sd">------------------</span>
 
 <span class="sd">.. autoclass:: DataManage4BigData</span>
 <span class="sd">    :members:</span>
@@ -196,9 +206,10 @@
 <span class="sd">        batch_frames: ``list`` or ``np.ndarray``.</span>
 <span class="sd">        batch_labels: ``list`` or ``np.ndarray``.</span>
 
-<span class="sd">        .. note::</span>
-<span class="sd">            the type of ``batch_frames`` and ``batch_labels`` is</span>
-<span class="sd">            same as your input data.</span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        the type of ``batch_frames`` and ``batch_labels`` is</span>
+<span class="sd">        same as your input data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_counter</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_frames</span><span class="p">):</span>
             <span class="n">batch_frames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_frames</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_counter</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
@@ -275,9 +286,10 @@
 <span class="sd">        labels : ``np.ndarray``</span>
 <span class="sd">            the label array of your dataset.</span>
 
-<span class="sd">        .. note::</span>
-<span class="sd">            we will check if the data is saved. If you didn&#39;t save the data</span>
-<span class="sd">            you will get log and two empty array.</span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        we will check if the data is saved. If you didn&#39;t save the data</span>
+<span class="sd">        you will get log and two empty array.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_is_exist</span><span class="p">:</span>

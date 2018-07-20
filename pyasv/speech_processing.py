@@ -1,17 +1,39 @@
 """
-.. automethod:: pyasv.speech_processing.ext_mfcc_feature
+ext_mfcc_feature
+----------------
+.. autofunction:: pyasv.speech_processing.ext_mfcc_feature
 
-.. automethod:: pyasv.speech_processing.ext_fbank_feature
 
-.. automethod:: pyasv.speech_processing.calc_fbank
+ext_fbank_feature
+-----------------
 
-.. automethod:: pyasv.speech_processing.calc_cqcc
+.. autofunction:: pyasv.speech_processing.ext_fbank_feature
 
-.. automethod:: pyasv.speech_processing.cqcc_resample
 
-.. automethod:: pyasv.speech_processing.slide_windows
+calc_fbank
+----------
+
+.. autofunction:: pyasv.speech_processing.calc_fbank
+
+
+calc_cqcc
+---------
+
+.. autofunction:: pyasv.speech_processing.calc_cqcc
+
+
+slide_windows
+-------------
+
+.. autofunction:: pyasv.speech_processing.slide_windows
+
+
+cqcc_resample
+-------------
+
+.. autofunction:: pyasv.speech_processing.cqcc_resample
+
 """
-
 import librosa
 import os
 import numpy as np
@@ -24,7 +46,16 @@ from scipy.fftpack import dct
 
 def slide_windows(feature):
     """concat the feature with the frame before and after it.
-    :param feature: feature of an audio file. The type is list ornp.ndarray
+
+    Parameters
+    ----------
+    feature : ``list`` or ``np.ndarray``
+        feature array of an audio file.
+
+    Returns
+    -------
+    result : ``list`` or ``np.ndarray``
+        the feature array after concat. The type is same as input.
     """
     if type(feature)!=np.ndarray:
         feature = np.array(feature)
@@ -38,21 +69,34 @@ def slide_windows(feature):
     return result
         
 
-def ext_mfcc_feature(url_path, config):
+def ext_mfcc_feature(url_path):
     """This function is used for extract MFCC feature of a dataset.
 
-    :param url_path: The path of the 'PATH' file. The file contain the path
-                     to all audio and its number in the dataset.
-                     The contents of the file should be as follows:
-                     xxxxx/your_data_path/1_1.wav 0
-                     xxxxx/your_data_path/1_2.wav 0
-                     xxxxx/your_data_path/2_1.wav 1
+    Parameters
+    ----------
+    url_path : ``str``
+        The path of the 'PATH' file.
 
-    :param config: The type is config class. We only need to know the save path, so we can use same config with model.
+    Notes
+    -----
+    The file contain the path to all audio and its number in the dataset.
+    The contents of the file should be as follows:
 
-    :return mfccs: The mfcc feature of this dataset. Each frame concat with its before and after frames.
+    xxxxx/your_data_path/1_1.wav 0
 
-    :return labels: The labels of this dataset.
+    xxxxx/your_data_path/1_2.wav 0
+
+    xxxxx/your_data_path/2_1.wav 1
+
+    Returns
+    -------
+    fbank : ``list``
+        The feature array. each frame concat with the frame before and after it.
+    label : ``list``
+        The label of fbank feature.
+
+    ::
+        #TODO：changeable concat size.
     """
     with open(url_path, 'r') as urls:
         mfccs = []
@@ -75,16 +119,33 @@ def ext_mfcc_feature(url_path, config):
 def ext_fbank_feature(url_path):
     """This function is used for extract features of one dataset.
 
-    :param url_path: The path of the 'PATH' file. The file contain the path
-                     to all audio and its number in the dataset.
-                     The contents of the file should be as follows:
-                     xxxxx/your_data_path/1_1.wav 0
-                     xxxxx/your_data_path/1_2.wav 0
-                     xxxxx/your_data_path/2_1.wav 1
+    Parameters
+    ----------
+    url_path : ``str``
+        The path of the 'PATH' file.
 
-    :return: The feature array. each frame concat with the frame before and after it.
+    Notes
+    -----
+    The file contain the path to all audio and its number in the dataset.
+    The contents of the file should be as follows:
 
-    :TODO：changeable concat size.
+    xxxxx/your_data_path/1_1.wav 0
+
+    xxxxx/your_data_path/1_2.wav 0
+
+    xxxxx/your_data_path/2_1.wav 1
+
+    Returns
+    -------
+    fbank : ``list``
+        The feature array. each frame concat with the frame before and after it.
+    label : ``list``
+        The label of fbank feature.
+
+    Todo
+    ----
+    changeable concat size.
+
     """
     with open(url_path, 'r') as urls:
         fbanks = []
@@ -114,9 +175,15 @@ def ext_fbank_feature(url_path):
 def calc_fbank(url):
     """Calculate Fbank feature of a audio file.
 
-    :param url: Path to the audio file.
+    Parameters
+    ----------
+    url : ``str``
+        Path to the audio file.
 
-    :return: Fbank feature of this audio.
+    Returns
+    -------
+    fbank : ``np.ndarray``
+        Fbank feature of this audio.
     """
     sample_rate, signal = read(url)
     pre_emphasis = 0.97
@@ -174,9 +241,15 @@ def calc_fbank(url):
 def calc_cqcc(url):
     """Calculate CQCC feature of a audio file.
 
-    :param url: path ot the audio file.
+    Parameters
+    ----------
+    url : ``str``
+        path ot the audio file.
 
-    :return: CQCC feature.
+    Returns
+    -------
+    cqcc : ``np.ndarray``
+        CQCC feature.
     """
     y, sr = librosa.load(url)
     constant_q = librosa.cqt(y=y, sr=sr)
@@ -190,11 +263,21 @@ def calc_cqcc(url):
 
 def cqcc_resample(s, fs_orig, fs_new, axis=0):
     """implement the resample operation of CQCC
-    :param s: spectrogram
-    :param fs_orig: origin sample rate
-    :param fs_new:  new sample rate
-    :param axis: the resample axis
-    :return: spectrogram after resample
+
+    Parameters
+    ----------
+    s : ``np.ndarray``
+        the input spectrogram.
+    fs_orig: ``int``
+        origin sample rate
+    fs_new: ``int``
+        new sample rate
+    axis: ``int``
+        the resample axis
+
+    Returns
+    -------
+    spec_res : spectrogram after resample
     """
     if int(fs_orig) != int(fs_new):
         s = resampy.resample(s, sr_orig=fs_orig, sr_new=fs_new,

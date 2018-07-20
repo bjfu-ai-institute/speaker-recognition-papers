@@ -28,7 +28,6 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Config" href="config.html" />
     <link rel="prev" title="Loss Function" href="loss.html" /> 
 
   
@@ -57,6 +56,10 @@
           
             
             
+              <div class="version">
+                0.1
+              </div>
+            
           
 
           
@@ -82,9 +85,15 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#ctdnn">CTDNN</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deepspeaker">DeepSpeaker</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#max-feature-map-model">Max Feature Map model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ctdnn">CTDNN</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#deepspeaker">DeepSpeaker</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#max-feature-map-model">Max Feature Map model</a><ul class="simple">
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
@@ -167,78 +176,179 @@
 <dl class="class">
 <dt id="pyasv.model.ctdnn.CTDnn">
 <em class="property">class </em><code class="descclassname">pyasv.model.ctdnn.</code><code class="descname">CTDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.feature" title="pyasv.model.ctdnn.CTDnn.feature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
+</dd>
+<dt><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.loss" title="pyasv.model.ctdnn.CTDnn.loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loss</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
+</dd>
+<dt><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.prediction" title="pyasv.model.ctdnn.CTDnn.prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to do predict operation.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.run" title="pyasv.model.ctdnn.CTDnn.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(train_frames,&nbsp;train_labels[,&nbsp;…])</td>
+<td>Run the ctdnn model.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.run_predict" title="pyasv.model.ctdnn.CTDnn.run_predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_predict</span></code></a>(enroll_frames,&nbsp;enroll_labels,&nbsp;…)</td>
+<td>Run prediction, will save the result to save_path/result.txt</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="pyasv.model.ctdnn.CTDnn.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create ctdnn model.</p>
-<dl class="docutils">
-<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
-<dd>The config of ctdnn model, no extra need.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd><p class="first last">The config of ctdnn model, no extra need.</p>
+</dd>
 </dl>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
-</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.ctdnn.CTDnn.feature">
 <code class="descname">feature</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
-<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>feature: ``tf.operation``</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.ctdnn.CTDnn.loss">
 <code class="descname">loss</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
-<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>loss</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.ctdnn.CTDnn.prediction">
 <code class="descname">prediction</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.prediction" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to do predict operation.</p>
-<p>prediction: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>prediction: ``tf.operation``</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.model.ctdnn.CTDnn.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em>, <em>need_prediction_now=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the ctdnn model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
-<dl class="docutils">
-<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of train dataset.</dd>
-<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of train dataset.</dd>
-<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of enroll dataset.</dd>
-<dt>enroll_labels=None <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></dt>
-<dd>The label array of enroll dataset.</dd>
-<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of test dataset.</dd>
-<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of test dataset.</dd>
-<dt>need_prediction_now <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
-<dd>if <em>True</em> we will create predict graph and run predict now.
-if <em>False</em> we will exit after training.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>train_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of train dataset.</p>
+</dd>
+<dt><strong>train_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of train dataset.</p>
+</dd>
+<dt><strong>enroll_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of enroll dataset.</p>
+</dd>
+<dt><strong>enroll_labels=None ``list`` or ``np.ndarray``</strong></dt>
+<dd><p class="first last">The label array of enroll dataset.</p>
+</dd>
+<dt><strong>test_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of test dataset.</p>
+</dd>
+<dt><strong>test_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of test dataset.</p>
+</dd>
+<dt><strong>need_prediction_now</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
+<dd><p class="first last">if <em>True</em> we will create predict graph and run predict now.
+if <em>False</em> we will exit after training.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.model.ctdnn.CTDnn.run_predict">
 <code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.run_predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run prediction, will save the result to save_path/result.txt</p>
-<dl class="docutils">
-<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of enroll dataset.</dd>
-<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label of enrol dataset.</dd>
-<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of test dataset.</dd>
-<dt>test_labels :</dt>
-<dd>The label of test dataset.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>enroll_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of enroll dataset.</p>
+</dd>
+<dt><strong>enroll_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label of enrol dataset.</p>
+</dd>
+<dt><strong>test_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of test dataset.</p>
+</dd>
+<dt><strong>test_labels :</strong></dt>
+<dd><p class="first last">The label of test dataset.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -255,14 +365,47 @@ if <em>False</em> we will exit after training.</dd>
 <dl class="class">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker">
 <em class="property">class </em><code class="descclassname">pyasv.model.deep_speaker.</code><code class="descname">DeepSpeaker</code><span class="sig-paren">(</span><em>config, out_channel=[64, 128, 256, 512]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference internal" href="#pyasv.model.deep_speaker.DeepSpeaker.feature" title="pyasv.model.deep_speaker.DeepSpeaker.feature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
+</dd>
+<dt><a class="reference internal" href="#pyasv.model.deep_speaker.DeepSpeaker.loss" title="pyasv.model.deep_speaker.DeepSpeaker.loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loss</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#pyasv.model.deep_speaker.DeepSpeaker.run" title="pyasv.model.deep_speaker.DeepSpeaker.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(train_frames,&nbsp;train_labels[,&nbsp;…])</td>
+<td>Run the deep speaker model.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>config, out_channel=[64, 128, 256, 512]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create deep speaker model.</p>
-<dl class="docutils">
-<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
-<dd>The config of ctdnn model, no extra need.</dd>
-<dt>out_channel <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd><p class="first last">The config of ctdnn model, no extra need.</p>
+</dd>
+<dt><strong>out_channel</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
 <dd><p class="first">The out channel of each res_block.</p>
 <p>default</p>
 <div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">out_channel</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]</span>
@@ -270,46 +413,84 @@ if <em>False</em> we will exit after training.</dd>
 </div>
 </dd>
 </dl>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">There is no predict operation in deep speaker model.
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>There is no predict operation in deep speaker model.
 Because we use the output of last layer as speaker vector.
 we can use DeepSpeaker.feature to get these vector.</p>
-</div>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker.feature">
 <code class="descname">feature</code><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
-<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>feature: ``tf.operation``</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker.loss">
 <code class="descname">loss</code><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
-<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>loss</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the deep speaker model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
-<dl class="docutils">
-<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of train dataset.</dd>
-<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of train dataset.</dd>
-<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of enroll dataset.</dd>
-<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of enroll dataset.</dd>
-<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of test dataset.</dd>
-<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of test dataset.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>train_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of train dataset.</p>
+</dd>
+<dt><strong>train_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of train dataset.</p>
+</dd>
+<dt><strong>enroll_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of enroll dataset.</p>
+</dd>
+<dt><strong>enroll_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of enroll dataset.</p>
+</dd>
+<dt><strong>test_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of test dataset.</p>
+</dd>
+<dt><strong>test_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of test dataset.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -326,78 +507,179 @@ we can use DeepSpeaker.feature to get these vector.</p>
 <dl class="class">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn">
 <em class="property">class </em><code class="descclassname">pyasv.model.max_feature_map_dnn_model.</code><code class="descname">MaxFeatureMapDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
+</dd>
+<dt><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loss</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
+</dd>
+<dt><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction</span></code></a></dt>
+<dd><p class="first last">A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to do predict operation.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(train_frames,&nbsp;train_labels[,&nbsp;…])</td>
+<td>Run the MFM model.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_predict</span></code></a>(enroll_frames,&nbsp;enroll_labels,&nbsp;…)</td>
+<td>Run prediction, will save the result to save_path/result.txt</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create Max feature Map model.</p>
-<dl class="docutils">
-<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
-<dd>The config of MFM model, no extra need.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd><p class="first last">The config of MFM model, no extra need.</p>
+</dd>
 </dl>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
-</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature">
 <code class="descname">feature</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get feature.</p>
-<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>feature: ``tf.operation``</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss">
 <code class="descname">loss</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to get loss.</p>
-<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>loss</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction">
 <code class="descname">prediction</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">property</span></code> member to do predict operation.</p>
-<p>prediction: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>prediction: ``tf.operation``</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em>, <em>need_prediction_now=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the MFM model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
-<dl class="docutils">
-<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of train dataset.</dd>
-<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of train dataset.</dd>
-<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of enroll dataset.</dd>
-<dt>enroll_labels=None <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></dt>
-<dd>The label array of enroll dataset.</dd>
-<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of test dataset.</dd>
-<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label array of test dataset.</dd>
-<dt>need_prediction_now <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
-<dd>if <em>True</em> we will create predict graph and run predict now.
-if <em>False</em> we will exit after training.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>train_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of train dataset.</p>
+</dd>
+<dt><strong>train_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of train dataset.</p>
+</dd>
+<dt><strong>enroll_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of enroll dataset.</p>
+</dd>
+<dt><strong>enroll_labels=None ``list`` or ``np.ndarray``</strong></dt>
+<dd><p class="first last">The label array of enroll dataset.</p>
+</dd>
+<dt><strong>test_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of test dataset.</p>
+</dd>
+<dt><strong>test_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label array of test dataset.</p>
+</dd>
+<dt><strong>need_prediction_now</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
+<dd><p class="first last">if <em>True</em> we will create predict graph and run predict now.
+if <em>False</em> we will exit after training.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict">
 <code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run prediction, will save the result to save_path/result.txt</p>
-<dl class="docutils">
-<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of enroll dataset.</dd>
-<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The label of enrol dataset.</dd>
-<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
-<dd>The feature array of test dataset.</dd>
-<dt>test_labels :</dt>
-<dd>The label of test dataset.</dd>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>enroll_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of enroll dataset.</p>
+</dd>
+<dt><strong>enroll_labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The label of enrol dataset.</p>
+</dd>
+<dt><strong>test_frames</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">The feature array of test dataset.</p>
+</dd>
+<dt><strong>test_labels :</strong></dt>
+<dd><p class="first last">The label of test dataset.</p>
+</dd>
 </dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -412,8 +694,6 @@ if <em>False</em> we will exit after training.</dd>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="config.html" class="btn btn-neutral float-right" title="Config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="loss.html" class="btn btn-neutral" title="Loss Function" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
