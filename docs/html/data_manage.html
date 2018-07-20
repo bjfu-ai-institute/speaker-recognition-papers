@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Data manager &mdash; Python-ASV 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Speech Processing" href="speech_processing.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Python-ASV
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech_processing.html">Speech Processing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Python-ASV</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Data manager</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/data_manage.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-pyasv.data_manage">
+<span id="data-manager"></span><h1>Data manager<a class="headerlink" href="#module-pyasv.data_manage" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pyasv.data_manage.DataManage">
+<em class="property">class </em><code class="descclassname">pyasv.data_manage.</code><code class="descname">DataManage</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use <code class="docutils literal notranslate"><span class="pre">DataManage</span></code> to manage normal dataset,
+we use next_batch to get batch data every step.</p>
+<dl class="method">
+<dt id="pyasv.data_manage.DataManage.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>raw_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the feature array of a dataset.</dd>
+<dt>raw_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the label array of a dataset.</dd>
+<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class</span></dt>
+<dd>The config of your model, we only need use its ‘batch_size’ member.</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.data_manage.DataManage.next_batch">
+<code class="descname">next_batch</code><a class="headerlink" href="#pyasv.data_manage.DataManage.next_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">property</span></code> to get next batch data.</p>
+<p>batch_frames: <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>.
+batch_labels: <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">the type of <code class="docutils literal notranslate"><span class="pre">batch_frames</span></code> and <code class="docutils literal notranslate"><span class="pre">batch_labels</span></code> is
+same as your input data.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyasv.data_manage.DataManage4BigData">
+<em class="property">class </em><code class="descclassname">pyasv.data_manage.</code><code class="descname">DataManage4BigData</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use <code class="docutils literal notranslate"><span class="pre">DataManage4BigData</span></code> to manage huge dataset.
+we will save the dataset to disk, and restore a batch of them
+in each step we can still use next_batch to get batch data
+every step.</p>
+<dl class="method">
+<dt id="pyasv.data_manage.DataManage4BigData.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>config: <code class="docutils literal notranslate"><span class="pre">config</span></code> class</dt>
+<dd>the config of your model. we will use its batch_size to manage our data
+and save the data to save_path/data.</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.data_manage.DataManage4BigData.next_batch">
+<code class="descname">next_batch</code><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.next_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a batch of data.</p>
+<dl class="docutils">
+<dt>frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the feature array of your dataset.</dd>
+<dt>labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the label array of your dataset.</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">we will check if the data is saved. If you didn’t save the data
+you will get log and two empty array.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.data_manage.DataManage4BigData.write_file">
+<code class="descname">write_file</code><span class="sig-paren">(</span><em>raw_frames</em>, <em>raw_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/data_manage.html#DataManage4BigData.write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.data_manage.DataManage4BigData.write_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save your data to save_path/data.</p>
+<dl class="docutils">
+<dt>raw_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the feature array of your dataset.</dd>
+<dt>raw_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>the label array of your dataset.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="speech_processing.html" class="btn btn-neutral" title="Speech Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjfu-AI-Lab Fang HuangQiang.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

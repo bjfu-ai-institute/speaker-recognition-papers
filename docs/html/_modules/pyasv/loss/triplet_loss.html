@@ -1,0 +1,465 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pyasv.loss.triplet_loss &mdash; Python-ASV 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Python-ASV
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech_processing.html">Speech Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_manage.html">Data manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Python-ASV</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>pyasv.loss.triplet_loss</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pyasv.loss.triplet_loss</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. note::</span>
+<span class="sd">    Reference from https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/model/triplet_loss.py</span>
+<span class="sd">    Thanks for Olivier Moindrot.</span>
+
+<span class="sd">.. automethod::</span>
+<span class="sd">    pyasv.loss.triplet_loss.batch_all_triplet_loss</span>
+
+<span class="sd">.. automethod::</span>
+<span class="sd">    pyasv.loss.triplet_loss.batch_hard_triplet_loss</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+
+
+<span class="sd">&quot;&quot;&quot;Define functions to create the triplet loss with online triplet mining.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;batch_all_triplet_loss&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;batch_hard_triplet_loss&#39;</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_pairwise_distances</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the 2D matrix of distances between all the embeddings.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    embeddings: `tf.tensor`.</span>
+<span class="sd">        The shape is (batch_size, embed_dim)</span>
+
+<span class="sd">    squared: `Bool`.</span>
+<span class="sd">        If `True`, output is the pairwise squared euclidean distance matrix.</span>
+<span class="sd">        If `False`, output is the pairwise euclidean distance matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pairwise_distances: `tf.tensor`</span>
+<span class="sd">        The shape is (batch_size, batch_size)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the dot product between all embeddings</span>
+    <span class="c1"># shape (batch_size, batch_size)</span>
+    <span class="n">dot_product</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">embeddings</span><span class="p">))</span>
+
+    <span class="c1"># Get squared L2 norm for each embedding. We can just take the diagonal of `dot_product`.</span>
+    <span class="c1"># This also provides more numerical stability (the diagonal of the result will be exactly 0).</span>
+    <span class="c1"># shape (batch_size,)</span>
+    <span class="n">square_norm</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">dot_product</span><span class="p">)</span>
+
+    <span class="c1"># Compute the pairwise distance matrix as we have:</span>
+    <span class="c1"># ||a - b||^2 = ||a||^2  - 2 &lt;a, b&gt; + ||b||^2</span>
+    <span class="c1"># shape (batch_size, batch_size)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">square_norm</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">dot_product</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">square_norm</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Because of computation errors, some distances might be negative so we put everything &gt;= 0.0</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">squared</span><span class="p">:</span>
+        <span class="c1"># Because the gradient of sqrt is infinite when distances == 0.0 (ex: on the diagonal)</span>
+        <span class="c1"># we need to add a small epsilon where distances == 0.0</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">to_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">+</span> <span class="n">mask</span> <span class="o">*</span> <span class="mf">1e-16</span>
+
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+
+        <span class="c1"># Correct the epsilon added: set the distances on the mask to be exactly 0.0</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">mask</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">distances</span>
+
+
+<span class="k">def</span> <span class="nf">_get_anchor_positive_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a 2D mask where mask[a, p] is True iff a and p are distinct and have same label.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+<span class="sd">    Returns</span>
+<span class="sd">        mask: tf.bool `Tensor` with shape [batch_size, batch_size]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check that i and j are distinct</span>
+    <span class="n">indices_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">indices_not_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">indices_equal</span><span class="p">)</span>
+
+    <span class="c1"># Check if labels[i] == labels[j]</span>
+    <span class="c1"># Uses broadcasting where the 1st argument has shape (1, batch_size) and the 2nd (batch_size, 1)</span>
+    <span class="n">labels_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Combine the two masks</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">indices_not_equal</span><span class="p">,</span> <span class="n">labels_equal</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mask</span>
+
+
+<span class="k">def</span> <span class="nf">_get_anchor_negative_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a 2D mask where mask[a, n] is True iff a and n have distinct labels.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+<span class="sd">    Returns</span>
+<span class="sd">        mask: tf.bool `Tensor` with shape [batch_size, batch_size]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if labels[i] != labels[k]</span>
+    <span class="c1"># Uses broadcasting where the 1st argument has shape (1, batch_size) and the 2nd (batch_size, 1)</span>
+    <span class="n">labels_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">labels_equal</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mask</span>
+
+
+<span class="k">def</span> <span class="nf">_get_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a 3D mask where mask[a, p, n] is True iff the triplet (a, p, n) is valid.</span>
+<span class="sd">    A triplet (i, j, k) is valid if:</span>
+<span class="sd">        - `i`, `j`, `k` are distinct</span>
+
+<span class="sd">        ::</span>
+<span class="sd">            labels[i] == labels[j] and labels[i] != labels[k]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check that i, j and k are distinct</span>
+    <span class="n">indices_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">indices_not_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">indices_equal</span><span class="p">)</span>
+    <span class="n">i_not_equal_j</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">indices_not_equal</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">i_not_equal_k</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">indices_not_equal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">j_not_equal_k</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">indices_not_equal</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">distinct_indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">i_not_equal_j</span><span class="p">,</span> <span class="n">i_not_equal_k</span><span class="p">),</span> <span class="n">j_not_equal_k</span><span class="p">)</span>
+
+
+    <span class="c1"># Check if labels[i] == labels[j] and labels[i] != labels[k]</span>
+    <span class="n">label_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">i_equal_j</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">label_equal</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">i_equal_k</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">label_equal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">valid_labels</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">i_equal_j</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">i_equal_k</span><span class="p">))</span>
+
+    <span class="c1"># Combine the two masks</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">distinct_indices</span><span class="p">,</span> <span class="n">valid_labels</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mask</span>
+
+
+<span class="k">def</span> <span class="nf">batch_all_triplet_loss</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build the triplet loss over a batch of embeddings.</span>
+<span class="sd">    We generate all the valid triplets and average the loss over the positive ones.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    labels: `tf.tensor`</span>
+<span class="sd">        labels of the batch, of size (batch_size,)</span>
+<span class="sd">    embeddings: `tf.tensor`</span>
+<span class="sd">        tensor of shape (batch_size, embed_dim)</span>
+<span class="sd">    margin: `float`</span>
+<span class="sd">        margin for triplet loss</span>
+<span class="sd">    squared: `Bool`</span>
+<span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
+<span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    triplet_loss: `tf.tensor`</span>
+<span class="sd">        scalar tensor containing the triplet loss</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the pairwise distance matrix</span>
+    <span class="n">pairwise_dist</span> <span class="o">=</span> <span class="n">_pairwise_distances</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">squared</span><span class="o">=</span><span class="n">squared</span><span class="p">)</span>
+
+    <span class="c1"># shape (batch_size, batch_size, 1)</span>
+    <span class="n">anchor_positive_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">pairwise_dist</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">anchor_positive_dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">anchor_positive_dist</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c1"># shape (batch_size, 1, batch_size)</span>
+    <span class="n">anchor_negative_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">pairwise_dist</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">anchor_negative_dist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">anchor_negative_dist</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="c1"># Compute a 3D tensor of size (batch_size, batch_size, batch_size)</span>
+    <span class="c1"># triplet_loss[i, j, k] will contain the triplet loss of anchor=i, positive=j, negative=k</span>
+    <span class="c1"># Uses broadcasting where the 1st argument has shape (batch_size, batch_size, 1)</span>
+    <span class="c1"># and the 2nd (batch_size, 1, batch_size)</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">anchor_positive_dist</span> <span class="o">-</span> <span class="n">anchor_negative_dist</span> <span class="o">+</span> <span class="n">margin</span>
+
+    <span class="c1"># Put to zero the invalid triplets</span>
+    <span class="c1"># (where label(a) != label(p) or label(n) == label(a) or a == p)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">_get_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">to_float</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">triplet_loss</span><span class="p">)</span>
+
+    <span class="c1"># Remove negative losses (i.e. the easy triplets)</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">triplet_loss</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Count number of positive triplets (where triplet_loss &gt; 0)</span>
+    <span class="n">valid_triplets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">to_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">greater</span><span class="p">(</span><span class="n">triplet_loss</span><span class="p">,</span> <span class="mf">1e-16</span><span class="p">))</span>
+    <span class="n">num_positive_triplets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">valid_triplets</span><span class="p">)</span>
+    <span class="n">num_valid_triplets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">fraction_positive_triplets</span> <span class="o">=</span> <span class="n">num_positive_triplets</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_valid_triplets</span> <span class="o">+</span> <span class="mf">1e-16</span><span class="p">)</span>
+
+    <span class="c1"># Get final mean triplet loss over the positive valid triplets</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">triplet_loss</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_positive_triplets</span> <span class="o">+</span> <span class="mf">1e-16</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">triplet_loss</span><span class="p">,</span> <span class="n">fraction_positive_triplets</span>
+
+
+<span class="k">def</span> <span class="nf">batch_hard_triplet_loss</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">squared</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build the triplet loss over a batch of embeddings.</span>
+<span class="sd">    For each anchor, we get the hardest positive and hardest negative to form a triplet.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    labels: `tf.tensor`</span>
+<span class="sd">        labels of the batch, of size (batch_size,)</span>
+<span class="sd">    embeddings: `tf.tensor`</span>
+<span class="sd">        tensor of shape (batch_size, embed_dim)</span>
+<span class="sd">    margin: `float`</span>
+<span class="sd">        margin for triplet loss</span>
+<span class="sd">    squared: `Bool`</span>
+<span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
+<span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    triplet_loss: `tf.tensor`</span>
+<span class="sd">        scalar tensor containing the triplet loss</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the pairwise distance matrix</span>
+    <span class="n">pairwise_dist</span> <span class="o">=</span> <span class="n">_pairwise_distances</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">squared</span><span class="o">=</span><span class="n">squared</span><span class="p">)</span>
+
+    <span class="c1"># For each anchor, get the hardest positive</span>
+    <span class="c1"># First, we need to get a mask for every valid positive (they should have same label)</span>
+    <span class="n">mask_anchor_positive</span> <span class="o">=</span> <span class="n">_get_anchor_positive_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">mask_anchor_positive</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">to_float</span><span class="p">(</span><span class="n">mask_anchor_positive</span><span class="p">)</span>
+
+    <span class="c1"># We put to 0 any element where (a, p) is not valid (valid if a != p and label(a) == label(p))</span>
+    <span class="n">anchor_positive_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">mask_anchor_positive</span><span class="p">,</span> <span class="n">pairwise_dist</span><span class="p">)</span>
+
+    <span class="c1"># shape (batch_size, 1)</span>
+    <span class="n">hardest_positive_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">anchor_positive_dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">&quot;hardest_positive_dist&quot;</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">hardest_positive_dist</span><span class="p">))</span>
+
+    <span class="c1"># For each anchor, get the hardest negative</span>
+    <span class="c1"># First, we need to get a mask for every valid negative (they should have different labels)</span>
+    <span class="n">mask_anchor_negative</span> <span class="o">=</span> <span class="n">_get_anchor_negative_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">mask_anchor_negative</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">to_float</span><span class="p">(</span><span class="n">mask_anchor_negative</span><span class="p">)</span>
+
+    <span class="c1"># We add the maximum value in each row to the invalid negatives (label(a) == label(n))</span>
+    <span class="n">max_anchor_negative_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">pairwise_dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">anchor_negative_dist</span> <span class="o">=</span> <span class="n">pairwise_dist</span> <span class="o">+</span> <span class="n">max_anchor_negative_dist</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">mask_anchor_negative</span><span class="p">)</span>
+
+    <span class="c1"># shape (batch_size,)</span>
+    <span class="n">hardest_negative_dist</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_min</span><span class="p">(</span><span class="n">anchor_negative_dist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">&quot;hardest_negative_dist&quot;</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">hardest_negative_dist</span><span class="p">))</span>
+
+    <span class="c1"># Combine biggest d(a, p) and smallest d(a, n) into final triplet loss</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">hardest_positive_dist</span> <span class="o">-</span> <span class="n">hardest_negative_dist</span> <span class="o">+</span> <span class="n">margin</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Get final mean triplet loss</span>
+    <span class="n">triplet_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">triplet_loss</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">triplet_loss</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjfu-AI-Lab Fang HuangQiang.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.1.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

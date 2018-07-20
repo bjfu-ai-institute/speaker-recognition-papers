@@ -1,0 +1,571 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pyasv.model.deep_speaker &mdash; Python-ASV 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Python-ASV
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loss.html">Loss Function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../speech_processing.html">Speech Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_manage.html">Data manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Python-ASV</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>pyasv.model.deep_speaker</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pyasv.model.deep_speaker</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">pyasv.loss.triplet_loss</span> <span class="k">as</span> <span class="nn">triplet_loss</span>
+<span class="kn">from</span> <span class="nn">pyasv.data_manage</span> <span class="k">import</span> <span class="n">DataManage</span>
+<span class="kn">from</span> <span class="nn">pyasv.data_manage</span> <span class="k">import</span> <span class="n">DataManage4BigData</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DeepSpeaker"><a class="viewcode-back" href="../../../model.html#pyasv.model.deep_speaker.DeepSpeaker">[docs]</a><span class="k">class</span> <span class="nc">DeepSpeaker</span><span class="p">:</span>
+<div class="viewcode-block" id="DeepSpeaker.__init__"><a class="viewcode-back" href="../../../model.html#pyasv.model.deep_speaker.DeepSpeaker.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">out_channel</span><span class="o">=</span><span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Create deep speaker model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        config : ``config`` class.</span>
+<span class="sd">            The config of ctdnn model, no extra need.</span>
+<span class="sd">        out_channel : ``list``</span>
+<span class="sd">            The out channel of each res_block.</span>
+
+<span class="sd">            default</span>
+<span class="sd">            ::</span>
+<span class="sd">                out_channel = [64, 128, 256, 512]</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            There is no predict operation in deep speaker model.</span>
+<span class="sd">            Because we use the output of last layer as speaker vector.</span>
+<span class="sd">            we can use DeepSpeaker.feature to get these vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_blocks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_channel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_channel</span> <span class="o">=</span> <span class="n">out_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">N_SPEAKER</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_step</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">MAX_STEP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">N_GPU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conv_weight_decay</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">CONV_WEIGHT_DECAY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fc_weight_decay</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">FC_WEIGHT_DECAY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">SAVE_PATH</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bn_epsilon</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">BN_EPSILON</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">LR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">BATCH_SIZE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DeepSpeaker.run"><a class="viewcode-back" href="../../../model.html#pyasv.model.deep_speaker.DeepSpeaker.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">train_frames</span><span class="p">,</span>
+            <span class="n">train_labels</span><span class="p">,</span>
+            <span class="n">enroll_frames</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">enroll_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">test_frames</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">test_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run the deep speaker model. Will save model to save_path/ and save tensorboard to save_path/graph/.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        train_frames : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The feature array of train dataset.</span>
+<span class="sd">        train_labels : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The label array of train dataset.</span>
+<span class="sd">        enroll_frames : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The feature array of enroll dataset.</span>
+<span class="sd">        enroll_labels : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The label array of enroll dataset.</span>
+<span class="sd">        test_frames : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The feature array of test dataset.</span>
+<span class="sd">        test_labels : ``list`` or ``np.ndarray``</span>
+<span class="sd">            The label array of test dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">as_default</span><span class="p">():</span>
+            <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">ConfigProto</span><span class="p">(</span>
+                    <span class="n">allow_soft_placement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">log_device_placement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">))</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_build_train_graph</span><span class="p">()</span>
+                <span class="c1"># Make sure the format of data is np.ndarray</span>
+                <span class="n">train_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">train_frames</span><span class="p">)</span>
+                <span class="n">train_targets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">train_labels</span><span class="p">)</span>
+                <span class="n">enroll_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">enroll_frames</span><span class="p">)</span>
+                <span class="n">enroll_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">)</span>
+                <span class="n">test_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">test_frames</span><span class="p">)</span>
+                <span class="n">test_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">test_labels</span><span class="p">)</span>
+
+                <span class="n">train_data</span> <span class="o">=</span> <span class="n">DataManage</span><span class="p">(</span><span class="n">train_frames</span><span class="p">,</span> <span class="n">train_targets</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_size</span><span class="p">)</span>
+                <span class="n">initial</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">global_variables_initializer</span><span class="p">()</span>
+                <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+                <span class="n">saver</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Saver</span><span class="p">()</span>
+                <span class="n">train_op</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_step</span><span class="p">()</span>
+
+                <span class="c1"># initial tensorboard</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">FileWriter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span> <span class="s1">&#39;graph&#39;</span><span class="p">),</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">enroll_frames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">accuracy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_acc</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">enroll_frames</span><span class="p">,</span> <span class="n">enroll_labels</span><span class="p">,</span> <span class="n">test_frames</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+                    <span class="n">acc_summary</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">)</span>
+                <span class="c1"># record the memory usage and time of each step</span>
+                <span class="n">run_options</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RunOptions</span><span class="p">(</span><span class="n">trace_level</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">RunOptions</span><span class="o">.</span><span class="n">FULL_TRACE</span><span class="p">)</span>
+                <span class="n">run_metadata</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RunMetadata</span><span class="p">()</span>
+
+                <span class="c1"># define tensorboard steps</span>
+
+                <span class="n">merged_summary</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">merge_all</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_step</span><span class="p">):</span>
+                    <span class="n">inp_frames</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">inp_labels</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">):</span>
+                        <span class="n">frames</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">next_batch</span>
+                        <span class="n">inp_frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
+                        <span class="n">inp_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+                    <span class="n">inp_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">inp_frames</span><span class="p">)</span>
+                    <span class="n">inp_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">inp_labels</span><span class="p">)</span>
+                    <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train_op</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x:0&#39;</span><span class="p">:</span> <span class="n">inp_frames</span><span class="p">,</span> <span class="s1">&#39;y_:0&#39;</span><span class="p">:</span> <span class="n">inp_labels</span><span class="p">})</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">25</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_step</span><span class="p">:</span>
+                        <span class="n">saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">),</span> <span class="n">global_step</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+
+                <span class="n">INF</span> <span class="o">=</span> <span class="mh">0x3f3f3f3f</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">enroll_data</span> <span class="o">=</span> <span class="n">DataManage</span><span class="p">(</span><span class="n">enroll_frames</span><span class="p">,</span> <span class="n">enroll_labels</span><span class="p">,</span> <span class="n">INF</span><span class="p">)</span>
+                <span class="n">test_data</span> <span class="o">=</span> <span class="n">DataManage</span><span class="p">(</span><span class="n">test_frames</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">,</span> <span class="n">INF</span><span class="p">)</span>
+
+                <span class="n">get_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature</span>
+                <span class="n">frames</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">enroll_data</span><span class="o">.</span><span class="n">next_batch</span>
+                <span class="n">embeddings</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">get_vector</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x:0&#39;</span><span class="p">:</span> <span class="n">frames</span><span class="p">,</span> <span class="s1">&#39;y_:0&#39;</span><span class="p">:</span> <span class="n">labels</span><span class="p">})</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">[</span><span class="n">i</span><span class="p">])]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span> <span class="o">=</span> <span class="n">embeddings</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">)[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">embeddings</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">)[</span><span class="n">i</span><span class="p">]]</span> <span class="o">/=</span> <span class="mi">2</span>
+
+                <span class="n">frames</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">test_data</span><span class="o">.</span><span class="n">next_batch</span>
+                <span class="n">embeddings</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">get_vector</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x:0&#39;</span><span class="p">:</span> <span class="n">frames</span><span class="p">,</span> <span class="s1">&#39;y_:0&#39;</span><span class="p">:</span> <span class="n">labels</span><span class="p">})</span>
+
+                <span class="n">support</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)):</span>
+                    <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">label</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                        <span class="n">new_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cosine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">embeddings</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">new_score</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+                            <span class="n">label</span> <span class="o">=</span> <span class="n">key</span>
+                    <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">test_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                        <span class="n">support</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span> <span class="s1">&#39;result&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Acc is </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">support</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">embeddings</span><span class="p">))</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">feature</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The operation to get feature. ``property``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        feature: ``tf.operation``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The operation to get loss. ``property``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        loss : ``tf.operation``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loss</span>
+
+    <span class="k">def</span> <span class="nf">_build_pred_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_frames</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_targets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="s1">&#39;gpu_ind&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+                                        <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_build_train_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_frames</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_targets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="s1">&#39;gpu_ind&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+                                        <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">inp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_frames</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_targets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="p">])</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inference</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature</span> <span class="o">=</span> <span class="n">output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triplet_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">AdamOptimizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_learning_rate</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_blocks</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">inp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_residual_block</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channel</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;residual_block_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">,</span>
+                                           <span class="n">is_first_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+            <span class="k">else</span><span class="p">:</span>     
+                <span class="n">inp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_residual_block</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_channel</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;residual_block_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">,</span>
+                                           <span class="n">is_first_layer</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="n">inp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">avg_pool</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">ksize</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> 
+                             <span class="n">strides</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">)</span>
+
+        <span class="n">inp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span><span class="o">.</span><span class="n">as_list</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">weight_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="s2">&quot;affine_weight&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span><span class="o">.</span><span class="n">as_list</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">512</span><span class="p">],</span>
+                                           <span class="n">weight_type</span><span class="o">=</span><span class="s2">&quot;FC&quot;</span><span class="p">)</span>
+        
+        <span class="n">bias_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="s2">&quot;affine_bias&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">512</span><span class="p">],</span> <span class="s2">&quot;FC&quot;</span><span class="p">)</span>
+
+        <span class="n">inp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">weight_affine</span><span class="p">)</span> <span class="o">+</span> <span class="n">bias_affine</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span><span class="o">.</span><span class="n">as_list</span><span class="p">())</span>
+
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">moments</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="s1">&#39;output_beta&#39;</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                               <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="s1">&#39;output_gamma&#39;</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                                <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">batch_normalization</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bn_epsilon</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="k">def</span> <span class="nf">_residual_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out_channel</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">is_first_layer</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">inp_channel</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span><span class="o">.</span><span class="n">as_list</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">inp_channel</span><span class="o">*</span><span class="mi">2</span> <span class="o">==</span> <span class="n">out_channel</span><span class="p">:</span>
+            <span class="n">increased</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">stride</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">increased</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">is_first_layer</span><span class="p">:</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_conv&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">inp_channel</span><span class="p">,</span> <span class="n">out_channel</span><span class="p">],</span>
+                                        <span class="n">weight_type</span><span class="o">=</span><span class="s2">&quot;Conv&quot;</span><span class="p">)</span>
+            <span class="n">conv1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">conv1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relu_conv_layer</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">inp_channel</span><span class="p">,</span> <span class="n">out_channel</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_conv1&quot;</span><span class="p">,</span>
+                                          <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">,</span> <span class="n">bn_after_conv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">conv2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relu_conv_layer</span><span class="p">(</span><span class="n">conv1</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">out_channel</span><span class="p">,</span> <span class="n">out_channel</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_conv2&quot;</span><span class="p">,</span>
+                                      <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">,</span> <span class="n">bn_after_conv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">increased</span><span class="p">:</span>
+            <span class="n">pool_inp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">avg_pool</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">ksize</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                                      <span class="n">strides</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">)</span>
+            <span class="n">padded_inp</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">pool_inp</span><span class="p">,</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">inp_channel</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">inp_channel</span><span class="o">//</span><span class="mi">2</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">padded_inp</span> <span class="o">=</span> <span class="n">inp</span>
+        <span class="k">return</span> <span class="n">conv2</span> <span class="o">+</span> <span class="n">padded_inp</span>
+
+    <span class="k">def</span> <span class="nf">_triplet_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">triplet_loss</span><span class="o">.</span><span class="n">batch_hard_triplet_loss</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span>
+
+    <span class="k">def</span> <span class="nf">_batch_normalization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">moments</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_beta&#39;</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                               <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_gamma&#39;</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                                <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant_initializer</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">bn_layer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">batch_normalization</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bn_epsilon</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bn_layer</span>
+
+    <span class="k">def</span> <span class="nf">_relu_fc_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">weight_shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">units</span><span class="p">]</span>
+        <span class="n">bias_shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">units</span><span class="p">]</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_weight&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">weight_shape</span><span class="p">,</span>
+                                    <span class="n">weight_type</span><span class="o">=</span><span class="s2">&quot;FC&quot;</span><span class="p">)</span>
+        <span class="n">bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_bias&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">bias_shape</span><span class="p">,</span>
+                                  <span class="n">weight_type</span><span class="o">=</span><span class="s2">&quot;Conv&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">bias</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_relu_conv_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">filter_shape</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span>
+                         <span class="n">name</span><span class="p">,</span> <span class="n">bn_after_conv</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_variable</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;_filter&quot;</span><span class="p">,</span> <span class="n">filter_shape</span><span class="p">,</span> <span class="s2">&quot;Conv&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bn_after_conv</span><span class="p">:</span>
+            <span class="n">conv_layer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span>
+                                      <span class="n">strides</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
+            <span class="n">bn_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_normalization</span><span class="p">(</span><span class="n">conv_layer</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">bn_layer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bn_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_normalization</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">relu_layer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">bn_layer</span><span class="p">)</span>
+            <span class="n">conv_layer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span><span class="n">relu_layer</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span>
+                                      <span class="n">strides</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">conv_layer</span>
+
+    <span class="k">def</span> <span class="nf">_new_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">weight_type</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">xavier_initializer</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">weight_type</span> <span class="o">==</span> <span class="s2">&quot;Conv&quot;</span><span class="p">:</span>
+            <span class="n">regularizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">l2_regularizer</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_conv_weight_decay</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">regularizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">l2_regularizer</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fc_weight_decay</span><span class="p">)</span>
+        <span class="n">new_var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">initializer</span><span class="o">=</span><span class="n">init</span><span class="p">,</span>
+                                  <span class="n">regularizer</span><span class="o">=</span><span class="n">regularizer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_var</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_average_gradients</span><span class="p">(</span><span class="n">grads</span><span class="p">):</span>  <span class="c1"># grads:[[grad0, grad1,..], [grad0,grad1,..]..]</span>
+        <span class="n">averaged_grads</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">grads_per_var</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">grads</span><span class="p">):</span>
+            <span class="n">grads</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">grad</span> <span class="ow">in</span> <span class="n">grads_per_var</span><span class="p">:</span>
+                <span class="n">expanded_grad</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">grads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">expanded_grad</span><span class="p">)</span>
+            <span class="n">grads</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">grads</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">averaged_grads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">grads</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">averaged_grads</span>
+
+    <span class="k">def</span> <span class="nf">_validation_acc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enroll_frames</span><span class="p">,</span> <span class="n">enroll_labels</span><span class="p">,</span> <span class="n">test_frames</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">,</span> <span class="n">sess</span><span class="p">):</span>
+        <span class="n">enroll_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">enroll_frames</span><span class="p">[:</span><span class="mi">200</span><span class="p">])</span>
+        <span class="n">enroll_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">[:</span><span class="mi">200</span><span class="p">])</span>
+
+        <span class="c1"># if the labels aren&#39;t one-hot encode, convert them to one-hot</span>
+
+        <span class="n">enroll_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="n">enroll_frames</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">enroll_l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="n">enroll_frames</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">))</span>
+
+        <span class="n">enroll_f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="o">.</span><span class="n">eval</span><span class="p">()]</span> <span class="o">=</span> <span class="n">enroll_frames</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">enroll_l</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="o">.</span><span class="n">eval</span><span class="p">()]</span> <span class="o">=</span> <span class="n">enroll_labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">)</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature</span><span class="p">,</span>
+                            <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x:0&#39;</span><span class="p">:</span> <span class="n">enroll_f</span><span class="p">,</span> <span class="s1">&#39;y_:0&#39;</span><span class="p">:</span> <span class="n">enroll_l</span><span class="p">})</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">enroll_labels</span><span class="p">)</span> <span class="o">==</span> <span class="n">i</span><span class="p">])</span>
+
+        <span class="n">test_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="n">test_frames</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">test_l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">,</span> <span class="n">test_frames</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">))</span>
+
+        <span class="n">test_f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="o">.</span><span class="n">eval</span><span class="p">()]</span> <span class="o">=</span> <span class="n">test_frames</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">test_l</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="o">.</span><span class="n">eval</span><span class="p">()]</span> <span class="o">=</span> <span class="n">test_labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">)</span>
+
+        <span class="n">features</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature</span><span class="p">,</span>
+                            <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;x:0&#39;</span><span class="p">:</span> <span class="n">test_f</span><span class="p">,</span> <span class="s1">&#39;y_:0&#39;</span><span class="p">:</span> <span class="n">test_l</span><span class="p">})</span>
+
+        <span class="n">tot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># print(features.shape[0])</span>
+        <span class="k">for</span> <span class="n">vec_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">spkr_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_speaker</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cosine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">spkr_id</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">vec_id</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cosine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vectors</span><span class="p">[</span><span class="n">spkr_id</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">vec_id</span><span class="p">])</span>
+                    <span class="n">pred</span> <span class="o">=</span> <span class="n">spkr_id</span>
+            <span class="k">if</span> <span class="n">pred</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">test_labels</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="n">vec_id</span><span class="p">]:</span>
+                <span class="n">acc</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">acc</span> <span class="o">/</span> <span class="n">tot</span>
+
+    <span class="k">def</span> <span class="nf">_cosine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector1</span><span class="p">,</span> <span class="n">vector2</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vector1</span><span class="p">,</span> <span class="n">vector2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector2</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">grads</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_gpu</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;/gpu:</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gpu_ind</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">gradient_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opt</span><span class="o">.</span><span class="n">compute_gradients</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">)</span>
+                <span class="n">grads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gradient_all</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;/cpu:0&quot;</span><span class="p">):</span>
+            <span class="n">ave_grads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_average_gradients</span><span class="p">(</span><span class="n">grads</span><span class="p">)</span>
+            <span class="n">train_op</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opt</span><span class="o">.</span><span class="n">apply_gradients</span><span class="p">(</span><span class="n">ave_grads</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">train_op</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjfu-AI-Lab Fang HuangQiang.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.1.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

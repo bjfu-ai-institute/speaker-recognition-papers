@@ -1,0 +1,409 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pyasv.speech_processing &mdash; Python-ASV 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Python-ASV
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../loss.html">Loss Function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../speech_processing.html">Speech Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_manage.html">Data manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Python-ASV</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>pyasv.speech_processing</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pyasv.speech_processing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. automethod:: pyasv.speech_processing.ext_mfcc_feature</span>
+
+<span class="sd">.. automethod:: pyasv.speech_processing.ext_fbank_feature</span>
+
+<span class="sd">.. automethod:: pyasv.speech_processing.calc_fbank</span>
+
+<span class="sd">.. automethod:: pyasv.speech_processing.calc_cqcc</span>
+
+<span class="sd">.. automethod:: pyasv.speech_processing.cqcc_resample</span>
+
+<span class="sd">.. automethod:: pyasv.speech_processing.slide_windows</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">librosa</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">signal</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">resampy</span>
+<span class="kn">from</span> <span class="nn">scipy.io.wavfile</span> <span class="k">import</span> <span class="n">read</span>
+<span class="kn">from</span> <span class="nn">scipy.fftpack</span> <span class="k">import</span> <span class="n">dct</span>
+
+
+<span class="k">def</span> <span class="nf">slide_windows</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;concat the feature with the frame before and after it.</span>
+<span class="sd">    :param feature: feature of an audio file. The type is list ornp.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">!=</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+    <span class="n">result_</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">49</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">50</span><span class="p">]))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result_</span><span class="p">)</span>  
+    <span class="k">return</span> <span class="n">result</span>
+        
+
+<span class="k">def</span> <span class="nf">ext_mfcc_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function is used for extract MFCC feature of a dataset.</span>
+
+<span class="sd">    :param url_path: The path of the &#39;PATH&#39; file. The file contain the path</span>
+<span class="sd">                     to all audio and its number in the dataset.</span>
+<span class="sd">                     The contents of the file should be as follows:</span>
+<span class="sd">                     xxxxx/your_data_path/1_1.wav 0</span>
+<span class="sd">                     xxxxx/your_data_path/1_2.wav 0</span>
+<span class="sd">                     xxxxx/your_data_path/2_1.wav 1</span>
+
+<span class="sd">    :param config: The type is config class. We only need to know the save path, so we can use same config with model.</span>
+
+<span class="sd">    :return mfccs: The mfcc feature of this dataset. Each frame concat with its before and after frames.</span>
+
+<span class="sd">    :return labels: The labels of this dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
+        <span class="n">mfccs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">urls</span><span class="p">):</span>
+            <span class="n">url</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">y</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">mfcc_</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">mfcc</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">n_mfcc</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+            <span class="n">mfcc_delta</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">delta</span><span class="p">(</span><span class="n">mfcc_</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">mfcc_delta_delta</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">delta</span><span class="p">(</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">mfcc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">mfcc_delta_delta</span><span class="p">])])</span>
+            <span class="n">mfcc</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">mfcc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mfcc</span><span class="p">:</span>
+                <span class="n">mfccs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mfccs</span><span class="p">,</span> <span class="n">labels</span>
+
+
+<span class="k">def</span> <span class="nf">ext_fbank_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function is used for extract features of one dataset.</span>
+
+<span class="sd">    :param url_path: The path of the &#39;PATH&#39; file. The file contain the path</span>
+<span class="sd">                     to all audio and its number in the dataset.</span>
+<span class="sd">                     The contents of the file should be as follows:</span>
+<span class="sd">                     xxxxx/your_data_path/1_1.wav 0</span>
+<span class="sd">                     xxxxx/your_data_path/1_2.wav 0</span>
+<span class="sd">                     xxxxx/your_data_path/2_1.wav 1</span>
+
+<span class="sd">    :return: The feature array. each frame concat with the frame before and after it.</span>
+
+<span class="sd">    :TODO：changeable concat size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
+        <span class="n">fbanks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">urls</span><span class="p">):</span>
+            <span class="n">url</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1">#label = np.zeros(config.N_SPEAKER)</span>
+            <span class="c1">#label[index] = 1</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            # I am not sure I use librosa in right way.</span>
+<span class="sd">            y, sr = librosa.load(url)</span>
+<span class="sd">            stft = librosa.core.stft(y)</span>
+<span class="sd">            melW=librosa.filters.mel(sr=sr, n_fft=2048,n_mels=40,fmin=0.,fmax=22100)</span>
+<span class="sd">            melW /= np.max(melW, axis=-1)[:,None]</span>
+<span class="sd">            fbank = np.dot(stft.T, melW.T)</span>
+<span class="sd">            fbank = slide_windows(fbank)</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">fbank</span> <span class="o">=</span> <span class="n">calc_fbank</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">fbank</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">fbank</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fbank</span><span class="p">:</span>
+                <span class="n">fbanks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fbanks</span><span class="p">,</span> <span class="n">labels</span>
+
+
+<span class="k">def</span> <span class="nf">calc_fbank</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate Fbank feature of a audio file.</span>
+
+<span class="sd">    :param url: Path to the audio file.</span>
+
+<span class="sd">    :return: Fbank feature of this audio.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_rate</span><span class="p">,</span> <span class="n">signal</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">pre_emphasis</span> <span class="o">=</span> <span class="mf">0.97</span>
+    <span class="n">frame_size</span> <span class="o">=</span> <span class="mf">0.025</span>
+    <span class="n">frame_stride</span> <span class="o">=</span> <span class="mf">0.010</span>
+    <span class="n">NFFT</span> <span class="o">=</span> <span class="mi">512</span>
+    <span class="n">nfilt</span> <span class="o">=</span> <span class="mi">64</span>
+    
+    <span class="n">emphasized_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">signal</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">pre_emphasis</span> <span class="o">*</span> <span class="n">signal</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># convert from seconds to samples</span>
+    <span class="n">frame_length</span><span class="p">,</span> <span class="n">frame_step</span> <span class="o">=</span> <span class="n">frame_size</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">frame_stride</span> <span class="o">*</span> <span class="n">sample_rate</span>  
+    <span class="n">signal_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">emphasized_signal</span><span class="p">)</span>
+    <span class="n">frame_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">frame_length</span><span class="p">))</span>
+    <span class="n">frame_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">frame_step</span><span class="p">))</span>
+    <span class="c1"># Make sure that we have at least 1 frame</span>
+    <span class="n">num_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal_length</span> <span class="o">-</span> <span class="n">frame_length</span><span class="p">))</span> <span class="o">/</span> <span class="n">frame_step</span><span class="p">))</span>
+
+    <span class="n">pad_signal_length</span> <span class="o">=</span> <span class="n">num_frames</span> <span class="o">*</span> <span class="n">frame_step</span> <span class="o">+</span> <span class="n">frame_length</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">pad_signal_length</span> <span class="o">-</span> <span class="n">signal_length</span><span class="p">))</span>
+
+    <span class="c1"># Pad Signal to make sure that all frames have equal number of samples</span>
+    <span class="c1"># without truncating any samples from the original signal</span>
+    <span class="n">pad_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">emphasized_signal</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> 
+
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">frame_length</span><span class="p">),</span> <span class="p">(</span><span class="n">num_frames</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> \
+              <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_frames</span> <span class="o">*</span> <span class="n">frame_step</span><span class="p">,</span> <span class="n">frame_step</span><span class="p">),</span> <span class="p">(</span><span class="n">frame_length</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="n">pad_signal</span><span class="p">[</span><span class="n">indices</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+    <span class="n">frames</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">hamming</span><span class="p">(</span><span class="n">frame_length</span><span class="p">)</span>
+    <span class="n">mag_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="n">NFFT</span><span class="p">))</span>  <span class="c1"># Magnitude of the FFT</span>
+    <span class="n">pow_frames</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">NFFT</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">mag_frames</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># Power Spectrum</span>
+
+    <span class="n">low_freq_mel</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">high_freq_mel</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2595</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">sample_rate</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">700</span><span class="p">))</span>  <span class="c1"># Convert Hz to Mel</span>
+    <span class="n">mel_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">low_freq_mel</span><span class="p">,</span> <span class="n">high_freq_mel</span><span class="p">,</span> <span class="n">nfilt</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># Equally spaced in Mel scale</span>
+    <span class="n">hz_points</span> <span class="o">=</span> <span class="p">(</span><span class="mi">700</span> <span class="o">*</span> <span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="n">mel_points</span> <span class="o">/</span> <span class="mi">2595</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># Convert Mel to Hz</span>
+    <span class="nb">bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">NFFT</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">hz_points</span> <span class="o">/</span> <span class="n">sample_rate</span><span class="p">)</span>
+
+    <span class="n">fbank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nfilt</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">NFFT</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))))</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nfilt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">f_m_minus</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>   <span class="c1"># left</span>
+        <span class="n">f_m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>             <span class="c1"># center</span>
+        <span class="n">f_m_plus</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>    <span class="c1"># right</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">f_m_minus</span><span class="p">,</span> <span class="n">f_m</span><span class="p">):</span>
+            <span class="n">fbank</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">-</span> <span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">f_m</span><span class="p">,</span> <span class="n">f_m_plus</span><span class="p">):</span>
+            <span class="n">fbank</span><span class="p">[</span><span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">bin</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="nb">bin</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+    <span class="n">filter_banks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pow_frames</span><span class="p">,</span> <span class="n">fbank</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">filter_banks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">filter_banks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">filter_banks</span><span class="p">)</span>  <span class="c1"># Numerical Stability</span>
+    <span class="n">filter_banks</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">)</span>
+    <span class="n">filter_banks</span> <span class="o">-=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filter_banks</span>
+
+
+<span class="k">def</span> <span class="nf">calc_cqcc</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate CQCC feature of a audio file.</span>
+
+<span class="sd">    :param url: path ot the audio file.</span>
+
+<span class="sd">    :return: CQCC feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">constant_q</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">cqt</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">)</span>
+    <span class="n">cqt_abs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">constant_q</span><span class="p">)</span>
+    <span class="n">cqt_abs_square</span> <span class="o">=</span> <span class="n">cqt_abs</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">cqt_spec</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">amplitude_to_db</span><span class="p">(</span><span class="n">cqt_abs_square</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="n">cqt_resampy_spec</span> <span class="o">=</span> <span class="n">cqcc_resample</span><span class="p">(</span><span class="n">cqt_spec</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="mi">44000</span><span class="p">)</span>
+    <span class="n">cqcc</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">fftpack</span><span class="o">.</span><span class="n">dct</span><span class="p">(</span><span class="n">cqt_resampy_spec</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cqcc</span>
+
+
+<span class="k">def</span> <span class="nf">cqcc_resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fs_orig</span><span class="p">,</span> <span class="n">fs_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;implement the resample operation of CQCC</span>
+<span class="sd">    :param s: spectrogram</span>
+<span class="sd">    :param fs_orig: origin sample rate</span>
+<span class="sd">    :param fs_new:  new sample rate</span>
+<span class="sd">    :param axis: the resample axis</span>
+<span class="sd">    :return: spectrogram after resample</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_orig</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_new</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">resampy</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">sr_orig</span><span class="o">=</span><span class="n">fs_orig</span><span class="p">,</span> <span class="n">sr_new</span><span class="o">=</span><span class="n">fs_new</span><span class="p">,</span>
+                             <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjfu-AI-Lab Fang HuangQiang.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,2 +1,0 @@
-from src.loss.triplet_loss import batch_hard_triplet_loss
-from src.loss.triplet_loss import batch_all_triplet_loss

@@ -9,6 +9,7 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # Windows Installer files
+*.bat
 *.cab
 *.msi
 *.msm
@@ -58,4 +59,13 @@ mydense*
 
 #
 src/model/dualpathnet.py
-run_*.py
+docs/build/
+.idea/*
+pyasv/setup.py
+pyasv/test.py
+pyasv/run_*.py
+
+# temp
+pyasv/MANIFEST.in
+pyasv/README.txt
+pyasv/LICENSE.txt

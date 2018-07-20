@@ -1,0 +1,4 @@
+.. autoclass:: src.model.ctdnn.CTDnn
+    :members:
+
+    .. automethod:: __init__

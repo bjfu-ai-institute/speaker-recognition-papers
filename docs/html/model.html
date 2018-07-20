@@ -1,0 +1,474 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Model &mdash; Python-ASV 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Config" href="config.html" />
+    <link rel="prev" title="Loss Function" href="loss.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Python-ASV
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="loss.html">Loss Function</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ctdnn">CTDNN</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deepspeaker">DeepSpeaker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#max-feature-map-model">Max Feature Map model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speech_processing.html">Speech Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_manage.html">Data manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Python-ASV</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/model.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="model">
+<h1>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ctdnn">
+<h2>CTDNN<a class="headerlink" href="#ctdnn" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Full_info_deep_speaker_feature_learning.pdf">*Paper name*</a>.</p>
+<blockquote>
+<div>FULL-INFO TRAINING FOR DEEP SPEAKER FEATURE LEARNING</div></blockquote>
+<p><em>author</em></p>
+<blockquote>
+<div>Lantian Li, Zhiyuan Tang, Dong Wang, Thomas Fang Zheng</div></blockquote>
+<dl class="class">
+<dt id="pyasv.model.ctdnn.CTDnn">
+<em class="property">class </em><code class="descclassname">pyasv.model.ctdnn.</code><code class="descname">CTDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyasv.model.ctdnn.CTDnn.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create ctdnn model.</p>
+<dl class="docutils">
+<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd>The config of ctdnn model, no extra need.</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.ctdnn.CTDnn.feature">
+<code class="descname">feature</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get feature. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.ctdnn.CTDnn.loss">
+<code class="descname">loss</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get loss. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.ctdnn.CTDnn.prediction">
+<code class="descname">prediction</code><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get predict operation. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>prediction: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.model.ctdnn.CTDnn.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em>, <em>need_prediction_now=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the ctdnn model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
+<dl class="docutils">
+<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of train dataset.</dd>
+<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of train dataset.</dd>
+<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of enroll dataset.</dd>
+<dt>enroll_labels=None <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></dt>
+<dd>The label array of enroll dataset.</dd>
+<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of test dataset.</dd>
+<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of test dataset.</dd>
+<dt>need_prediction_now <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
+<dd>if <em>True</em> we will create predict graph and run predict now.
+if <em>False</em> we will exit after training.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.model.ctdnn.CTDnn.run_predict">
+<code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.run_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run prediction, will save the result to save_path/result.txt</p>
+<dl class="docutils">
+<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of enroll dataset.</dd>
+<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label of enrol dataset.</dd>
+<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of test dataset.</dd>
+<dt>test_labels :</dt>
+<dd>The label of test dataset.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="deepspeaker">
+<h2>DeepSpeaker<a class="headerlink" href="#deepspeaker" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Deep%20Speaker%20an%20End-to-End%20Neural%20Speaker%20Embedding%20System.pdf">*Paper name*</a>.</p>
+<blockquote>
+<div>Deep Speaker: an End-to-End Neural Speaker Embedding System</div></blockquote>
+<p><em>author</em></p>
+<blockquote>
+<div>Chao Li∗, Xiaokong Ma∗, Bing Jiang∗, Xiangang Li ∗ Xuewei Zhang, Xiao Liu, Ying Cao, Ajay Kannan, Zhenyao Zhu</div></blockquote>
+<dl class="class">
+<dt id="pyasv.model.deep_speaker.DeepSpeaker">
+<em class="property">class </em><code class="descclassname">pyasv.model.deep_speaker.</code><code class="descname">DeepSpeaker</code><span class="sig-paren">(</span><em>config, out_channel=[64, 128, 256, 512]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyasv.model.deep_speaker.DeepSpeaker.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config, out_channel=[64, 128, 256, 512]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create deep speaker model.</p>
+<dl class="docutils">
+<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd>The config of ctdnn model, no extra need.</dd>
+<dt>out_channel <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first">The out channel of each res_block.</p>
+<p>default</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">out_channel</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">There is no predict operation in deep speaker model.
+Because we use the output of last layer as speaker vector.
+we can use DeepSpeaker.feature to get these vector.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.deep_speaker.DeepSpeaker.feature">
+<code class="descname">feature</code><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get feature. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.deep_speaker.DeepSpeaker.loss">
+<code class="descname">loss</code><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get loss. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.model.deep_speaker.DeepSpeaker.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the deep speaker model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
+<dl class="docutils">
+<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of train dataset.</dd>
+<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of train dataset.</dd>
+<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of enroll dataset.</dd>
+<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of enroll dataset.</dd>
+<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of test dataset.</dd>
+<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of test dataset.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="max-feature-map-model">
+<h2>Max Feature Map model<a class="headerlink" href="#max-feature-map-model" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/DEEP_CNN_BASED_FEATURE_EXTRACTOR_FOR_TEXT-PROMPTED_SPEAKER.pdf">*Paper name*</a>.</p>
+<blockquote>
+<div>DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKER RECOGNITION</div></blockquote>
+<p><em>author</em></p>
+<blockquote>
+<div>Sergey Novoselov1,2, Oleg Kudashev2, Vadim Shchemelinin1, Ivan Kremnev3, Galina Lavrentyeva1</div></blockquote>
+<dl class="class">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn">
+<em class="property">class </em><code class="descclassname">pyasv.model.max_feature_map_dnn_model.</code><code class="descname">MaxFeatureMapDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Max feature Map model.</p>
+<dl class="docutils">
+<dt>config <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code> class.</span></dt>
+<dd>The config of MFM model, no extra need.</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The compute graph will not be created by <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature">
+<code class="descname">feature</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get feature. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>feature: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss">
+<code class="descname">loss</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operation to get loss. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>loss : <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction">
+<code class="descname">prediction</code><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get predict operation. <code class="docutils literal notranslate"><span class="pre">property</span></code></p>
+<p>prediction: <code class="docutils literal notranslate"><span class="pre">tf.operation</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>train_frames</em>, <em>train_labels</em>, <em>enroll_frames=None</em>, <em>enroll_labels=None</em>, <em>test_frames=None</em>, <em>test_labels=None</em>, <em>need_prediction_now=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the MFM model. Will save model to save_path/ and save tensorboard to save_path/graph/.</p>
+<dl class="docutils">
+<dt>train_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of train dataset.</dd>
+<dt>train_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of train dataset.</dd>
+<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of enroll dataset.</dd>
+<dt>enroll_labels=None <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></dt>
+<dd>The label array of enroll dataset.</dd>
+<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of test dataset.</dd>
+<dt>test_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label array of test dataset.</dd>
+<dt>need_prediction_now <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt>
+<dd>if <em>True</em> we will create predict graph and run predict now.
+if <em>False</em> we will exit after training.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict">
+<code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run prediction, will save the result to save_path/result.txt</p>
+<dl class="docutils">
+<dt>enroll_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of enroll dataset.</dd>
+<dt>enroll_labels <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The label of enrol dataset.</dd>
+<dt>test_frames <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd>The feature array of test dataset.</dd>
+<dt>test_labels :</dt>
+<dd>The label of test dataset.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="config.html" class="btn btn-neutral float-right" title="Config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="loss.html" class="btn btn-neutral" title="Loss Function" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Bjfu-AI-Lab Fang HuangQiang.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
