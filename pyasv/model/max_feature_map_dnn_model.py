@@ -168,7 +168,7 @@ class MaxFeatureMapDnn:
 
     @property
     def loss(self):
-        """The operation to get loss. ``property``
+        """A ``property`` member to get loss.
 
         Returns
         -------
@@ -178,7 +178,7 @@ class MaxFeatureMapDnn:
 
     @property
     def prediction(self):
-        """Get predict operation. ``property``
+        """A ``property`` member to do predict operation.
 
         Returns
         -------
@@ -188,7 +188,7 @@ class MaxFeatureMapDnn:
 
     @property
     def feature(self):
-        """The operation to get feature. ``property``
+        """A ``property`` member to get feature.
 
         Returns
         -------

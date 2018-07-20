@@ -175,16 +175,16 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    embeddings: `tf.tensor`.</span>
+<span class="sd">    embeddings: ``tf.tensor``.</span>
 <span class="sd">        The shape is (batch_size, embed_dim)</span>
 
-<span class="sd">    squared: `Bool`.</span>
+<span class="sd">    squared: ``Bool``.</span>
 <span class="sd">        If `True`, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If `False`, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    pairwise_distances: `tf.tensor`</span>
+<span class="sd">    pairwise_distances: ``tf.tensor``</span>
 <span class="sd">        The shape is (batch_size, batch_size)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the dot product between all embeddings</span>
@@ -296,19 +296,19 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    labels: `tf.tensor`</span>
+<span class="sd">    labels: ``tf.tensor``</span>
 <span class="sd">        labels of the batch, of size (batch_size,)</span>
-<span class="sd">    embeddings: `tf.tensor`</span>
+<span class="sd">    embeddings: ``tf.tensor``</span>
 <span class="sd">        tensor of shape (batch_size, embed_dim)</span>
-<span class="sd">    margin: `float`</span>
+<span class="sd">    margin: ``float``</span>
 <span class="sd">        margin for triplet loss</span>
-<span class="sd">    squared: `Bool`</span>
+<span class="sd">    squared: ``Bool``</span>
 <span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    triplet_loss: `tf.tensor`</span>
+<span class="sd">    triplet_loss: ``tf.tensor``</span>
 <span class="sd">        scalar tensor containing the triplet loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the pairwise distance matrix</span>
@@ -354,19 +354,19 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    labels: `tf.tensor`</span>
+<span class="sd">    labels: ``tf.tensor``</span>
 <span class="sd">        labels of the batch, of size (batch_size,)</span>
-<span class="sd">    embeddings: `tf.tensor`</span>
+<span class="sd">    embeddings: ``tf.tensor``</span>
 <span class="sd">        tensor of shape (batch_size, embed_dim)</span>
 <span class="sd">    margin: `float`</span>
 <span class="sd">        margin for triplet loss</span>
-<span class="sd">    squared: `Bool`</span>
+<span class="sd">    squared: ``Bool``</span>
 <span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    triplet_loss: `tf.tensor`</span>
+<span class="sd">    triplet_loss: ``tf.tensor``</span>
 <span class="sd">        scalar tensor containing the triplet loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the pairwise distance matrix</span>

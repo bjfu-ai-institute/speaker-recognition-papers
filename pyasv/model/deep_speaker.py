@@ -148,7 +148,7 @@ class DeepSpeaker:
 
     @property
     def feature(self):
-        """The operation to get feature. ``property``
+        """A ``property`` member to get feature.
 
         Returns
         -------
@@ -158,7 +158,7 @@ class DeepSpeaker:
 
     @property
     def loss(self):
-        """The operation to get loss. ``property``
+        """A ``property`` member to get loss.
 
         Returns
         -------

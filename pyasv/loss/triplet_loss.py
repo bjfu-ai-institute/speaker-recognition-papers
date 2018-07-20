@@ -27,16 +27,16 @@ def _pairwise_distances(embeddings, squared=False):
 
     Parameters
     ----------
-    embeddings: `tf.tensor`.
+    embeddings: ``tf.tensor``.
         The shape is (batch_size, embed_dim)
 
-    squared: `Bool`.
+    squared: ``Bool``.
         If `True`, output is the pairwise squared euclidean distance matrix.
         If `False`, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    pairwise_distances: `tf.tensor`
+    pairwise_distances: ``tf.tensor``
         The shape is (batch_size, batch_size)
     """
     # Get the dot product between all embeddings
@@ -148,19 +148,19 @@ def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
 
     Parameters
     ----------
-    labels: `tf.tensor`
+    labels: ``tf.tensor``
         labels of the batch, of size (batch_size,)
-    embeddings: `tf.tensor`
+    embeddings: ``tf.tensor``
         tensor of shape (batch_size, embed_dim)
-    margin: `float`
+    margin: ``float``
         margin for triplet loss
-    squared: `Bool`
+    squared: ``Bool``
         If true, output is the pairwise squared euclidean distance matrix.
         If false, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    triplet_loss: `tf.tensor`
+    triplet_loss: ``tf.tensor``
         scalar tensor containing the triplet loss
     """
     # Get the pairwise distance matrix
@@ -206,19 +206,19 @@ def batch_hard_triplet_loss(labels, embeddings, margin, squared=False):
 
     Parameters
     ----------
-    labels: `tf.tensor`
+    labels: ``tf.tensor``
         labels of the batch, of size (batch_size,)
-    embeddings: `tf.tensor`
+    embeddings: ``tf.tensor``
         tensor of shape (batch_size, embed_dim)
     margin: `float`
         margin for triplet loss
-    squared: `Bool`
+    squared: ``Bool``
         If true, output is the pairwise squared euclidean distance matrix.
         If false, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    triplet_loss: `tf.tensor`
+    triplet_loss: ``tf.tensor``
         scalar tensor containing the triplet loss
     """
     # Get the pairwise distance matrix
