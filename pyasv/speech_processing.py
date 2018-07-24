@@ -33,6 +33,11 @@ cqcc_resample
 
 .. autofunction:: pyasv.speech_processing.cqcc_resample
 
+
+cmvn
+-------------
+
+.. autofuncion: pyasv.speech_processing.cmvn
 """
 import librosa
 import os
@@ -109,6 +114,7 @@ def ext_mfcc_feature(url_path):
             mfcc_delta = librosa.feature.delta(mfcc_, width=3)
             mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
             mfcc = np.vstack([mfcc_, np.vstack([mfcc_delta, mfcc_delta_delta])])
+            mfcc = cmvn(mfcc)
             mfcc = slide_windows(mfcc)
             for i in mfcc:
                 mfccs.append(i)
@@ -235,6 +241,7 @@ def calc_fbank(url):
     filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
     filter_banks = 20 * np.log10(filter_banks)
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
+    filter_banks = cmvn(filter_banks)
     return filter_banks
 
 
@@ -283,3 +290,29 @@ def cqcc_resample(s, fs_orig, fs_new, axis=0):
         s = resampy.resample(s, sr_orig=fs_orig, sr_new=fs_new,
                              axis=axis)
     return s
+
+
+def cmvn(feature):
+    """Apply cmvn to feature list/array.
+
+    Parameters
+    ----------
+    feature : ``np.ndarray``
+
+    returns
+    -------
+    ``np.ndarray``
+        the feature after cmvn.
+    """
+    if type(feature) == np.ndarray:
+        feature = np.array(feature)
+
+    N = feature.shape[0]
+    mean_m = np.sum(feature, axis=0) / N
+    std_m = np.sqrt(np.sum(feature ** 2, axis=0) / N - mean_m ** 2)
+    for col in range(feature.shape[1]):
+        if std_m[col] != 0:
+            feature[:, col] = (feature[:, col] - mean_m[col]) / std_m[col]
+        else:
+            feature[:, col] = feature[:, col] - mean_m[col]
+    return feature
