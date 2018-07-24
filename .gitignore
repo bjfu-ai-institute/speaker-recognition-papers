@@ -71,3 +71,5 @@ test*
 pyasv/MANIFEST.in
 pyasv/README.txt
 pyasv/LICENSE.txt
+pyasv/model/dense.py
+pyasv/model/dualpathnet.py
