@@ -58,7 +58,7 @@ test.py
 mydense*
 
 #
-src/model/dualpathnet.py
+pyasv/model/dualpathnet.py
 docs/build/
 .idea/*
 pyasv/setup.py
@@ -69,3 +69,5 @@ pyasv/run_*.py
 pyasv/MANIFEST.in
 pyasv/README.txt
 pyasv/LICENSE.txt
+pyasv/model/dense.py
+pyasv/model/dualpathnet.py
