@@ -167,9 +167,11 @@ class CTDnn:
                     current_time = time.time()
 
                     # print log
-                    print("-------")
+                    print("-----------------------")
                     print("No.%d step use %f sec" % (i, current_time - last_time))
-                    print("-------")
+                    if enroll_frames is not None:
+                        print("Acc = %f"%sess.run(accuracy))
+                    print("-----------------------")
                     last_time = time.time()
 
                     # record
@@ -300,8 +302,8 @@ class CTDnn:
         frames = batch_frames[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
         target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
         self._prediction, self._feature = self._inference(frames)
-        self._loss = -tf.reduce_mean(target*tf.log(tf.clip_by_value(self._prediction,
-                                                                    1e-8, tf.reduce_max(self._prediction))))
+        self._loss = -tf.reduce_mean(tf.reduce_sum(target*tf.log(tf.clip_by_value(self._prediction,
+                                                                                  1e-29, 1.0)), axis=1))
         """
         # Update vectors
         # pred_index = tf.argmax(output, axis=1)
@@ -365,7 +367,7 @@ class CTDnn:
 
         output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
 
-        return tf.nn.softmax(output), feature_layer, 
+        return output, feature_layer
         
     def _t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):

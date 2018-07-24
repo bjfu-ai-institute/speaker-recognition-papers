@@ -58,12 +58,14 @@ test.py
 mydense*
 
 #
-src/model/dualpathnet.py
+pyasv/model/dualpathnet.py
 docs/build/
 .idea/*
 pyasv/setup.py
 pyasv/test.py
 pyasv/run_*.py
+run_*.py
+test*
 
 # temp
 pyasv/MANIFEST.in

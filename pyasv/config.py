@@ -1,4 +1,4 @@
-import pickle as pkl
+import json
 import os
 
 
@@ -52,10 +52,10 @@ class Config:
             If the param "is_big_dataset" is False, this param should be None.
         """
         if config_path:
-            f = open(config_path, 'rb')
-            dic = pkl.load(f)
-            self = dic['config']
-            print("successfully load " + dic[name])
+            f = open(config_path, 'r')
+            dic = json.load(f)
+            self.__dict__ = dic
+
         else:
             self.BATCH_SIZE = batch_size
             self.N_GPU = n_gpu
@@ -116,7 +116,7 @@ class Config:
         name: ``str``.
             the name of your config file.
         """
-        f = open(os.path.join(self.SAVE_PATH, name+'.pkl'), 'wb+')
+        f = open(os.path.join(self.SAVE_PATH, name+'.json'), 'w')
         dic = {'config': self, 'name': name}
-        pkl.dump(dic, f)
+        json.dump(dic, f)
         f.close()
