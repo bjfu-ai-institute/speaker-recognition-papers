@@ -124,7 +124,7 @@ class CTDnn:
                     self._build_train_graph()
                 else:
                     self._build_train_graph()
-                    train_data = DataManage(train_frames, train_targets, self._batch_size - 1)
+                    train_data = DataManage(train_frames, train_targets, self._config)
 
                 # initial step
                 initial = tf.global_variables_initializer()
