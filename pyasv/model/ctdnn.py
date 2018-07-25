@@ -300,7 +300,7 @@ class CTDnn:
         batch_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1],name='x')
         batch_target = tf.placeholder(tf.float32, shape=[None, self._n_speaker], name='y_')
         frames = batch_frames[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
-        target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
+        target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :]
         self._prediction, self._feature = self._inference(frames)
         self._loss = -tf.reduce_mean(tf.reduce_sum(target*tf.log(tf.clip_by_value(self._prediction,
                                                                                   1e-29, 1.0)), axis=1))
