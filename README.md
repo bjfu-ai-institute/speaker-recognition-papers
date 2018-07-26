@@ -41,7 +41,7 @@ config = pyasv.Config(name='my_ctdnn_model',
                     save_path='/home/my_path')
 config.save('./my_config_path')
 
-config_deep_speaker = src.Config(config_path='./my_config_path')
+config_deep_speaker = pyasv.Config(config_path='./my_config_path')
 config_deep_speaker.set(name='my_deep_speaker_model',
                         conv_weight_decay=1e-3,
                         fc_weight_dacay=1e-3,

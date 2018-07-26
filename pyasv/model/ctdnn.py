@@ -125,7 +125,7 @@ class CTDnn:
                     self._build_train_graph()
                 else:
                     self._build_train_graph()
-                    train_data = DataManage(train_frames, train_targets, self._batch_size - 1)
+                    train_data = DataManage(train_frames, train_targets, self._config)
 
                 # initial step
                 initial = tf.global_variables_initializer()
@@ -172,6 +172,7 @@ class CTDnn:
                     current_time = time.time()
 
                     # print log
+
                     print("------------------------")
                     print("No.%d step use %f sec" % (i, current_time - last_time))
                     try:
@@ -307,10 +308,10 @@ class CTDnn:
         batch_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1], name='x')
         batch_target = tf.placeholder(tf.float32, shape=[None, self._n_speaker], name='y_')
         frames = batch_frames[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
-        target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
+        target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :]
         self._prediction, self._feature = self._inference(frames)
-        self._loss = -tf.reduce_mean(target*tf.log(tf.clip_by_value(self._prediction,
-                                                                    1e-8, tf.reduce_max(self._prediction))))
+        self._loss = -tf.reduce_mean(tf.reduce_sum(target*tf.log(tf.clip_by_value(self._prediction,
+                                                                                  1e-29, 1.0)), axis=1))
         """
         # Update vectors
         # pred_index = tf.argmax(output, axis=1)
@@ -374,7 +375,7 @@ class CTDnn:
 
         output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
 
-        return tf.nn.softmax(output), feature_layer, 
+        return output, feature_layer
         
     def _t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
