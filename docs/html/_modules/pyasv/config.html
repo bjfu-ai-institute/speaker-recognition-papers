@@ -158,11 +158,8 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-
-<span class="sd">    ::</span>
-
-<span class="sd">        # The normal way to create a config.</span>
-<span class="sd">        config = Config(name=&#39;CTDnn-config&#39;,</span>
+<span class="sd">    &gt;&gt;&gt;# The normal way to create a config.</span>
+<span class="sd">    &gt;&gt;&gt;config = Config(name=&#39;CTDnn-config&#39;,</span>
 <span class="sd">                        batch_size=65,</span>
 <span class="sd">                        n_gpu=4,</span>
 <span class="sd">                        max_step=100,</span>
@@ -171,7 +168,8 @@
 <span class="sd">                        url_of_bigdataset_temp_file=None,</span>
 <span class="sd">                        learning_rate=1e-3,</span>
 <span class="sd">                        save_path=&#39;/opt/user1/fhq/save/ctdnn&#39;)</span>
-<span class="sd">        config.save(name=&#39;ctdnn-config&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;# Load saved config.</span>
+<span class="sd">    &gt;&gt;&gt;config.save(name=&#39;ctdnn-config&#39;)</span>
 
 <span class="sd">    # Use config path to create a config</span>
 <span class="sd">    config = Config(config_path=&#39;/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl&#39;)</span>
@@ -193,13 +191,13 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        config_path: ``str``</span>
+<span class="sd">        config_path : ``str``</span>
 <span class="sd">            The path of config which you want to restore,</span>
 <span class="sd">            If you want to create a new config, this param should</span>
 <span class="sd">            be None.</span>
-<span class="sd">        is_big_dataset: ``bool``</span>
+<span class="sd">        is_big_dataset : ``bool``</span>
 <span class="sd">            If we store the features to disk and restore a part of feature each step.</span>
-<span class="sd">        url_of_bigdataset_temp_file: ``str``</span>
+<span class="sd">        url_of_bigdataset_temp_file : ``str``</span>
 <span class="sd">            To decide the save path of the features you want to restore.</span>
 <span class="sd">            If the param &quot;is_big_dataset&quot; is False, this param should be None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -265,7 +263,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        name: ``str``.</span>
+<span class="sd">        name : ``str``.</span>
 <span class="sd">            the name of your config file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.pkl&#39;</span><span class="p">),</span> <span class="s1">&#39;wb+&#39;</span><span class="p">)</span>

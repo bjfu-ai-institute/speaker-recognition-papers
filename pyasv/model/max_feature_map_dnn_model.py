@@ -8,10 +8,6 @@ import numpy as np
 from pyasv.data_manage import DataManage
 from pyasv.data_manage import DataManage4BigData
 
-"""
-Paper: DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKER
-"""
-
 
 class MaxFeatureMapDnn:
     def __init__(self, config):
@@ -29,9 +25,11 @@ class MaxFeatureMapDnn:
         """
         self._config = config
         self._batch_size = config.BATCH_SIZE
+        self._vectors = []
         self._n_gpu = config.N_GPU
         self._name = config.MODEL_NAME
         self._n_speaker = config.N_SPEAKER
+        self._gpu_ind = 0
         self._max_step = config.MAX_STEP
         self._is_big_dataset = config.IS_BIG_DATASET
         if self._is_big_dataset:
@@ -57,7 +55,7 @@ class MaxFeatureMapDnn:
             The label array of train dataset.
         enroll_frames : ``list`` or ``np.ndarray``
             The feature array of enroll dataset.
-        enroll_labels=None ``list`` or ``np.ndarray``
+        enroll_labels : ``list`` or ``np.ndarray``
             The label array of enroll dataset.
         test_frames : ``list`` or ``np.ndarray``
             The feature array of test dataset.
@@ -94,8 +92,8 @@ class MaxFeatureMapDnn:
                         frames, labels = train_data.next_batch
                         input_frames.append(frames)
                         input_labels.append(labels)
-                    input_frames = np.array(input_frames).reshape([self._n_gpu, self._batch_size, 9, 40, 1])
-                    input_labels = np.array(input_labels).reshape([self._n_gpu, self._batch_size, self._n_speaker])
+                    input_frames = np.array(input_frames).reshape([-1, 9, 40, 1])
+                    input_labels = np.array(input_labels).reshape([-1, self._n_speaker])
                     sess.run(train_op, feed_dict={'x:0': input_frames, 'y_:0': input_labels})
                     current_time = time.time()
                     print("No.%d step use %f sec" % (i, current_time - last_time))
@@ -183,7 +181,7 @@ class MaxFeatureMapDnn:
 
         Returns
         -------
-        prediction: ``tf.operation``
+        prediction : ``tf.operation``
         """
         return self._prediction
 
@@ -193,7 +191,7 @@ class MaxFeatureMapDnn:
 
         Returns
         -------
-        feature: ``tf.operation``
+        feature : ``tf.operation``
         """
         return self._feature
 
@@ -203,15 +201,14 @@ class MaxFeatureMapDnn:
         _, self._feature = self._inference(frames)   
 
     def _build_train_graph(self):
-        self._gpu_ind = tf.get_variable(name='gpu_ind', trainable=False 
-                            ,shape=[],dtype=tf.int32, initializer=tf.constant_initializer(value=0, dtype=tf.int32))
-        frames = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, 64], name='x')
-        labels = tf.placeholder(tf.float32, shape=[self._n_gpu, self._batch_size, self._n_speaker], name='y_')
-        out = self._inference(frames)
-        out_softmax, feature = tf.nn.softmax(out)
-        self._feature = feature
-        self._prediction = out_softmax
-        self._loss = -tf.reduce_mean(labels * tf.log(tf.clip_by_value( self._prediction, 1e-8, tf.reduce_max(self._prediction))))
+        frames = tf.placeholder(tf.float32, shape=[-1, 64, 1], name='x')
+        labels = tf.placeholder(tf.float32, shape=[-1, self._n_speaker], name='y_')
+        inp = frames[self._gpu_ind*self._batch_size:(self._gpu_ind+1)*self._batch_size, :, :, :]
+        label = labels[self._gpu_ind*self._batch_size:(self._gpu_ind+1)*self._batch_size, :, :, :]
+        out, mfm6 = self._inference(frames)
+        self._feature = out
+        self._prediction = out
+        self._loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=label, logits=out)
         self._opt = tf.train.AdamOptimizer(self._lr)
         self._opt.minimize(self._loss)
         self._saver = tf.train.Saver()
@@ -317,9 +314,38 @@ class MaxFeatureMapDnn:
                 average_grads.append(grad_and_var)
         return average_grads
 
-    def _validation_acc(self):
-        #TODO:
-        raise NotImplementedError
+    def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
+        enroll_frames = np.array(enroll_frames[:200])
+        enroll_labels = np.array(enroll_labels[:200])
+        test_labels = np.array(test_labels)
+
+        features = sess.run(self.feature,
+                            feed_dict={'x:0': enroll_frames, 'y_:0': enroll_labels})
+
+        for i in range(self._n_speaker):
+            self._vectors[i] = np.mean(features[np.max(enroll_labels) == i])
+
+        features = sess.run(self.feature,
+                            feed_dict={'x:0': test_frames, 'y_:0': test_labels})
+
+        tot = 0
+        acc = 0
+        # print(features.shape[0])
+        for vec_id in range(test_labels.shape[0]):
+            score = -1
+            pred = -1
+            tot += 1
+            for spkr_id in range(self._n_speaker):
+                if self._cosine(self._vectors[spkr_id], features[vec_id]) > score:
+                    score = self._cosine(self._vectors[spkr_id], features[vec_id])
+                    pred = spkr_id
+            if pred == np.argmax(test_labels, axis=1)[vec_id]:
+                acc += 1
+
+        return acc / tot
+
+    def _cosine(self, vector1, vector2):
+        return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
 
     def _train_step(self):
         grads = []

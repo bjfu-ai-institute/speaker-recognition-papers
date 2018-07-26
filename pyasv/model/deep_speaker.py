@@ -29,6 +29,7 @@ class DeepSpeaker:
         Because we use the output of last layer as speaker vector.
         we can use DeepSpeaker.feature to get these vector.
         """
+        self._gpu_ind = 0
         self.n_blocks = len(out_channel)
         self.out_channel = out_channel
         self._n_speaker = config.N_SPEAKER
@@ -153,7 +154,7 @@ class DeepSpeaker:
 
         Returns
         -------
-        feature: ``tf.operation``
+        feature : ``tf.operation``
         """
         return self._feature
 
@@ -168,19 +169,15 @@ class DeepSpeaker:
         return self._loss
 
     def _build_pred_graph(self):
-        self._batch_frames = tf.placeholder(tf.float32, shape=[None, 100, 64, 1])
-        self._batch_targets = tf.placeholder(tf.float32, shape=[None, 1])
-        self._gpu_ind = tf.get_variable('gpu_ind', shape=[], dtype=tf.int32,
-                                        initializer=tf.constant_initializer(value=0))
-        raise NotImplementedError
+        batch_frames = tf.placeholder(tf.float32, shape=[None, 100, 64, 1])
+        output = self._inference(batch_frames)
+        self._feature = output
 
     def _build_train_graph(self):
-        self._batch_frames = tf.placeholder(tf.float32, shape=[self._n_gpu, None, 100, 64, 1])
-        self._batch_targets = tf.placeholder(tf.float32, shape=[self._n_gpu, None, 1])
-        self._gpu_ind = tf.get_variable('gpu_ind', shape=[], dtype=tf.int32,
-                                        initializer=tf.constant_initializer(value=0))
-        inp = self._batch_frames[self._gpu_ind]
-        targets = tf.squeeze(self._batch_targets[self._gpu_ind])
+        batch_frames = tf.placeholder(tf.float32, shape=[None, 100, 64, 1])
+        batch_targets = tf.placeholder(tf.float32, shape=[None, 1])
+        inp = batch_frames[self._gpu_ind*self._batch_size:(self._n_gpu+1)*self._batch_size, :, :, :]
+        targets = batch_targets[self._gpu_ind*self._batch_size:(self._n_gpu+1)*self._batch_size, :]
         output = self._inference(inp)
         self._feature = output
         self._loss = self._triplet_loss(output, targets)
@@ -305,37 +302,24 @@ class DeepSpeaker:
             averaged_grads.append(grads)
         return averaged_grads
 
-    def _validation_acc(self, enroll_frames, enroll_labels, test_frames, test_labels, sess):
+    def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
         enroll_frames = np.array(enroll_frames[:200])
         enroll_labels = np.array(enroll_labels[:200])
-
-        # if the labels aren't one-hot encode, convert them to one-hot
-
-        enroll_f = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 9, 40, 1))
-        enroll_l = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], self._n_speaker))
-
-        enroll_f[self._gpu_ind.eval()] = enroll_frames.reshape(-1, 9, 40, 1)
-        enroll_l[self._gpu_ind.eval()] = enroll_labels.reshape(-1, self._n_speaker)
+        test_labels = np.array(test_labels)
 
         features = sess.run(self.feature,
-                            feed_dict={'x:0': enroll_f, 'y_:0': enroll_l})
+                            feed_dict={'x:0': enroll_frames, 'y_:0': enroll_labels})
 
         for i in range(self._n_speaker):
             self._vectors[i] = np.mean(features[np.max(enroll_labels) == i])
 
-        test_f = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 9, 40, 1))
-        test_l = np.zeros(shape=(self._n_gpu, test_frames.shape[0], self._n_speaker))
-
-        test_f[self._gpu_ind.eval()] = test_frames.reshape(-1, 9, 40, 1)
-        test_l[self._gpu_ind.eval()] = test_labels.reshape(-1, self._n_speaker)
-
         features = sess.run(self.feature,
-                            feed_dict={'x:0': test_f, 'y_:0': test_l})
+                            feed_dict={'x:0': test_frames, 'y_:0': test_labels})
 
         tot = 0
         acc = 0
         # print(features.shape[0])
-        for vec_id in range(features.shape[0]):
+        for vec_id in range(test_labels.shape[0]):
             score = -1
             pred = -1
             tot += 1
@@ -355,7 +339,7 @@ class DeepSpeaker:
         grads = []
         for i in range(self._n_gpu):
             with tf.device("/gpu:%d" % i):
-                self._gpu_ind.assign(i)
+                self._gpu_ind = i
                 gradient_all = self._opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):

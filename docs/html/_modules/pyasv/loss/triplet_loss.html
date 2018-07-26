@@ -179,16 +179,16 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    embeddings: ``tf.tensor``.</span>
+<span class="sd">    embeddings : ``tf.tensor``.</span>
 <span class="sd">        The shape is (batch_size, embed_dim)</span>
 
-<span class="sd">    squared: ``Bool``.</span>
+<span class="sd">    squared : ``Bool``.</span>
 <span class="sd">        If `True`, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If `False`, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    pairwise_distances: ``tf.tensor``</span>
+<span class="sd">    pairwise_distances : ``tf.tensor``</span>
 <span class="sd">        The shape is (batch_size, batch_size)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the dot product between all embeddings</span>
@@ -224,10 +224,14 @@
 
 <span class="k">def</span> <span class="nf">_get_anchor_positive_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return a 2D mask where mask[a, p] is True iff a and p are distinct and have same label.</span>
+
 <span class="sd">    Parameters</span>
-<span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+<span class="sd">    ----------</span>
+<span class="sd">        labels : tf.int32 `Tensor` with shape [batch_size]</span>
+
 <span class="sd">    Returns</span>
-<span class="sd">        mask: tf.bool `Tensor` with shape [batch_size, batch_size]</span>
+<span class="sd">    -------</span>
+<span class="sd">        mask : tf.bool `Tensor` with shape [batch_size, batch_size]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check that i and j are distinct</span>
     <span class="n">indices_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -245,9 +249,13 @@
 
 <span class="k">def</span> <span class="nf">_get_anchor_negative_triplet_mask</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return a 2D mask where mask[a, n] is True iff a and n have distinct labels.</span>
+
 <span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+
 <span class="sd">    Returns</span>
+<span class="sd">    -------</span>
 <span class="sd">        mask: tf.bool `Tensor` with shape [batch_size, batch_size]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check if labels[i] != labels[k]</span>
@@ -264,12 +272,13 @@
 <span class="sd">    A triplet (i, j, k) is valid if:</span>
 <span class="sd">        - `i`, `j`, `k` are distinct</span>
 
-<span class="sd">        ::</span>
-<span class="sd">            labels[i] == labels[j] and labels[i] != labels[k]</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    labels[i] == labels[j] and labels[i] != labels[k]</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        labels: tf.int32 `Tensor` with shape [batch_size]</span>
+<span class="sd">    labels: tf.int32 `Tensor` with shape [batch_size]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check that i, j and k are distinct</span>
     <span class="n">indices_equal</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -300,19 +309,19 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    labels: ``tf.tensor``</span>
+<span class="sd">    labels : ``tf.tensor``</span>
 <span class="sd">        labels of the batch, of size (batch_size,)</span>
-<span class="sd">    embeddings: ``tf.tensor``</span>
+<span class="sd">    embeddings : ``tf.tensor``</span>
 <span class="sd">        tensor of shape (batch_size, embed_dim)</span>
-<span class="sd">    margin: ``float``</span>
+<span class="sd">    margin : ``float``</span>
 <span class="sd">        margin for triplet loss</span>
-<span class="sd">    squared: ``Bool``</span>
+<span class="sd">    squared : ``Bool``</span>
 <span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    triplet_loss: ``tf.tensor``</span>
+<span class="sd">    triplet_loss : ``tf.tensor``</span>
 <span class="sd">        scalar tensor containing the triplet loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the pairwise distance matrix</span>
@@ -358,19 +367,19 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    labels: ``tf.tensor``</span>
+<span class="sd">    labels : ``tf.tensor``</span>
 <span class="sd">        labels of the batch, of size (batch_size,)</span>
-<span class="sd">    embeddings: ``tf.tensor``</span>
+<span class="sd">    embeddings : ``tf.tensor``</span>
 <span class="sd">        tensor of shape (batch_size, embed_dim)</span>
-<span class="sd">    margin: `float`</span>
+<span class="sd">    margin : `float`</span>
 <span class="sd">        margin for triplet loss</span>
-<span class="sd">    squared: ``Bool``</span>
+<span class="sd">    squared : ``Bool``</span>
 <span class="sd">        If true, output is the pairwise squared euclidean distance matrix.</span>
 <span class="sd">        If false, output is the pairwise euclidean distance matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    triplet_loss: ``tf.tensor``</span>
+<span class="sd">    triplet_loss : ``tf.tensor``</span>
 <span class="sd">        scalar tensor containing the triplet loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get the pairwise distance matrix</span>

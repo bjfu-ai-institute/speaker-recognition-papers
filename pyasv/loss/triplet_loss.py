@@ -27,16 +27,16 @@ def _pairwise_distances(embeddings, squared=False):
 
     Parameters
     ----------
-    embeddings: ``tf.tensor``.
+    embeddings : ``tf.tensor``.
         The shape is (batch_size, embed_dim)
 
-    squared: ``Bool``.
+    squared : ``Bool``.
         If `True`, output is the pairwise squared euclidean distance matrix.
         If `False`, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    pairwise_distances: ``tf.tensor``
+    pairwise_distances : ``tf.tensor``
         The shape is (batch_size, batch_size)
     """
     # Get the dot product between all embeddings
@@ -72,10 +72,14 @@ def _pairwise_distances(embeddings, squared=False):
 
 def _get_anchor_positive_triplet_mask(labels):
     """Return a 2D mask where mask[a, p] is True iff a and p are distinct and have same label.
+
     Parameters
-        labels: tf.int32 `Tensor` with shape [batch_size]
+    ----------
+        labels : tf.int32 `Tensor` with shape [batch_size]
+
     Returns
-        mask: tf.bool `Tensor` with shape [batch_size, batch_size]
+    -------
+        mask : tf.bool `Tensor` with shape [batch_size, batch_size]
     """
     # Check that i and j are distinct
     indices_equal = tf.cast(tf.eye(tf.shape(labels)[0]), tf.bool)
@@ -93,9 +97,13 @@ def _get_anchor_positive_triplet_mask(labels):
 
 def _get_anchor_negative_triplet_mask(labels):
     """Return a 2D mask where mask[a, n] is True iff a and n have distinct labels.
+
     Parameters
+    ----------
         labels: tf.int32 `Tensor` with shape [batch_size]
+
     Returns
+    -------
         mask: tf.bool `Tensor` with shape [batch_size, batch_size]
     """
     # Check if labels[i] != labels[k]
@@ -112,12 +120,13 @@ def _get_triplet_mask(labels):
     A triplet (i, j, k) is valid if:
         - `i`, `j`, `k` are distinct
 
-        ::
-            labels[i] == labels[j] and labels[i] != labels[k]
+    Examples
+    --------
+    labels[i] == labels[j] and labels[i] != labels[k]
 
     Parameters
     ----------
-        labels: tf.int32 `Tensor` with shape [batch_size]
+    labels: tf.int32 `Tensor` with shape [batch_size]
     """
     # Check that i, j and k are distinct
     indices_equal = tf.cast(tf.eye(tf.shape(labels)[0]), tf.bool)
@@ -148,19 +157,19 @@ def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
 
     Parameters
     ----------
-    labels: ``tf.tensor``
+    labels : ``tf.tensor``
         labels of the batch, of size (batch_size,)
-    embeddings: ``tf.tensor``
+    embeddings : ``tf.tensor``
         tensor of shape (batch_size, embed_dim)
-    margin: ``float``
+    margin : ``float``
         margin for triplet loss
-    squared: ``Bool``
+    squared : ``Bool``
         If true, output is the pairwise squared euclidean distance matrix.
         If false, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    triplet_loss: ``tf.tensor``
+    triplet_loss : ``tf.tensor``
         scalar tensor containing the triplet loss
     """
     # Get the pairwise distance matrix
@@ -206,19 +215,19 @@ def batch_hard_triplet_loss(labels, embeddings, margin, squared=False):
 
     Parameters
     ----------
-    labels: ``tf.tensor``
+    labels : ``tf.tensor``
         labels of the batch, of size (batch_size,)
-    embeddings: ``tf.tensor``
+    embeddings : ``tf.tensor``
         tensor of shape (batch_size, embed_dim)
-    margin: `float`
+    margin : `float`
         margin for triplet loss
-    squared: ``Bool``
+    squared : ``Bool``
         If true, output is the pairwise squared euclidean distance matrix.
         If false, output is the pairwise euclidean distance matrix.
 
     Returns
     -------
-    triplet_loss: ``tf.tensor``
+    triplet_loss : ``tf.tensor``
         scalar tensor containing the triplet loss
     """
     # Get the pairwise distance matrix

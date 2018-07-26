@@ -51,8 +51,8 @@ class DataManage(object):
 
         Returns
         -------
-        batch_frames: ``list`` or ``np.ndarray``.
-        batch_labels: ``list`` or ``np.ndarray``.
+        batch_frames : ``list`` or ``np.ndarray``.
+        batch_labels : ``list`` or ``np.ndarray``.
 
         Notes
         -----
@@ -83,7 +83,7 @@ class DataManage4BigData(object):
         """
         Parameters
         ----------
-        config: ``config`` class
+        config : ``config`` class
             the config of your model. we will use its batch_size to manage our data
             and save the data to save_path/data.
         """

@@ -175,16 +175,16 @@ We generate all the valid triplets and average the loss over the positive ones.<
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>labels: ``tf.tensor``</strong></dt>
+<dt><strong>labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">labels of the batch, of size (batch_size,)</p>
 </dd>
-<dt><strong>embeddings: ``tf.tensor``</strong></dt>
+<dt><strong>embeddings</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">tensor of shape (batch_size, embed_dim)</p>
 </dd>
-<dt><strong>margin: ``float``</strong></dt>
+<dt><strong>margin</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">float</span></code></span></dt>
 <dd><p class="first last">margin for triplet loss</p>
 </dd>
-<dt><strong>squared: ``Bool``</strong></dt>
+<dt><strong>squared</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">Bool</span></code></span></dt>
 <dd><p class="first last">If true, output is the pairwise squared euclidean distance matrix.
 If false, output is the pairwise euclidean distance matrix.</p>
 </dd>
@@ -192,7 +192,7 @@ If false, output is the pairwise euclidean distance matrix.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>triplet_loss: ``tf.tensor``</strong></dt>
+<dt><strong>triplet_loss</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">scalar tensor containing the triplet loss</p>
 </dd>
 </dl>
@@ -212,16 +212,16 @@ For each anchor, we get the hardest positive and hardest negative to form a trip
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>labels: ``tf.tensor``</strong></dt>
+<dt><strong>labels</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">labels of the batch, of size (batch_size,)</p>
 </dd>
-<dt><strong>embeddings: ``tf.tensor``</strong></dt>
+<dt><strong>embeddings</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">tensor of shape (batch_size, embed_dim)</p>
 </dd>
-<dt><strong>margin: `float`</strong></dt>
+<dt><strong>margin</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><em class="xref py py-obj">float</em></span></dt>
 <dd><p class="first last">margin for triplet loss</p>
 </dd>
-<dt><strong>squared: ``Bool``</strong></dt>
+<dt><strong>squared</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">Bool</span></code></span></dt>
 <dd><p class="first last">If true, output is the pairwise squared euclidean distance matrix.
 If false, output is the pairwise euclidean distance matrix.</p>
 </dd>
@@ -229,7 +229,7 @@ If false, output is the pairwise euclidean distance matrix.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>triplet_loss: ``tf.tensor``</strong></dt>
+<dt><strong>triplet_loss</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">tf.tensor</span></code></span></dt>
 <dd><p class="first last">scalar tensor containing the triplet loss</p>
 </dd>
 </dl>

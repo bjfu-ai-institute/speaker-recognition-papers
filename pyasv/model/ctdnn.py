@@ -9,6 +9,7 @@ import time
 import numpy as np
 from pyasv.data_manage import DataManage
 from pyasv.data_manage import DataManage4BigData
+from tensorflow.python import debug as tfdbg
 
 
 class CTDnn:
@@ -56,7 +57,7 @@ class CTDnn:
             The label array of train dataset.
         enroll_frames : ``list`` or ``np.ndarray``
             The feature array of enroll dataset.
-        enroll_labels=None ``list`` or ``np.ndarray``
+        enroll_labels : ``list`` or ``np.ndarray``
             The label array of enroll dataset.
         test_frames : ``list`` or ``np.ndarray``
             The feature array of test dataset.
@@ -129,6 +130,8 @@ class CTDnn:
                 # initial step
                 initial = tf.global_variables_initializer()
                 sess.run(initial)
+                debug_sess = tfdbg.LocalCLIDebugWrapperSession(sess=sess)
+
                 train_op, loss = self._train_step()
                 if enroll_frames is not None:
                     accuracy = self._validation_acc(sess, enroll_frames, enroll_labels, test_frames, test_labels)
@@ -162,14 +165,20 @@ class CTDnn:
                     input_frames = np.array(input_frames).reshape([self._n_gpu, -1, 9, 40, 1])
                     input_labels = np.array(input_labels).reshape([self._n_gpu, -1, self._n_speaker])
 
-                    _, summary_str = sess.run([train_op, merged_summary],
-                                              feed_dict={'x:0': input_frames, 'y_:0': input_labels})
+                    _, summary_str = debug_sess.run([train_op, merged_summary],
+                                                    feed_dict={'x:0':input_frames, "y_:0":input_labels})
+                    # _, summary_str = sess.run([train_op, merged_summary],
+                    #                          feed_dict={'x:0': input_frames, 'y_:0': input_labels})
                     current_time = time.time()
 
                     # print log
-                    print("-------")
+                    print("------------------------")
                     print("No.%d step use %f sec" % (i, current_time - last_time))
-                    print("-------")
+                    try:
+                        print("Acc = %f" % accuracy.eval())
+                    except:
+                        pass
+                    print("------------------------")
                     last_time = time.time()
 
                     # record
@@ -274,7 +283,7 @@ class CTDnn:
 
         Returns
         -------
-        prediction: ``tf.operation``
+        prediction : ``tf.operation``
         """
         return self._prediction
 
@@ -284,7 +293,7 @@ class CTDnn:
 
         Returns
         -------
-        feature: ``tf.operation``
+        feature : ``tf.operation``
         """
         return self._feature
 
@@ -295,7 +304,7 @@ class CTDnn:
 
     def _build_train_graph(self):
 
-        batch_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1],name='x')
+        batch_frames = tf.placeholder(tf.float32, shape=[None, 9, 40, 1], name='x')
         batch_target = tf.placeholder(tf.float32, shape=[None, self._n_speaker], name='y_')
         frames = batch_frames[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
         target = batch_target[self._batch_size*self._gpu_ind:(self._batch_size+1)*self._gpu_ind, :, :, :]
@@ -337,7 +346,7 @@ class CTDnn:
 
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
 
-        conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 128], [1, 1, 1, 1], 'VALID')
+        conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 256], [1, 1, 1, 1], 'VALID')
 
         pool2 = tf.nn.max_pool(conv2, ksize=[1, 1, 2, 1], strides=[1, 1, 2, 1], padding='VALID')
 
@@ -436,7 +445,7 @@ class CTDnn:
         grads = []
         for i in range(self._n_gpu):
             with tf.device("/gpu:%d" % i):
-                self._gpu_ind.assign(i)
+                self._gpu_ind = i
                 gradient_all = self._opt.compute_gradients(self.loss)
                 grads.append(gradient_all)
         with tf.device("/cpu:0"):
@@ -448,34 +457,21 @@ class CTDnn:
     def _validation_acc(self, sess, enroll_frames, enroll_labels, test_frames, test_labels):
         enroll_frames = np.array(enroll_frames[:200])
         enroll_labels = np.array(enroll_labels[:200])
-
-        # if the labels aren't one-hot encode, convert them to one-hot
-        
-        enroll_f = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], 9, 40, 1))
-        enroll_l = np.zeros(shape=(self._n_gpu, enroll_frames.shape[0], self._n_speaker))
-
-        enroll_f[self._gpu_ind.eval()] = enroll_frames.reshape(-1, 9, 40 ,1)
-        enroll_l[self._gpu_ind.eval()] = enroll_labels.reshape(-1, self._n_speaker)
+        test_labels = np.array(test_labels)
 
         features = sess.run(self.feature, 
-                            feed_dict={'x:0':enroll_f, 'y_:0':enroll_l})
+                            feed_dict={'x:0': enroll_frames, 'y_:0': enroll_labels})
         
         for i in range(self._n_speaker):
             self._vectors[i] = np.mean(features[np.max(enroll_labels) == i])
 
-        test_f = np.zeros(shape=(self._n_gpu, test_frames.shape[0], 9, 40, 1))
-        test_l = np.zeros(shape=(self._n_gpu, test_frames.shape[0], self._n_speaker))
-
-        test_f[self._gpu_ind.eval()] = test_frames.reshape(-1, 9, 40 ,1)
-        test_l[self._gpu_ind.eval()] = test_labels.reshape(-1, self._n_speaker)
-
         features = sess.run(self.feature, 
-                            feed_dict={'x:0':test_f, 'y_:0':test_l})
+                            feed_dict={'x:0': test_frames, 'y_:0': test_labels})
         
         tot = 0
         acc = 0
         # print(features.shape[0])
-        for vec_id in range(features.shape[0]):
+        for vec_id in range(test_labels.shape[0]):
             score = -1
             pred = -1
             tot += 1

@@ -6,11 +6,8 @@ class Config:
     """
     Examples
     --------
-
-    ::
-
-        # The normal way to create a config.
-        config = Config(name='CTDnn-config',
+    >>># The normal way to create a config.
+    >>>config = Config(name='CTDnn-config',
                         batch_size=65,
                         n_gpu=4,
                         max_step=100,
@@ -19,7 +16,8 @@ class Config:
                         url_of_bigdataset_temp_file=None,
                         learning_rate=1e-3,
                         save_path='/opt/user1/fhq/save/ctdnn')
-        config.save(name='ctdnn-config')
+    >>># Load saved config.
+    >>>config.save(name='ctdnn-config')
 
     # Use config path to create a config
     config = Config(config_path='/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl')
@@ -41,13 +39,13 @@ class Config:
         """
         Parameters
         ----------
-        config_path: ``str``
+        config_path : ``str``
             The path of config which you want to restore,
             If you want to create a new config, this param should
             be None.
-        is_big_dataset: ``bool``
+        is_big_dataset : ``bool``
             If we store the features to disk and restore a part of feature each step.
-        url_of_bigdataset_temp_file: ``str``
+        url_of_bigdataset_temp_file : ``str``
             To decide the save path of the features you want to restore.
             If the param "is_big_dataset" is False, this param should be None.
         """
@@ -113,7 +111,7 @@ class Config:
 
         Parameters
         ----------
-        name: ``str``.
+        name : ``str``.
             the name of your config file.
         """
         f = open(os.path.join(self.SAVE_PATH, name+'.pkl'), 'wb+')

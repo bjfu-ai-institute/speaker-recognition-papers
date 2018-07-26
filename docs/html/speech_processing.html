@@ -93,6 +93,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#calc-cqcc">calc_cqcc</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#slide-windows">slide_windows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cqcc-resample">cqcc_resample</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cmvn">cmvn</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_manage.html">Data manager</a></li>
@@ -195,8 +196,8 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>The file contain the path to all audio and its number in the dataset.
-The contents of the file should be as follows:</p>
+<p>The file contain the path to all audio and its number in the dataset.</p>
+<p>The contents of the file should be as follows:</p>
 <p>xxxxx/your_data_path/1_1.wav 0</p>
 <p>xxxxx/your_data_path/1_2.wav 0</p>
 <p>xxxxx/your_data_path/2_1.wav 1</p>
@@ -233,8 +234,8 @@ The contents of the file should be as follows:</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>The file contain the path to all audio and its number in the dataset.
-The contents of the file should be as follows:</p>
+<p>The file contain the path to all audio and its number in the dataset.</p>
+<p>The contents of the file should be as follows:</p>
 <p>xxxxx/your_data_path/1_1.wav 0</p>
 <p>xxxxx/your_data_path/1_2.wav 0</p>
 <p>xxxxx/your_data_path/2_1.wav 1</p>
@@ -342,21 +343,22 @@ The contents of the file should be as follows:</p>
 <dt><strong>s</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
 <dd><p class="first last">the input spectrogram.</p>
 </dd>
-<dt><strong>fs_orig: ``int``</strong></dt>
+<dt><strong>fs_orig</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt>
 <dd><p class="first last">origin sample rate</p>
 </dd>
-<dt><strong>fs_new: ``int``</strong></dt>
+<dt><strong>fs_new</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt>
 <dd><p class="first last">new sample rate</p>
 </dd>
-<dt><strong>axis: ``int``</strong></dt>
+<dt><strong>axis</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt>
 <dd><p class="first last">the resample axis</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>spec_res</strong> <span class="classifier-delimiter">:</span> <span class="classifier">spectrogram after resample</span></dt>
-<dd></dd>
+<dt><strong>spec_res</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">spectrogram after resample</p>
+</dd>
 </dl>
 </td>
 </tr>
@@ -364,6 +366,9 @@ The contents of the file should be as follows:</p>
 </table>
 </dd></dl>
 
+</div>
+<div class="section" id="cmvn">
+<h2>cmvn<a class="headerlink" href="#cmvn" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

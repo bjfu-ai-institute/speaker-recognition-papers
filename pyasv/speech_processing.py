@@ -85,6 +85,7 @@ def ext_mfcc_feature(url_path):
     Notes
     -----
     The file contain the path to all audio and its number in the dataset.
+
     The contents of the file should be as follows:
 
     xxxxx/your_data_path/1_1.wav 0
@@ -133,6 +134,7 @@ def ext_fbank_feature(url_path):
     Notes
     -----
     The file contain the path to all audio and its number in the dataset.
+
     The contents of the file should be as follows:
 
     xxxxx/your_data_path/1_1.wav 0
@@ -148,7 +150,7 @@ def ext_fbank_feature(url_path):
     label : ``list``
         The label of fbank feature.
 
-    Todo
+    TODO
     ----
     changeable concat size.
 
@@ -275,16 +277,17 @@ def cqcc_resample(s, fs_orig, fs_new, axis=0):
     ----------
     s : ``np.ndarray``
         the input spectrogram.
-    fs_orig: ``int``
+    fs_orig : ``int``
         origin sample rate
-    fs_new: ``int``
+    fs_new : ``int``
         new sample rate
-    axis: ``int``
+    axis : ``int``
         the resample axis
 
     Returns
     -------
-    spec_res : spectrogram after resample
+    spec_res : ``np.ndarray``
+        spectrogram after resample
     """
     if int(fs_orig) != int(fs_new):
         s = resampy.resample(s, sr_orig=fs_orig, sr_new=fs_new,
@@ -301,8 +304,12 @@ def cmvn(feature):
 
     returns
     -------
-    ``np.ndarray``
+    feature_list : ``np.ndarray``
         the feature after cmvn.
+
+    Notes
+    -----
+    We have used `cmvn` while calculating mfcc or fbank.
     """
     if type(feature) == np.ndarray:
         feature = np.array(feature)

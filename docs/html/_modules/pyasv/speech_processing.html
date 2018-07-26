@@ -185,6 +185,11 @@
 
 <span class="sd">.. autofunction:: pyasv.speech_processing.cqcc_resample</span>
 
+
+<span class="sd">cmvn</span>
+<span class="sd">-------------</span>
+
+<span class="sd">.. autofuncion: pyasv.speech_processing.cmvn</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">librosa</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -232,6 +237,7 @@
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
+
 <span class="sd">    The contents of the file should be as follows:</span>
 
 <span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
@@ -261,6 +267,7 @@
             <span class="n">mfcc_delta</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">delta</span><span class="p">(</span><span class="n">mfcc_</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
             <span class="n">mfcc_delta_delta</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">delta</span><span class="p">(</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
             <span class="n">mfcc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">mfcc_delta_delta</span><span class="p">])])</span>
+            <span class="n">mfcc</span> <span class="o">=</span> <span class="n">cmvn</span><span class="p">(</span><span class="n">mfcc</span><span class="p">)</span>
             <span class="n">mfcc</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">mfcc</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mfcc</span><span class="p">:</span>
                 <span class="n">mfccs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
@@ -279,6 +286,7 @@
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
+
 <span class="sd">    The contents of the file should be as follows:</span>
 
 <span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
@@ -294,7 +302,7 @@
 <span class="sd">    label : ``list``</span>
 <span class="sd">        The label of fbank feature.</span>
 
-<span class="sd">    Todo</span>
+<span class="sd">    TODO</span>
 <span class="sd">    ----</span>
 <span class="sd">    changeable concat size.</span>
 
@@ -387,6 +395,7 @@
     <span class="n">filter_banks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">filter_banks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="n">filter_banks</span><span class="p">)</span>  <span class="c1"># Numerical Stability</span>
     <span class="n">filter_banks</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">)</span>
     <span class="n">filter_banks</span> <span class="o">-=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+    <span class="n">filter_banks</span> <span class="o">=</span> <span class="n">cmvn</span><span class="p">(</span><span class="n">filter_banks</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">filter_banks</span></div>
 
 
@@ -420,21 +429,52 @@
 <span class="sd">    ----------</span>
 <span class="sd">    s : ``np.ndarray``</span>
 <span class="sd">        the input spectrogram.</span>
-<span class="sd">    fs_orig: ``int``</span>
+<span class="sd">    fs_orig : ``int``</span>
 <span class="sd">        origin sample rate</span>
-<span class="sd">    fs_new: ``int``</span>
+<span class="sd">    fs_new : ``int``</span>
 <span class="sd">        new sample rate</span>
-<span class="sd">    axis: ``int``</span>
+<span class="sd">    axis : ``int``</span>
 <span class="sd">        the resample axis</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    spec_res : spectrogram after resample</span>
+<span class="sd">    spec_res : ``np.ndarray``</span>
+<span class="sd">        spectrogram after resample</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_orig</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs_new</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">resampy</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">sr_orig</span><span class="o">=</span><span class="n">fs_orig</span><span class="p">,</span> <span class="n">sr_new</span><span class="o">=</span><span class="n">fs_new</span><span class="p">,</span>
                              <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">s</span></div>
+
+
+<span class="k">def</span> <span class="nf">cmvn</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Apply cmvn to feature list/array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature : ``np.ndarray``</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    feature_list : ``np.ndarray``</span>
+<span class="sd">        the feature after cmvn.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    We have used `cmvn` while calculating mfcc or fbank.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mean_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span>
+    <span class="n">std_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">feature</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">N</span> <span class="o">-</span> <span class="n">mean_m</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">std_m</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean_m</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="o">/</span> <span class="n">std_m</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean_m</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">feature</span>
 </pre></div>
 
            </div>
