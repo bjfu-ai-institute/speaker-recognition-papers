@@ -150,30 +150,11 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pyasv.config</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pkl</span>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
 
 <div class="viewcode-block" id="Config"><a class="viewcode-back" href="../../config.html#pyasv.Config">[docs]</a><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt;# The normal way to create a config.</span>
-<span class="sd">    &gt;&gt;&gt;config = Config(name=&#39;CTDnn-config&#39;,</span>
-<span class="sd">                        batch_size=65,</span>
-<span class="sd">                        n_gpu=4,</span>
-<span class="sd">                        max_step=100,</span>
-<span class="sd">                        n_speaker=166,</span>
-<span class="sd">                        is_big_dataset=False,</span>
-<span class="sd">                        url_of_bigdataset_temp_file=None,</span>
-<span class="sd">                        learning_rate=1e-3,</span>
-<span class="sd">                        save_path=&#39;/opt/user1/fhq/save/ctdnn&#39;)</span>
-<span class="sd">    &gt;&gt;&gt;# Load saved config.</span>
-<span class="sd">    &gt;&gt;&gt;config.save(name=&#39;ctdnn-config&#39;)</span>
-
-<span class="sd">    # Use config path to create a config</span>
-<span class="sd">    config = Config(config_path=&#39;/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl&#39;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Config.__init__"><a class="viewcode-back" href="../../config.html#pyasv.Config.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">config_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -202,10 +183,10 @@
 <span class="sd">            If the param &quot;is_big_dataset&quot; is False, this param should be None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">config_path</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
-            <span class="n">dic</span> <span class="o">=</span> <span class="n">pkl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="bp">self</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">]</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;successfully load &quot;</span> <span class="o">+</span> <span class="n">dic</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">dic</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">=</span> <span class="n">dic</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="n">batch_size</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">N_GPU</span> <span class="o">=</span> <span class="n">n_gpu</span>
@@ -266,9 +247,9 @@
 <span class="sd">        name : ``str``.</span>
 <span class="sd">            the name of your config file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.pkl&#39;</span><span class="p">),</span> <span class="s1">&#39;wb+&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
         <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
-        <span class="n">pkl</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
 </pre></div>
 

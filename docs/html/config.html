@@ -158,26 +158,29 @@
 <p>The config class is used for set our model and operation.
 In general, we only need a part of his parameters. So, we
 just need to set the needed parameters when we create a config class.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyasv</span> <span class="k">import</span> <span class="n">Config</span>
+
+
+<span class="c1"># The normal way to create a config.</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CTDnn-config&#39;</span><span class="p">,</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="mi">65</span><span class="p">,</span>
+                <span class="n">n_gpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                <span class="n">max_step</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">n_speaker</span><span class="o">=</span><span class="mi">166</span><span class="p">,</span>
+                <span class="n">is_big_dataset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">url_of_bigdataset_temp_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                         <span class="n">save_path</span><span class="o">=</span><span class="s1">&#39;/opt/user1/fhq/save/ctdnn&#39;</span><span class="p">)</span>
+<span class="c1"># Load saved config.</span>
+<span class="n">config</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ctdnn-config&#39;</span><span class="p">)</span>
+<span class="c1"># Use config path to create a config</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="s1">&#39;/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="class">
 <dt id="pyasv.Config">
 <em class="property">class </em><code class="descclassname">pyasv.</code><code class="descname">Config</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config" title="Permalink to this definition">¶</a></dt>
-<dd><p class="rubric">Examples</p>
-<p>&gt;&gt;&gt;# The normal way to create a config.
-&gt;&gt;&gt;config = Config(name=’CTDnn-config’,</p>
-<blockquote>
-<div>batch_size=65,
-n_gpu=4,
-max_step=100,
-n_speaker=166,
-is_big_dataset=False,
-url_of_bigdataset_temp_file=None,
-learning_rate=1e-3,
-save_path=’/opt/user1/fhq/save/ctdnn’)</div></blockquote>
-<p>&gt;&gt;&gt;# Load saved config.
-&gt;&gt;&gt;config.save(name=’ctdnn-config’)</p>
-<p># Use config path to create a config
-config = Config(config_path=’/opt/user1/fhq/save/ctdnn/ctdnn-config.pkl’)</p>
-<p class="rubric">Methods</p>
+<dd><p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />

@@ -187,20 +187,11 @@
 <dt><strong>label</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
 <dd><p class="first last">The label of fbank feature.</p>
 </dd>
-<dt><strong>::</strong></dt>
-<dd><p class="first last">#TODO：changeable concat size.</p>
-</dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Notes</p>
-<p>The file contain the path to all audio and its number in the dataset.</p>
-<p>The contents of the file should be as follows:</p>
-<p>xxxxx/your_data_path/1_1.wav 0</p>
-<p>xxxxx/your_data_path/1_2.wav 0</p>
-<p>xxxxx/your_data_path/2_1.wav 1</p>
 </dd></dl>
 
 </div>
@@ -234,13 +225,17 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
+<p>Changeable concat size is in the todolist</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
 <p>The file contain the path to all audio and its number in the dataset.</p>
 <p>The contents of the file should be as follows:</p>
 <p>xxxxx/your_data_path/1_1.wav 0</p>
 <p>xxxxx/your_data_path/1_2.wav 0</p>
-<p>xxxxx/your_data_path/2_1.wav 1</p>
-</dd></dl>
-
+<p class="last">xxxxx/your_data_path/2_1.wav 1</p>
+</div>
 </div>
 <div class="section" id="calc-fbank">
 <h2>calc_fbank<a class="headerlink" href="#calc-fbank" title="Permalink to this headline">¶</a></h2>
@@ -369,6 +364,33 @@
 </div>
 <div class="section" id="cmvn">
 <h2>cmvn<a class="headerlink" href="#cmvn" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pyasv.speech_processing.cmvn">
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">cmvn</code><span class="sig-paren">(</span><em>feature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#cmvn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.cmvn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply cmvn to feature list/array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>feature</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>feature_list</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code></span></dt>
+<dd><p class="first last">the feature after cmvn.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>We have used <a class="reference internal" href="#pyasv.speech_processing.cmvn" title="pyasv.speech_processing.cmvn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cmvn</span></code></a> while calculating mfcc or fbank.</p>
+</dd></dl>
+
 </div>
 </div>
 

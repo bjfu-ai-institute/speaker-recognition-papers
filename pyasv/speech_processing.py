@@ -3,12 +3,21 @@ ext_mfcc_feature
 ----------------
 .. autofunction:: pyasv.speech_processing.ext_mfcc_feature
 
-
 ext_fbank_feature
 -----------------
 
 .. autofunction:: pyasv.speech_processing.ext_fbank_feature
 
+.. note::
+    The file contain the path to all audio and its number in the dataset.
+
+    The contents of the file should be as follows:
+
+    xxxxx/your_data_path/1_1.wav 0
+
+    xxxxx/your_data_path/1_2.wav 0
+
+    xxxxx/your_data_path/2_1.wav 1
 
 calc_fbank
 ----------
@@ -35,9 +44,10 @@ cqcc_resample
 
 
 cmvn
--------------
+----
 
-.. autofuncion: pyasv.speech_processing.cmvn
+.. autofunction:: pyasv.speech_processing.cmvn
+
 """
 import librosa
 import os
@@ -82,18 +92,6 @@ def ext_mfcc_feature(url_path):
     url_path : ``str``
         The path of the 'PATH' file.
 
-    Notes
-    -----
-    The file contain the path to all audio and its number in the dataset.
-
-    The contents of the file should be as follows:
-
-    xxxxx/your_data_path/1_1.wav 0
-
-    xxxxx/your_data_path/1_2.wav 0
-
-    xxxxx/your_data_path/2_1.wav 1
-
     Returns
     -------
     fbank : ``list``
@@ -101,8 +99,6 @@ def ext_mfcc_feature(url_path):
     label : ``list``
         The label of fbank feature.
 
-    ::
-        #TODO：changeable concat size.
     """
     with open(url_path, 'r') as urls:
         mfccs = []
@@ -131,18 +127,6 @@ def ext_fbank_feature(url_path):
     url_path : ``str``
         The path of the 'PATH' file.
 
-    Notes
-    -----
-    The file contain the path to all audio and its number in the dataset.
-
-    The contents of the file should be as follows:
-
-    xxxxx/your_data_path/1_1.wav 0
-
-    xxxxx/your_data_path/1_2.wav 0
-
-    xxxxx/your_data_path/2_1.wav 1
-
     Returns
     -------
     fbank : ``list``
@@ -150,9 +134,9 @@ def ext_fbank_feature(url_path):
     label : ``list``
         The label of fbank feature.
 
-    TODO
-    ----
-    changeable concat size.
+    Notes
+    -----
+    Changeable concat size is in the todolist
 
     """
     with open(url_path, 'r') as urls:

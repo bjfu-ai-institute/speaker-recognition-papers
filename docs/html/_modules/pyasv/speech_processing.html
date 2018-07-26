@@ -155,12 +155,21 @@
 <span class="sd">----------------</span>
 <span class="sd">.. autofunction:: pyasv.speech_processing.ext_mfcc_feature</span>
 
-
 <span class="sd">ext_fbank_feature</span>
 <span class="sd">-----------------</span>
 
 <span class="sd">.. autofunction:: pyasv.speech_processing.ext_fbank_feature</span>
 
+<span class="sd">.. note::</span>
+<span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
+
+<span class="sd">    The contents of the file should be as follows:</span>
+
+<span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
+
+<span class="sd">    xxxxx/your_data_path/1_2.wav 0</span>
+
+<span class="sd">    xxxxx/your_data_path/2_1.wav 1</span>
 
 <span class="sd">calc_fbank</span>
 <span class="sd">----------</span>
@@ -187,9 +196,10 @@
 
 
 <span class="sd">cmvn</span>
-<span class="sd">-------------</span>
+<span class="sd">----</span>
 
-<span class="sd">.. autofuncion: pyasv.speech_processing.cmvn</span>
+<span class="sd">.. autofunction:: pyasv.speech_processing.cmvn</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">librosa</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -234,18 +244,6 @@
 <span class="sd">    url_path : ``str``</span>
 <span class="sd">        The path of the &#39;PATH&#39; file.</span>
 
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
-
-<span class="sd">    The contents of the file should be as follows:</span>
-
-<span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
-
-<span class="sd">    xxxxx/your_data_path/1_2.wav 0</span>
-
-<span class="sd">    xxxxx/your_data_path/2_1.wav 1</span>
-
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    fbank : ``list``</span>
@@ -253,8 +251,6 @@
 <span class="sd">    label : ``list``</span>
 <span class="sd">        The label of fbank feature.</span>
 
-<span class="sd">    ::</span>
-<span class="sd">        #TODO：changeable concat size.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
         <span class="n">mfccs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -283,18 +279,6 @@
 <span class="sd">    url_path : ``str``</span>
 <span class="sd">        The path of the &#39;PATH&#39; file.</span>
 
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    The file contain the path to all audio and its number in the dataset.</span>
-
-<span class="sd">    The contents of the file should be as follows:</span>
-
-<span class="sd">    xxxxx/your_data_path/1_1.wav 0</span>
-
-<span class="sd">    xxxxx/your_data_path/1_2.wav 0</span>
-
-<span class="sd">    xxxxx/your_data_path/2_1.wav 1</span>
-
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    fbank : ``list``</span>
@@ -302,9 +286,9 @@
 <span class="sd">    label : ``list``</span>
 <span class="sd">        The label of fbank feature.</span>
 
-<span class="sd">    TODO</span>
-<span class="sd">    ----</span>
-<span class="sd">    changeable concat size.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Changeable concat size is in the todolist</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">urls</span><span class="p">:</span>
@@ -447,7 +431,7 @@
     <span class="k">return</span> <span class="n">s</span></div>
 
 
-<span class="k">def</span> <span class="nf">cmvn</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
+<div class="viewcode-block" id="cmvn"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.cmvn">[docs]</a><span class="k">def</span> <span class="nf">cmvn</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply cmvn to feature list/array.</span>
 
 <span class="sd">    Parameters</span>
@@ -474,7 +458,7 @@
             <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean_m</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="o">/</span> <span class="n">std_m</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean_m</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">feature</span>
+    <span class="k">return</span> <span class="n">feature</span></div>
 </pre></div>
 
            </div>

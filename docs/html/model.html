@@ -167,12 +167,8 @@
 <h1>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="ctdnn">
 <h2>CTDNN<a class="headerlink" href="#ctdnn" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Full_info_deep_speaker_feature_learning.pdf">Paper name</a>.</p>
-<blockquote>
-<div>FULL-INFO TRAINING FOR DEEP SPEAKER FEATURE LEARNING</div></blockquote>
-<p><em>author</em></p>
-<blockquote>
-<div>Lantian Li, Zhiyuan Tang, Dong Wang, Thomas Fang Zheng</div></blockquote>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Full_info_deep_speaker_feature_learning.pdf">FULL-INFO TRAINING FOR DEEP SPEAKER FEATURE LEARNING</a>.
+<em>Lantian Li, Zhiyuan Tang, Dong Wang, Thomas Fang Zheng</em></p>
 <dl class="class">
 <dt id="pyasv.model.ctdnn.CTDnn">
 <em class="property">class </em><code class="descclassname">pyasv.model.ctdnn.</code><code class="descname">CTDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn" title="Permalink to this definition">¶</a></dt>
@@ -206,7 +202,7 @@
 <td>Run the ctdnn model.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#pyasv.model.ctdnn.CTDnn.run_predict" title="pyasv.model.ctdnn.CTDnn.run_predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_predict</span></code></a>(enroll_frames,&nbsp;enroll_labels,&nbsp;…)</td>
-<td>Run prediction, will save the result to save_path/result.txt</td>
+<td>Run prediction, will save the result to save_path</td>
 </tr>
 </tbody>
 </table>
@@ -326,7 +322,7 @@ if <em>False</em> we will exit after training.</p>
 <dl class="method">
 <dt id="pyasv.model.ctdnn.CTDnn.run_predict">
 <code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/ctdnn.html#CTDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.ctdnn.CTDnn.run_predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run prediction, will save the result to save_path/result.txt</p>
+<dd><p>Run prediction, will save the result to save_path</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -356,12 +352,8 @@ if <em>False</em> we will exit after training.</p>
 </div>
 <div class="section" id="deepspeaker">
 <h2>DeepSpeaker<a class="headerlink" href="#deepspeaker" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Deep%20Speaker%20an%20End-to-End%20Neural%20Speaker%20Embedding%20System.pdf">Paper name</a>.</p>
-<blockquote>
-<div>Deep Speaker: an End-to-End Neural Speaker Embedding System</div></blockquote>
-<p><em>author</em></p>
-<blockquote>
-<div>Chao Li∗, Xiaokong Ma∗, Bing Jiang∗, Xiangang Li ∗ Xuewei Zhang, Xiao Liu, Ying Cao, Ajay Kannan, Zhenyao Zhu</div></blockquote>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Deep%20Speaker%20an%20End-to-End%20Neural%20Speaker%20Embedding%20System.pdf">Deep Speaker: an End-to-End Neural Speaker Embedding System</a>.
+<em>Chao Li∗, Xiaokong Ma∗, Bing Jiang∗, Xiangang Li ∗ Xuewei Zhang, Xiao Liu, Ying Cao, Ajay Kannan, Zhenyao Zhu</em></p>
 <dl class="class">
 <dt id="pyasv.model.deep_speaker.DeepSpeaker">
 <em class="property">class </em><code class="descclassname">pyasv.model.deep_speaker.</code><code class="descname">DeepSpeaker</code><span class="sig-paren">(</span><em>config, out_channel=[64, 128, 256, 512]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/deep_speaker.html#DeepSpeaker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.deep_speaker.DeepSpeaker" title="Permalink to this definition">¶</a></dt>
@@ -406,8 +398,7 @@ if <em>False</em> we will exit after training.</p>
 <dd><p class="first last">The config of ctdnn model, no extra need.</p>
 </dd>
 <dt><strong>out_channel</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
-<dd><p class="first">The out channel of each res_block.</p>
-<p>default</p>
+<dd><p class="first">The out channel of each res_block.:</p>
 <div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">out_channel</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -498,12 +489,8 @@ we can use DeepSpeaker.feature to get these vector.</p>
 </div>
 <div class="section" id="max-feature-map-model">
 <h2>Max Feature Map model<a class="headerlink" href="#max-feature-map-model" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/DEEP_CNN_BASED_FEATURE_EXTRACTOR_FOR_TEXT-PROMPTED_SPEAKER.pdf">Paper name</a>.</p>
-<blockquote>
-<div>DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKER RECOGNITION</div></blockquote>
-<p><em>author</em></p>
-<blockquote>
-<div>Sergey Novoselov1,2, Oleg Kudashev2, Vadim Shchemelinin1, Ivan Kremnev3, Galina Lavrentyeva1</div></blockquote>
+<p><a class="reference external" href="https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/DEEP_CNN_BASED_FEATURE_EXTRACTOR_FOR_TEXT-PROMPTED_SPEAKER.pdf">DEEP CNN BASED FEATURE EXTRACTOR FOR TEXT-PROMPTED SPEAKER RECOGNITION</a>.
+<em>Sergey Novoselov1,2, Oleg Kudashev2, Vadim Shchemelinin1, Ivan Kremnev3, Galina Lavrentyeva1</em></p>
 <dl class="class">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn">
 <em class="property">class </em><code class="descclassname">pyasv.model.max_feature_map_dnn_model.</code><code class="descname">MaxFeatureMapDnn</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn" title="Permalink to this definition">¶</a></dt>
@@ -537,7 +524,7 @@ we can use DeepSpeaker.feature to get these vector.</p>
 <td>Run the MFM model.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict" title="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_predict</span></code></a>(enroll_frames,&nbsp;enroll_labels,&nbsp;…)</td>
-<td>Run prediction, will save the result to save_path/result.txt</td>
+<td>Run prediction, will save the result to save_path</td>
 </tr>
 </tbody>
 </table>
@@ -657,7 +644,7 @@ if <em>False</em> we will exit after training.</p>
 <dl class="method">
 <dt id="pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict">
 <code class="descname">run_predict</code><span class="sig-paren">(</span><em>enroll_frames</em>, <em>enroll_labels</em>, <em>test_frames</em>, <em>test_labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/model/max_feature_map_dnn_model.html#MaxFeatureMapDnn.run_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.model.max_feature_map_dnn_model.MaxFeatureMapDnn.run_predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run prediction, will save the result to save_path/result.txt</p>
+<dd><p>Run prediction, will save the result to save_path</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

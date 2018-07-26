@@ -108,7 +108,7 @@ class MaxFeatureMapDnn:
                     enroll_labels,
                     test_frames,
                     test_labels):
-        """Run prediction, will save the result to save_path/result.txt
+        """Run prediction, will save the result to save_path
 
         Parameters
         ----------

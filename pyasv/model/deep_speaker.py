@@ -17,10 +17,8 @@ class DeepSpeaker:
         config : ``config`` class.
             The config of ctdnn model, no extra need.
         out_channel : ``list``
-            The out channel of each res_block.
-
-            default
-            ::
+            The out channel of each res_block.::
+            
                 out_channel = [64, 128, 256, 512]
 
         Notes
