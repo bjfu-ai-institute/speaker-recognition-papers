@@ -5,3 +5,4 @@ import pyasv.data_manage
 import pyasv.config
 import pyasv.backend
 import pyasv.loss
+from core import run

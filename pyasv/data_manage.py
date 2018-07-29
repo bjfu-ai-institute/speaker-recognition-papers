@@ -40,9 +40,12 @@ class DataManage(object):
         self.raw_frames = np.array(raw_frames, dtype=np.float32)
         self.raw_labels = np.array(raw_labels, dtype=np.float32)
         self.batch_size = config.BATCH_SIZE
-        self.epoch_size = len(raw_frames) / config.BATCH_SIZE
+        if type(raw_frames) == np.ndarray:
+            self.num_examples = raw_frames.shape[0]
+        else:
+            self.num_examples = len(raw_frames)
+        self.epoch_size = self.num_examples / config.BATCH_SIZE
         self.batch_counter = 0
-        self.is_eof = False
         self.spkr_num = np.array(self.raw_labels).shape[-1]
 
     @property
@@ -67,7 +70,6 @@ class DataManage(object):
             self.batch_counter += 1
             return batch_frames, batch_labels
         else:
-            self.is_eof = True
             return self.raw_frames[self.batch_counter * self.batch_size:-1], \
                    self.raw_labels[self.batch_counter * self.batch_size:-1]
 
