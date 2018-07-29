@@ -66,6 +66,7 @@ pyasv/test.py
 pyasv/run_*.py
 run_*.py
 test*
+run_ctdnn.py
 
 # temp
 pyasv/MANIFEST.in
