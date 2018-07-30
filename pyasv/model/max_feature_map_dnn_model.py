@@ -79,7 +79,7 @@ class MaxFeatureMapDnn:
         out, mfm6 = self._inference(x)
         self._feature = out
         self._prediction = out
-        self._loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=out)
+        self._loss = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out)
 
     def _inference(self, frames):
         conv_1 = self._conv2d(frames, name='Conv1',shape=[7, 7, 1, 128], 
@@ -108,15 +108,15 @@ class MaxFeatureMapDnn:
                                 strides=[1, 1, 1, 1], padding='VALID')
         mfm_4_a = self._max_feature_map(conv_4_a)
         conv_4_b = self._conv2d(mfm_4_a, 'Conv4_b', shape=[3, 3, 128, 128], 
-                                strides=[1, 1, 1, 1], padding='VALID')
+                                strides=[1, 1, 1, 1], padding='SAME')
         mfm_4_b = self._max_feature_map(conv_4_b)
         #
 
         conv_5_a = self._conv2d(mfm_4_b, 'Conv5_a', shape=[1, 1, 64, 128], 
-                                strides=[1, 1, 1, 1], padding='VALID')
+                                strides=[1, 1, 1, 1], padding='SAME')
         mfm_5_a = self._max_feature_map(conv_5_a)
         conv_5_b = self._conv2d(mfm_5_a, 'Conv5_b', shape=[3, 3, 64, 128], 
-                                strides=[1, 1, 1, 1], padding='VALID')
+                                strides=[1, 1, 1, 1], padding='SAME')
         mfm_5_b = self._max_feature_map(conv_5_b)
         pool_5 = tf.nn.max_pool(mfm_5_b, [1, 2, 2, 1], [1, 2, 2, 1], 'SAME')
         
@@ -294,7 +294,7 @@ def _no_gpu(config, train, validation):
             for batch_id in range(total_batch):
                 print("batch_%d....." % batch_id)
                 batch_x, batch_y = train.next_batch
-                batch_x = batch_x.reshape(-1, 9, 40, 1)
+                batch_x = batch_x.reshape(-1, 50, 40, 1)
                 batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
                 _, _loss, feature = sess.run([train_op, loss, feature],
                                              feed_dict={x: batch_x, y: batch_y})
@@ -405,7 +405,7 @@ def _multi_gpu(config, train, validation):
                 for batch_idx in range(total_batch):
                     # print("batch_%d....."%batch_idx)
                     batch_x, batch_y = train.next_batch
-                    batch_x = batch_x.reshape(-1, 9, 40, 1)
+                    batch_x = batch_x.reshape(-1, 50, 40, 1)
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
