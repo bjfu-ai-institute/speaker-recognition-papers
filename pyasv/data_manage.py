@@ -40,7 +40,7 @@ class DataManage(object):
         self.raw_frames = np.array(raw_frames, dtype=np.float32)
         self.raw_labels = np.array(raw_labels, dtype=np.float32)
         if np.array(self.raw_labels).shape[-1] != config.N_SPEAKER:
-            self.raw_labels = np.eye(config.N_SPEAKER)[raw_labels.reshape(-1)]
+            self.raw_labels = np.eye(config.N_SPEAKER)[self.raw_labels.reshape(-1)]
         self.batch_size = config.BATCH_SIZE
         if type(raw_frames) == np.ndarray:
             self.num_examples = raw_frames.shape[0]
