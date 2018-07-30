@@ -38,6 +38,8 @@ class DataManage(object):
         assert len(raw_frames) == len(raw_labels)
         # must be one-hot encoding
         self.raw_frames = np.array(raw_frames, dtype=np.float32)
+        raw_labels = np.eye(config.N_SPEAKER)[raw_labels.reshape(-1)]
+                    
         self.raw_labels = np.array(raw_labels, dtype=np.float32)
         self.batch_size = config.BATCH_SIZE
         if type(raw_frames) == np.ndarray:

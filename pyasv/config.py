@@ -96,6 +96,6 @@ class Config:
             the name of your config file.
         """
         f = open(os.path.join(self.SAVE_PATH, name+'.json'), 'w')
-        dic = {'config': self, 'name': name}
+        dic = self.__dict__
         json.dump(dic, f)
         f.close()

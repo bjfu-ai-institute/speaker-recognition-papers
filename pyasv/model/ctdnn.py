@@ -177,14 +177,78 @@ def _no_gpu(config, train, validation):
     tf.reset_default_graph()
     with tf.Session() as sess:
         learning_rate = config.LR
+        print('build model...')
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         x = tf.placeholder(tf.float32, [None, 784])
         y = tf.placeholder(tf.float32, [None, 10])
         model = CTDnn(config, x, y)
         pred = model.prediction
         loss = model.loss
+        feature = model.feature
         train_op = opt.minimize(loss)
-        # TODO
+        vectors = dict()
+        print("done...")
+        print('run train op...')
+        sess.run(tf.global_variables_initializer())
+        for epoch in range(config.MAX_STEP):
+            start_time = time.time()
+            avg_loss = 0.0
+            total_batch = int(train.num_examples / config.BATCH_SIZE)
+            print('\n---------------------')
+            print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+            for batch_id in range(total_batch):
+                print("batch_%d....."%batch_id)
+                batch_x, batch_y = train.next_batch
+                batch_x = batch_x.reshape(-1, 9, 40, 1)
+                batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
+                _, _loss, feature = sess.run([train_op, loss, feature],
+                                             feed_dict={x:batch_x, y:batch_y})
+                avg_loss += _loss
+                for spkr in range(config.N_SPEAKER):
+                    if np.where(np.argmax(batch_y) == spkr) is not None: 
+                        vector = np.mean(feature[np.where(np.argmax(batch_y) == spkr)], axis=0)
+                        if spkr in vectors.keys():
+                            vector = (vectors[spkr] + vector)/2
+                        else:   
+                            vector = vector
+                            vectors[spkr] = vector
+                    else:
+                        if spkr not in vectors.keys():
+                            vector[spkr] = np.zeros([400], dtype=tf.float32)
+            avg_loss /= total_batch
+            print('Train loss:%.4f' % (avg_loss))
+            total_batch = int(validation.num_examples / config.N_GPU)
+            preds = None
+            ys = None
+            feature = None
+            for batch_idx in range(total_batch):
+                print("validation in batch_%d..."%batch_idx)
+                batch_pred, batch_feature = sess.run([pred, feature],
+                                                     feed_dict={x:batch_x, y:batch_y})
+                if preds is None:
+                    preds = batch_pred
+                else:
+                    preds = np.concatenate((preds, batch_pred), 0)
+                if feature is None:
+                    feature = batch_feature
+                else:
+                    feature = np.concatenate((feature, batch_feature), 0)
+            vec_preds = []
+            for sample in range(feature.shape[0]):
+                score = 1
+                pred = -1
+                for spkr in vectors.keys():
+                    if cosine(vectors[spkr], feature[sample]) > score:
+                        score = cosine(vectors[spkr], feature[sample])
+                        pred = int(spkr)
+                vec_preds.append(pred)
+            correct_pred = np.equal(np.argmax(y, 1), vec_preds)
+            val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
+            print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
+            stop_time = time.time()
+            elapsed_time = stop_time-start_time
+            print('Cost time: ' + str(elapsed_time) + ' sec.')
+        print('training done.')
 
 
 def _multi_gpu(config, train, validation):
@@ -192,8 +256,7 @@ def _multi_gpu(config, train, validation):
     with tf.Session() as sess:
         with tf.device('/cpu:0'):
             learning_rate = config.LR
-            opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
-
+            opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
             print('build model...')
             print('build model on gpu tower...')
             models = []
@@ -239,36 +302,42 @@ def _multi_gpu(config, train, validation):
                 print('\n---------------------')
                 print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
                 for batch_idx in range(total_batch):
+                    # print("batch_%d....."%batch_idx)
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
-                    batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
                     inp_dict = dict()
+                    # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
                     _, _loss, feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
+                    # print("train part done...")
                     avg_loss += _loss
                     for spkr in range(config.N_SPEAKER):
-                        vector = np.mean(feature[np.where(np.argmax(batch_y) == spkr)], axis=1)
-                        if spkr in vectors.keys():
-                            vector = (vectors[spkr] + vector)/2
-                        else:
-                            vector = vector
-                        vectors[spkr] = vector
-
+                        if np.where(np.argmax(batch_y) == spkr) is not None: 
+                            vector = np.mean(feature[np.where(np.argmax(batch_y) == spkr)], axis=1)
+                            if spkr in vectors.keys():
+                                vector = (vectors[spkr] + vector)/2
+                            else:
+                                vector = vector
+                                vectors[spkr] = vector
+                    # print("vector part done....")   
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
 
                 f = open("vectors_log", 'w')
                 for key in vectors.keys():
                     f.writelines(str(key) + ' ' + str(vectors[key]) + '\n')
-                val_payload_per_gpu = config.BATCH_SIZE / config.N_GPU
-
+                
+                val_payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
+                if config.BATCH_SIZE % config.N_GPU:
+                    print("Warning: Batch size can't to be divisible of N_GPU")
+                
                 total_batch = int(validation.num_examples / config.N_GPU)
                 preds = None
                 ys = None
                 feature = None
                 for batch_idx in range(total_batch):
 
-                    batch_x, batch_y = validation.next_batch(config.BATCH_SIZE)
+                    batch_x, batch_y = validation.next_batch
 
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
                     batch_pred,batch_y, batch_feature = sess.run([all_pred, all_y, get_feature], inp_dict)
@@ -295,7 +364,7 @@ def _multi_gpu(config, train, validation):
                             pred = int(spkr)
                     vec_preds.append(pred)
                 correct_pred = np.equal(np.argmax(all_y, 1), vec_preds)
-                val_accuracy = np.mean(np.cast(correct_pred, 'float'))
+                val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
 
                 stop_time = time.time()
@@ -308,10 +377,22 @@ def cosine(vector1, vector2):
 
 def run(config, train, validation):
     if config.N_GPU == 0:
-        _no_gpu(config)
+        _no_gpu(config, train, validation)
     else:
+        os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
+        memory_gpu=[int(x.split()[2]) for x in open('tmp','r').readlines()]
+        gpu_list = []
+        for gpu in range(config.N_GPU):
+            gpu_list.append(str(np.argmax(memory_gpu)))
+            memory_gpu[np.argmax(memory_gpu)] = -10000
+        s = ""
+        for i in range(config.N_GPU):
+            if i != 0:
+                s += ','
+            s += str(gpu_list[i])
+        os.environ['CUDA_VISIBLE_DEVICES'] = s
         _multi_gpu(config, train, validation)
 
 
 def restore():
-    return
+    print("not implemented now")
