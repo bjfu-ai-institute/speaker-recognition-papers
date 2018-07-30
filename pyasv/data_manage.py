@@ -38,9 +38,9 @@ class DataManage(object):
         assert len(raw_frames) == len(raw_labels)
         # must be one-hot encoding
         self.raw_frames = np.array(raw_frames, dtype=np.float32)
-        raw_labels = np.eye(config.N_SPEAKER)[raw_labels.reshape(-1)]
-                    
         self.raw_labels = np.array(raw_labels, dtype=np.float32)
+        if np.array(self.raw_labels).shape[-1] != config.N_SPEAKER:
+            self.raw_labels = np.eye(config.N_SPEAKER)[raw_labels.reshape(-1)]
         self.batch_size = config.BATCH_SIZE
         if type(raw_frames) == np.ndarray:
             self.num_examples = raw_frames.shape[0]
@@ -72,8 +72,8 @@ class DataManage(object):
             self.batch_counter += 1
             return batch_frames, batch_labels
         else:
-            return self.raw_frames[self.batch_counter * self.batch_size:-1], \
-                   self.raw_labels[self.batch_counter * self.batch_size:-1]
+            return self.raw_frames[self.batch_counter * self.batch_size:], \
+                   self.raw_labels[self.batch_counter * self.batch_size:]
 
 
 class DataManage4BigData(object):

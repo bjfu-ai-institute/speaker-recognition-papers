@@ -4,7 +4,7 @@
 import tensorflow as tf
 import sys
 
-sys.path.append("..")
+sys.path.append("../..")
 import os
 import time
 import numpy as np
@@ -179,8 +179,8 @@ def _no_gpu(config, train, validation):
         learning_rate = config.LR
         print('build model...')
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        x = tf.placeholder(tf.float32, [None, 784])
-        y = tf.placeholder(tf.float32, [None, 10])
+        x = tf.placeholder(tf.float32, [None, 9, 40, 1])
+        y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
         model = CTDnn(config, x, y)
         pred = model.prediction
         loss = model.loss
@@ -205,26 +205,27 @@ def _no_gpu(config, train, validation):
                                              feed_dict={x:batch_x, y:batch_y})
                 avg_loss += _loss
                 for spkr in range(config.N_SPEAKER):
-                    if np.where(np.argmax(batch_y) == spkr) is not None: 
-                        vector = np.mean(feature[np.where(np.argmax(batch_y) == spkr)], axis=0)
+                    if len(feature[np.argmax(batch_y, 1) == spkr]):
+                        vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
                         if spkr in vectors.keys():
                             vector = (vectors[spkr] + vector)/2
+                            vectors[spkr] = vector
                         else:   
                             vector = vector
                             vectors[spkr] = vector
                     else:
                         if spkr not in vectors.keys():
-                            vector[spkr] = np.zeros([400], dtype=tf.float32)
+                            vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
             total_batch = int(validation.num_examples / config.N_GPU)
             preds = None
-            ys = None
             feature = None
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx)
-                batch_pred, batch_feature = sess.run([pred, feature],
-                                                     feed_dict={x:batch_x, y:batch_y})
+                batch_x, batch_y = validation.next_batch
+                batch_y, batch_pred, batch_feature = sess.run([y, pred, feature],
+                                                              feed_dict={x:batch_x, y:batch_y})
                 if preds is None:
                     preds = batch_pred
                 else:
@@ -233,6 +234,10 @@ def _no_gpu(config, train, validation):
                     feature = batch_feature
                 else:
                     feature = np.concatenate((feature, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
             vec_preds = []
             for sample in range(feature.shape[0]):
                 score = 1
@@ -242,7 +247,7 @@ def _no_gpu(config, train, validation):
                         score = cosine(vectors[spkr], feature[sample])
                         pred = int(spkr)
                 vec_preds.append(pred)
-            correct_pred = np.equal(np.argmax(y, 1), vec_preds)
+            correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
             val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
             stop_time = time.time()
@@ -312,21 +317,20 @@ def _multi_gpu(config, train, validation):
                     # print("train part done...")
                     avg_loss += _loss
                     for spkr in range(config.N_SPEAKER):
-                        if np.where(np.argmax(batch_y) == spkr) is not None: 
-                            vector = np.mean(feature[np.where(np.argmax(batch_y) == spkr)], axis=1)
+                        if len(feature[np.argmax(batch_y, 1) == spkr]):
+                            vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
                             if spkr in vectors.keys():
-                                vector = (vectors[spkr] + vector)/2
+                                vector = (vectors[spkr] + vector) / 2
                             else:
                                 vector = vector
-                                vectors[spkr] = vector
-                    # print("vector part done....")   
+                            vectors[spkr] = vector
+                        else:
+                            if spkr not in vectors.keys():
+                                vectors[spkr] = np.zeros(400, dtype=np.float32)
+                    # print("vector part done....")
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
 
-                f = open("vectors_log", 'w')
-                for key in vectors.keys():
-                    f.writelines(str(key) + ' ' + str(vectors[key]) + '\n')
-                
                 val_payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
@@ -356,14 +360,14 @@ def _multi_gpu(config, train, validation):
 
                 vec_preds = []
                 for sample in range(feature.shape[0]):
-                    score = 1
+                    score = -100
                     pred = -1
                     for spkr in vectors.keys():
                         if cosine(vectors[spkr], feature[sample]) > score:
                             score = cosine(vectors[spkr], feature[sample])
                             pred = int(spkr)
                     vec_preds.append(pred)
-                correct_pred = np.equal(np.argmax(all_y, 1), vec_preds)
+                correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
 
@@ -372,13 +376,17 @@ def _multi_gpu(config, train, validation):
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
             print('training done.')
 
+
 def cosine(vector1, vector2):
     return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
+
 
 def run(config, train, validation):
     if config.N_GPU == 0:
         _no_gpu(config, train, validation)
     else:
+        if os.path.exists('./tmp'):
+            os.rename('./tmp', './tmp-backup')
         os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
         memory_gpu=[int(x.split()[2]) for x in open('tmp','r').readlines()]
         gpu_list = []
@@ -391,8 +399,34 @@ def run(config, train, validation):
                 s += ','
             s += str(gpu_list[i])
         os.environ['CUDA_VISIBLE_DEVICES'] = s
+        os.remove('./tmp')
         _multi_gpu(config, train, validation)
 
 
 def restore():
     print("not implemented now")
+
+
+def _main():
+    """
+    Test model.
+    """
+    from pyasv.data_manage import DataManage
+    from pyasv import Config
+    sys.path.append("../..")
+
+    con = Config(name='ctdnn', n_speaker=100, batch_size=64, n_gpu=4, max_step=20, is_big_dataset=False,
+                 learning_rate=0.001, save_path='./save')
+    x = np.random.random([6400, 9, 40, 1])
+    y = np.random.randint(0, 100, [6400, 1])
+    train = DataManage(x, y, con)
+
+    x = np.random.random([640, 9, 40, 1])
+    y = np.random.randint(0, 100, [640, 1])
+    validation = DataManage(x, y, con)
+
+    run(con, train, validation)
+
+
+if __name__ == '__main__':
+    _main()
