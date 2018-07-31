@@ -16,7 +16,8 @@ class Config:
                  save_path=None,
                  conv_weight_decay=None,
                  fc_weight_decay=None,
-                 bn_epsilon=None):
+                 bn_epsilon=None,
+                 slide_windows=None):
         """
         Parameters
         ----------
@@ -29,6 +30,9 @@ class Config:
         url_of_bigdataset_temp_file : ``str``
             To decide the save path of the features you want to restore.
             If the param "is_big_dataset" is False, this param should be None.
+        slide_windows : ``list``
+            This list have two element. The first is `l` and the second is `r`
+            If slide_windows is not ``None``, each frame's feature will be replace by [i-l, i+r] frames' feature.
         """
         if config_path:
             f = open(config_path, 'r')
@@ -49,7 +53,8 @@ class Config:
             self.CONV_WEIGHT_DECAY = conv_weight_decay
             self.FC_WEIGHT_DECAY = fc_weight_decay
             self.BN_EPSILON = bn_epsilon
-    
+            self.SLIDE_WINDOWS = slide_windows
+
     def set(self,
             n_speaker=None,
             batch_size=None,
@@ -61,32 +66,35 @@ class Config:
             save_path=None,
             conv_weight_decay=None,
             fc_weight_dacay=None,
-            bn_epsilon=None):
+            bn_epsilon=None,
+            slide_windows=None):
         """The ``set`` method is used for reset some config.
         """
-        if n_speaker:
+        if n_speaker is not None:
             self.N_SPEAKER = n_speaker
-        if batch_size:
+        if batch_size is not None:
             self.BATCH_SIZE = batch_size
-        if n_gpu:
+        if n_gpu is not None:
             self.N_GPU = n_gpu
-        if max_step:
+        if max_step is not None:
             self.MAX_STEP = max_step
-        if is_big_dataset:
+        if is_big_dataset is not None:
             self.IS_BIG_DATASET = is_big_dataset
-        if url_of_bigdataset_temp_file:
+        if url_of_bigdataset_temp_file is not None:
             self.URL_OF_BIG_DATASET = url_of_bigdataset_temp_file
-        if learning_rate:
+        if learning_rate is not None:
             self.LR = learning_rate
-        if save_path:
+        if save_path is not None:
             self.SAVE_PATH = save_path
-        if conv_weight_decay:
+        if conv_weight_decay is not None:
             self.CONV_WEIGHT_DECAY = conv_weight_decay
-        if fc_weight_dacay:
+        if fc_weight_dacay is not None:
             self.FC_WEIGHT_DECAY = fc_weight_dacay
-        if bn_epsilon:
+        if bn_epsilon is not None:
             self.BN_EPSILON = bn_epsilon
-        
+        if slide_windows is not None:
+            self.SLIDE_WINDOWS = slide_windows
+
     def save(self, name='global_config'):
         """This method is used for save your config to save_path
 

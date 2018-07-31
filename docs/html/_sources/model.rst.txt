@@ -1,6 +1,17 @@
 Model
 =====
 
+.. note::
+    Basic setting in config (every model needs)
+    
+    * model name
+    * speaker number
+    * max training step
+    * number of gpus. if equal to zero, we'll run model without gpu.
+    * save path
+    * learning rate
+    * batch size
+
 CTDNN
 -----
 
@@ -13,6 +24,8 @@ CTDNN
 
     .. automethod:: __init__
 
+.. autofunction:: pyasv.model.ctdnn.run
+
 DeepSpeaker
 -----------
 
@@ -20,10 +33,19 @@ DeepSpeaker
 <https://github.com/vzxxbacq/speaker-recognition-papers/blob/master/papers/Deep%20Speaker%20an%20End-to-End%20Neural%20Speaker%20Embedding%20System.pdf>`_.
 *Chao Li∗, Xiaokong Ma∗, Bing Jiang∗, Xiangang Li ∗ Xuewei Zhang, Xiao Liu, Ying Cao, Ajay Kannan, Zhenyao Zhu*
 
+.. note::
+    Extra setting in config:
+    
+    * weight decay for conv layer
+    * weight decay for fc layer
+    * epsilon for bn layer
+
 .. autoclass:: pyasv.model.deep_speaker.DeepSpeaker
     :members:
 
     .. automethod:: __init__
+
+.. autofunction:: pyasv.model.deep_speaker.run
 
 Max Feature Map model
 ---------------------
@@ -36,3 +58,5 @@ Max Feature Map model
     :members:
 
     .. automethod:: __init__
+
+.. autofunction:: pyasv.model.max_feature_map_dnn_model.run

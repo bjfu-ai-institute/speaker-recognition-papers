@@ -28,7 +28,10 @@ More info: [Doc](https://vzxxbacq.github.io/speaker-recognition-papers/html/inde
 If you want run these code on your computer, you only need to write code like this:
 
 ```python
-import pyasv
+from pyasv import Config
+from pyasv.speech_processing import ext_mfcc_feature
+from pyasv.data_manage import DataManage
+from pyasv.model.ctdnn import run
 
 config = pyasv.Config(name='my_ctdnn_model',
                     n_speaker=1e3,
@@ -38,17 +41,17 @@ config = pyasv.Config(name='my_ctdnn_model',
                     is_big_dataset=False,
                     url_of_bigdataset_temp_file=None,
                     learning_rate=1e-3,
+                    slide_windows=[4, 4]
                     save_path='/home/my_path')
 config.save('./my_config_path')
 
-config_deep_speaker = pyasv.Config(config_path='./my_config_path')
-config_deep_speaker.set(name='my_deep_speaker_model',
-                        conv_weight_decay=1e-3,
-                        fc_weight_dacay=1e-3,
-                        bn_epsilon=1e-3)
+frames, labels = ext_mfcc_feature('data_set_path', config)
+train = DataManage(frames, labels, config)
 
-m1 = pyasv.model.CTDnn(config)
-m2 = pyasv.model.DeepSpeaker(config_deep_speaker)
+frames, labels = ext_mfcc_feature('data_set_path', config)
+validation = DataManage(frames, labels, config)
+
+run(config, train, validation)
 ```
 
 ## TODO

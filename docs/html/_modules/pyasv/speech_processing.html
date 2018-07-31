@@ -211,7 +211,7 @@
 <span class="kn">from</span> <span class="nn">scipy.fftpack</span> <span class="k">import</span> <span class="n">dct</span>
 
 
-<div class="viewcode-block" id="slide_windows"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.slide_windows">[docs]</a><span class="k">def</span> <span class="nf">slide_windows</span><span class="p">(</span><span class="n">feature</span><span class="p">):</span>
+<div class="viewcode-block" id="slide_windows"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.slide_windows">[docs]</a><span class="k">def</span> <span class="nf">slide_windows</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;concat the feature with the frame before and after it.</span>
 
 <span class="sd">    Parameters</span>
@@ -227,22 +227,25 @@
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">!=</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
     <span class="n">result_</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">49</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">:</span>
+    <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">SLIDE_WINDOWS</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">r</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">l</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">result_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">50</span><span class="p">]))</span>
+            <span class="n">result_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">l</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">r</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result_</span><span class="p">)</span>  
     <span class="k">return</span> <span class="n">result</span></div>
         
 
-<div class="viewcode-block" id="ext_mfcc_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_mfcc_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_mfcc_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
+<div class="viewcode-block" id="ext_mfcc_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_mfcc_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_mfcc_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This function is used for extract MFCC feature of a dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    url_path : ``str``</span>
 <span class="sd">        The path of the &#39;PATH&#39; file.</span>
+<span class="sd">    config : ``config``</span>
+<span class="sd">        config of feature. (To decide if we need slide_window, and params of slide_window)</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -264,20 +267,22 @@
             <span class="n">mfcc_delta_delta</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">delta</span><span class="p">(</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
             <span class="n">mfcc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">mfcc_delta</span><span class="p">,</span> <span class="n">mfcc_delta_delta</span><span class="p">])])</span>
             <span class="n">mfcc</span> <span class="o">=</span> <span class="n">cmvn</span><span class="p">(</span><span class="n">mfcc</span><span class="p">)</span>
-            <span class="n">mfcc</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">mfcc</span><span class="p">)</span>
+            <span class="n">mfcc</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">mfcc</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mfcc</span><span class="p">:</span>
                 <span class="n">mfccs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mfccs</span><span class="p">,</span> <span class="n">labels</span></div>
 
 
-<div class="viewcode-block" id="ext_fbank_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_fbank_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_fbank_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">):</span>
+<div class="viewcode-block" id="ext_fbank_feature"><a class="viewcode-back" href="../../speech_processing.html#pyasv.speech_processing.ext_fbank_feature">[docs]</a><span class="k">def</span> <span class="nf">ext_fbank_feature</span><span class="p">(</span><span class="n">url_path</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This function is used for extract features of one dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    url_path : ``str``</span>
 <span class="sd">        The path of the &#39;PATH&#39; file.</span>
+<span class="sd">    config : ``config``</span>
+<span class="sd">        config of feature. (To decide if we need slide_window, and params of slide_window)</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -309,7 +314,7 @@
 <span class="sd">            fbank = slide_windows(fbank)</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">fbank</span> <span class="o">=</span> <span class="n">calc_fbank</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-            <span class="n">fbank</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">fbank</span><span class="p">)</span>
+            <span class="n">fbank</span> <span class="o">=</span> <span class="n">slide_windows</span><span class="p">(</span><span class="n">fbank</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fbank</span><span class="p">:</span>
                 <span class="n">fbanks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                 <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>

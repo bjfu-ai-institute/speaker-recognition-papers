@@ -36,14 +36,32 @@ class CTDnn:
 
     @property
     def loss(self):
+        """A ``property`` member to get loss.
+
+        Returns
+        -------
+        loss : ``tf.operation``
+        """
         return self._loss
 
     @property
     def prediction(self):
+        """A ``property`` member to get feature.
+
+        Returns
+        -------
+        feature : ``tf.operation``
+        """
         return self._prediction
 
     @property
     def feature(self):
+        """A ``property`` member to get feature.
+
+        Returns
+        -------
+        feature : ``tf.operation``
+        """
         return self._feature
 
     def _build_pred_graph(self, x):
@@ -190,6 +208,7 @@ def _no_gpu(config, train, validation):
         print("done...")
         print('run train op...')
         sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
         for epoch in range(config.MAX_STEP):
             start_time = time.time()
             avg_loss = 0.0
@@ -221,6 +240,7 @@ def _no_gpu(config, train, validation):
             total_batch = int(validation.num_examples / config.N_GPU)
             preds = None
             feature = None
+            ys = None
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx)
                 batch_x, batch_y = validation.next_batch
@@ -252,6 +272,7 @@ def _no_gpu(config, train, validation):
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
             stop_time = time.time()
             elapsed_time = stop_time-start_time
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
             print('Cost time: ' + str(elapsed_time) + ' sec.')
         print('training done.')
 
@@ -296,6 +317,8 @@ def _multi_gpu(config, train, validation):
 
             print('run train op...')
             sess.run(tf.global_variables_initializer())
+
+            saver = tf.train.Saver()
 
             for epoch in range(config.MAX_STEP):
                 start_time = time.time()
@@ -370,7 +393,7 @@ def _multi_gpu(config, train, validation):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -382,6 +405,17 @@ def cosine(vector1, vector2):
 
 
 def run(config, train, validation):
+    """Train CTDNN model.
+    
+    Parameters
+    ----------
+    config : ``config``
+        the config of model.
+    train : ``DataManage``
+        train dataset.
+    validation
+        validation dataset.
+    """
     if config.N_GPU == 0:
         _no_gpu(config, train, validation)
     else:

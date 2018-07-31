@@ -1,7 +1,6 @@
 import tensorflow as tf
 import sys
 sys.path.append("../..")
-from scipy.spatial.distance import cosine
 import os
 import time
 import numpy as np
@@ -285,6 +284,7 @@ def _no_gpu(config, train, validation):
         print("done...")
         print('run train op...')
         sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
         for epoch in range(config.MAX_STEP):
             start_time = time.time()
             avg_loss = 0.0
@@ -336,7 +336,7 @@ def _no_gpu(config, train, validation):
                     ys = np.concatenate((ys, batch_y), 0)
             vec_preds = []
             for sample in range(feature.shape[0]):
-                score = 1
+                score = -100
                 pred = -1
                 for spkr in vectors.keys():
                     if cosine(vectors[spkr], feature[sample]) > score:
@@ -346,6 +346,7 @@ def _no_gpu(config, train, validation):
             correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
             val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
             stop_time = time.time()
             elapsed_time = stop_time - start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -392,6 +393,8 @@ def _multi_gpu(config, train, validation):
 
             print('run train op...')
             sess.run(tf.global_variables_initializer())
+
+            saver = tf.train.Saver()
 
             for epoch in range(config.MAX_STEP):
                 start_time = time.time()
@@ -466,7 +469,7 @@ def _multi_gpu(config, train, validation):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
                 stop_time = time.time()
                 elapsed_time = stop_time - start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -474,6 +477,17 @@ def _multi_gpu(config, train, validation):
 
 
 def run(config, train, validation):
+    """Train MFM model.
+    
+    Parameters
+    ----------
+    config : ``config``
+        the config of model.
+    train : ``DataManage``
+        train dataset.
+    validation
+        validation dataset.
+    """
     if config.N_GPU == 0:
         _no_gpu(config, train, validation)
     else:

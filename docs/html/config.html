@@ -27,7 +27,8 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Model" href="model.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -179,7 +180,7 @@ just need to set the needed parameters when we create a config class.</p>
 </div>
 <dl class="class">
 <dt id="pyasv.Config">
-<em class="property">class </em><code class="descclassname">pyasv.</code><code class="descname">Config</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pyasv.</code><code class="descname">Config</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em>, <em>slide_windows=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config" title="Permalink to this definition">¶</a></dt>
 <dd><p class="rubric">Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -197,7 +198,7 @@ just need to set the needed parameters when we create a config class.</p>
 </table>
 <dl class="method">
 <dt id="pyasv.Config.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>config_path=None</em>, <em>name=None</em>, <em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_decay=None</em>, <em>bn_epsilon=None</em>, <em>slide_windows=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -214,6 +215,10 @@ be None.</p>
 <dt><strong>url_of_bigdataset_temp_file</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
 <dd><p class="first last">To decide the save path of the features you want to restore.
 If the param “is_big_dataset” is False, this param should be None.</p>
+</dd>
+<dt><strong>slide_windows</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">list</span></code></span></dt>
+<dd><p class="first last">This list have two element. The first is <em class="xref py py-obj">l</em> and the second is <em class="xref py py-obj">r</em>
+If slide_windows is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, each frame’s feature will be replace by [i-l, i+r] frames’ feature.</p>
 </dd>
 </dl>
 </td>
@@ -243,7 +248,7 @@ If the param “is_big_dataset” is False, this param should be None.</p>
 
 <dl class="method">
 <dt id="pyasv.Config.set">
-<code class="descname">set</code><span class="sig-paren">(</span><em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_dacay=None</em>, <em>bn_epsilon=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config.set" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set</code><span class="sig-paren">(</span><em>n_speaker=None</em>, <em>batch_size=None</em>, <em>n_gpu=None</em>, <em>max_step=None</em>, <em>is_big_dataset=None</em>, <em>url_of_bigdataset_temp_file=None</em>, <em>learning_rate=None</em>, <em>save_path=None</em>, <em>conv_weight_decay=None</em>, <em>fc_weight_dacay=None</em>, <em>bn_epsilon=None</em>, <em>slide_windows=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/config.html#Config.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.Config.set" title="Permalink to this definition">¶</a></dt>
 <dd><p>The <code class="docutils literal notranslate"><span class="pre">set</span></code> method is used for reset some config.</p>
 </dd></dl>
 
@@ -256,6 +261,13 @@ If the param “is_big_dataset” is False, this param should be None.</p>
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="model.html" class="btn btn-neutral" title="Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

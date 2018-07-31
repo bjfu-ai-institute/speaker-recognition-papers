@@ -167,7 +167,7 @@
 <h2>ext_mfcc_feature<a class="headerlink" href="#ext-mfcc-feature" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="pyasv.speech_processing.ext_mfcc_feature">
-<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_mfcc_feature</code><span class="sig-paren">(</span><em>url_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_mfcc_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_mfcc_feature" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_mfcc_feature</code><span class="sig-paren">(</span><em>url_path</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_mfcc_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_mfcc_feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used for extract MFCC feature of a dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -176,6 +176,9 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>url_path</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
 <dd><p class="first last">The path of the ‘PATH’ file.</p>
+</dd>
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code></span></dt>
+<dd><p class="first last">config of feature. (To decide if we need slide_window, and params of slide_window)</p>
 </dd>
 </dl>
 </td>
@@ -199,7 +202,7 @@
 <h2>ext_fbank_feature<a class="headerlink" href="#ext-fbank-feature" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="pyasv.speech_processing.ext_fbank_feature">
-<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_fbank_feature</code><span class="sig-paren">(</span><em>url_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_fbank_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_fbank_feature" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">ext_fbank_feature</code><span class="sig-paren">(</span><em>url_path</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#ext_fbank_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.ext_fbank_feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used for extract features of one dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -208,6 +211,9 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>url_path</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt>
 <dd><p class="first last">The path of the ‘PATH’ file.</p>
+</dd>
+<dt><strong>config</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><code class="docutils literal notranslate"><span class="pre">config</span></code></span></dt>
+<dd><p class="first last">config of feature. (To decide if we need slide_window, and params of slide_window)</p>
 </dd>
 </dl>
 </td>
@@ -299,7 +305,7 @@
 <h2>slide_windows<a class="headerlink" href="#slide-windows" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="pyasv.speech_processing.slide_windows">
-<code class="descclassname">pyasv.speech_processing.</code><code class="descname">slide_windows</code><span class="sig-paren">(</span><em>feature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#slide_windows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.slide_windows" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pyasv.speech_processing.</code><code class="descname">slide_windows</code><span class="sig-paren">(</span><em>feature</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyasv/speech_processing.html#slide_windows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyasv.speech_processing.slide_windows" title="Permalink to this definition">¶</a></dt>
 <dd><p>concat the feature with the frame before and after it.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

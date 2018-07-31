@@ -168,7 +168,8 @@
                  <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">conv_weight_decay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">fc_weight_decay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">bn_epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">bn_epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">slide_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -181,6 +182,9 @@
 <span class="sd">        url_of_bigdataset_temp_file : ``str``</span>
 <span class="sd">            To decide the save path of the features you want to restore.</span>
 <span class="sd">            If the param &quot;is_big_dataset&quot; is False, this param should be None.</span>
+<span class="sd">        slide_windows : ``list``</span>
+<span class="sd">            This list have two element. The first is `l` and the second is `r`</span>
+<span class="sd">            If slide_windows is not ``None``, each frame&#39;s feature will be replace by [i-l, i+r] frames&#39; feature.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">config_path</span><span class="p">:</span>
             <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
@@ -200,8 +204,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span> <span class="o">=</span> <span class="n">save_path</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">CONV_WEIGHT_DECAY</span> <span class="o">=</span> <span class="n">conv_weight_decay</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">FC_WEIGHT_DECAY</span> <span class="o">=</span> <span class="n">fc_weight_decay</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">BN_EPSILON</span> <span class="o">=</span> <span class="n">bn_epsilon</span></div>
-    
+            <span class="bp">self</span><span class="o">.</span><span class="n">BN_EPSILON</span> <span class="o">=</span> <span class="n">bn_epsilon</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SLIDE_WINDOWS</span> <span class="o">=</span> <span class="n">slide_windows</span></div>
+
 <div class="viewcode-block" id="Config.set"><a class="viewcode-back" href="../../config.html#pyasv.Config.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">n_speaker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -213,32 +218,35 @@
             <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">conv_weight_decay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">fc_weight_dacay</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">bn_epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">bn_epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">slide_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The ``set`` method is used for reset some config.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">n_speaker</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n_speaker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">N_SPEAKER</span> <span class="o">=</span> <span class="n">n_speaker</span>
-        <span class="k">if</span> <span class="n">batch_size</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="n">batch_size</span>
-        <span class="k">if</span> <span class="n">n_gpu</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n_gpu</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">N_GPU</span> <span class="o">=</span> <span class="n">n_gpu</span>
-        <span class="k">if</span> <span class="n">max_step</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">max_step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">MAX_STEP</span> <span class="o">=</span> <span class="n">max_step</span>
-        <span class="k">if</span> <span class="n">is_big_dataset</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_big_dataset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">IS_BIG_DATASET</span> <span class="o">=</span> <span class="n">is_big_dataset</span>
-        <span class="k">if</span> <span class="n">url_of_bigdataset_temp_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">url_of_bigdataset_temp_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">URL_OF_BIG_DATASET</span> <span class="o">=</span> <span class="n">url_of_bigdataset_temp_file</span>
-        <span class="k">if</span> <span class="n">learning_rate</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">learning_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">LR</span> <span class="o">=</span> <span class="n">learning_rate</span>
-        <span class="k">if</span> <span class="n">save_path</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">save_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span> <span class="o">=</span> <span class="n">save_path</span>
-        <span class="k">if</span> <span class="n">conv_weight_decay</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">conv_weight_decay</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">CONV_WEIGHT_DECAY</span> <span class="o">=</span> <span class="n">conv_weight_decay</span>
-        <span class="k">if</span> <span class="n">fc_weight_dacay</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fc_weight_dacay</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">FC_WEIGHT_DECAY</span> <span class="o">=</span> <span class="n">fc_weight_dacay</span>
-        <span class="k">if</span> <span class="n">bn_epsilon</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">BN_EPSILON</span> <span class="o">=</span> <span class="n">bn_epsilon</span></div>
-        
+        <span class="k">if</span> <span class="n">bn_epsilon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BN_EPSILON</span> <span class="o">=</span> <span class="n">bn_epsilon</span>
+        <span class="k">if</span> <span class="n">slide_windows</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SLIDE_WINDOWS</span> <span class="o">=</span> <span class="n">slide_windows</span></div>
+
 <div class="viewcode-block" id="Config.save"><a class="viewcode-back" href="../../config.html#pyasv.Config.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;global_config&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This method is used for save your config to save_path</span>
 
@@ -248,7 +256,7 @@
 <span class="sd">            the name of your config file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SAVE_PATH</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
-        <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="n">dic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span>
         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
 </pre></div>

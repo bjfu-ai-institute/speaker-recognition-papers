@@ -59,7 +59,7 @@ from scipy.io.wavfile import read
 from scipy.fftpack import dct
 
 
-def slide_windows(feature):
+def slide_windows(feature, config):
     """concat the feature with the frame before and after it.
 
     Parameters
@@ -75,22 +75,25 @@ def slide_windows(feature):
     if type(feature)!=np.ndarray:
         feature = np.array(feature)
     result_ = []
-    for i in range(feature.shape[0]-49):
-        if i < 50:
+    l, r = config.SLIDE_WINDOWS
+    for i in range(feature.shape[0]-r):
+        if i < l:
             continue
         else:
-            result_.append(np.array(feature[i-50:i+50]))
+            result_.append(np.array(feature[i-l:i+r+1]))
     result = np.array(result_)  
     return result
         
 
-def ext_mfcc_feature(url_path):
+def ext_mfcc_feature(url_path, config):
     """This function is used for extract MFCC feature of a dataset.
 
     Parameters
     ----------
     url_path : ``str``
         The path of the 'PATH' file.
+    config : ``config``
+        config of feature. (To decide if we need slide_window, and params of slide_window)
 
     Returns
     -------
@@ -112,20 +115,22 @@ def ext_mfcc_feature(url_path):
             mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
             mfcc = np.vstack([mfcc_, np.vstack([mfcc_delta, mfcc_delta_delta])])
             mfcc = cmvn(mfcc)
-            mfcc = slide_windows(mfcc)
+            mfcc = slide_windows(mfcc, config)
             for i in mfcc:
                 mfccs.append(i)
                 labels.append(index)
         return mfccs, labels
 
 
-def ext_fbank_feature(url_path):
+def ext_fbank_feature(url_path, config):
     """This function is used for extract features of one dataset.
 
     Parameters
     ----------
     url_path : ``str``
         The path of the 'PATH' file.
+    config : ``config``
+        config of feature. (To decide if we need slide_window, and params of slide_window)
 
     Returns
     -------
@@ -157,7 +162,7 @@ def ext_fbank_feature(url_path):
             fbank = slide_windows(fbank)
             """
             fbank = calc_fbank(url)
-            fbank = slide_windows(fbank)
+            fbank = slide_windows(fbank, config)
             for i in fbank:
                 fbanks.append(i)
                 labels.append(index)

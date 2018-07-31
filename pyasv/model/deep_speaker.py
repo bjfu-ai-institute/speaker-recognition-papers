@@ -32,6 +32,7 @@ class DeepSpeaker:
         self._gpu_ind = 0
         self.n_blocks = len(out_channel)
         self.out_channel = out_channel
+        self._name = config.MODEL_NAME
         self._n_speaker = config.N_SPEAKER
         self._max_step = config.MAX_STEP
         self._n_gpu = config.N_GPU
@@ -225,6 +226,7 @@ def _no_gpu(config, train, validation):
         print("done...")
         print('run train op...')
         sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
         for epoch in range(config.MAX_STEP):
             start_time = time.time()
             avg_loss = 0.0
@@ -284,6 +286,7 @@ def _no_gpu(config, train, validation):
             stop_time = time.time()
             elapsed_time = stop_time-start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
         print('training done.')
 
 
@@ -326,8 +329,10 @@ def _multi_gpu(config, train, validation):
             sess.run(tf.global_variables_initializer())
 
             # debug_mode
-            sess = debug.LocalCLIDebugWrapperSession(sess=sess)
+            # sess = debug.LocalCLIDebugWrapperSession(sess=sess)
 
+            saver = tf.train.Saver()
+            
             for epoch in range(config.MAX_STEP):
                 start_time = time.time()
                 payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
@@ -386,7 +391,7 @@ def _multi_gpu(config, train, validation):
 
                 vec_preds = []
                 for sample in range(feature.shape[0]):
-                    score = 1
+                    score = -100
                     pred = -1
                     for spkr in vectors.keys():
                         if cosine(vectors[spkr], feature[sample]) > score:
@@ -396,7 +401,7 @@ def _multi_gpu(config, train, validation):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -408,6 +413,17 @@ def cosine(vector1, vector2):
 
 
 def run(config, train, validation):
+    """Train DeepSpeaker model.
+    
+    Parameters
+    ----------
+    config : ``config``
+        the config of model.
+    train : ``DataManage``
+        train dataset.
+    validation
+        validation dataset.
+    """
     if config.N_GPU == 0:
         _no_gpu(config, train, validation)
     else:
