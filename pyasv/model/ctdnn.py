@@ -212,12 +212,11 @@ def _no_gpu(config, train, validation):
         for epoch in range(config.MAX_STEP):
             start_time = time.time()
             avg_loss = 0.0
-            total_batch = int(train.num_examples / config.BATCH_SIZE)
+            total_batch = int(train.num_examples / config.BATCH_SIZE) - 1
             feature_ = None
             print('\n---------------------')
-            print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+            print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
             for batch_id in range(total_batch):
-                print("batch_%d....."%batch_id, end='\r')
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
                 batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
@@ -228,6 +227,7 @@ def _no_gpu(config, train, validation):
                     feature_ = feature
                 else:
                     feature_ = np.concatenate((feature_, feature), 0)
+                print("batch_%d  batch_loss=%.4f"%(batch_id, _loss), end='\r')
             for spkr in range(config.N_SPEAKER):
                 if len(feature[np.argmax(batch_y, 1) == spkr]):
                     vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
@@ -241,12 +241,12 @@ def _no_gpu(config, train, validation):
                         vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
-            total_batch = int(validation.num_examples / config.N_GPU)
+            total_batch = int(validation.num_examples / config.N_GPU) - 1
             preds = None
             feature = None
             ys = None
             for batch_idx in range(total_batch):
-                print("validation in batch_%d..."%batch_idx)
+                print("validation in batch_%d..."%batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
                 batch_y, batch_pred, batch_feature = sess.run([y, pred, feature],
                                                               feed_dict={x:batch_x, y:batch_y})
@@ -329,13 +329,12 @@ def _multi_gpu(config, train, validation):
                 payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
-                total_batch = int(train.num_examples / config.BATCH_SIZE)
+                total_batch = int(train.num_examples / config.BATCH_SIZE) - 1
                 avg_loss = 0.0
                 print('\n---------------------')
                 print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
                 feature_ = None
                 for batch_idx in range(total_batch):
-                    print("batch_%d....."%batch_idx, end='\r')
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
                     inp_dict = dict()
@@ -348,6 +347,7 @@ def _multi_gpu(config, train, validation):
                         feature_ = feature
                     else:
                         feature_ = np.concatenate((feature_, feature), 0)
+                    print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
                 for spkr in range(config.N_SPEAKER):
                     if len(feature[np.argmax(batch_y, 1) == spkr]):
                         vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
@@ -366,8 +366,8 @@ def _multi_gpu(config, train, validation):
                 val_payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
-                
-                total_batch = int(validation.num_examples / config.N_GPU)
+
+                total_batch = int(validation.num_examples / config.N_GPU) - 1
                 preds = None
                 ys = None
                 feature = None

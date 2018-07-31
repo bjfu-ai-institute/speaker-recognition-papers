@@ -235,7 +235,6 @@ def _no_gpu(config, train, validation):
             print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
             feature_ = None
             for batch_id in range(total_batch):
-                print("batch_%d....."%batch_id, end='\r')
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
                 batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
@@ -246,6 +245,7 @@ def _no_gpu(config, train, validation):
                     feature_ = feature
                 else:
                     feature_ = np.concatenate((feature_, feature), 0)
+                print("batch_%d  batch_loss=%.4f"%(batch_id, _loss), end='\r')
             for spkr in range(config.N_SPEAKER):
                 if len(feature[np.argmax(batch_y, 1) == spkr]):
                     vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
@@ -263,7 +263,7 @@ def _no_gpu(config, train, validation):
             ys = None
             feature = None
             for batch_idx in range(total_batch):
-                print("validation in batch_%d..."%batch_idx)
+                print("validation in batch_%d..."%batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
                 batch_y, batch_feature = sess.run([y, feature],
                                                   feed_dict={x: batch_x, y: batch_y})
@@ -348,7 +348,6 @@ def _multi_gpu(config, train, validation):
                 print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
                 feature_ = None
                 for batch_idx in range(total_batch):
-                    print("batch_%d....."%batch_idx, end='\r')
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
                     inp_dict = dict()
@@ -361,6 +360,7 @@ def _multi_gpu(config, train, validation):
                         feature_ = feature
                     else:
                         feature_ = np.concatenate((feature_, feature), 0)
+                    print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
                 for spkr in range(config.N_SPEAKER):
                     if len(feature[np.argmax(batch_y, 1) == spkr]):
                         vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
