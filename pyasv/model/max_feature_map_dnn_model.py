@@ -292,6 +292,7 @@ def _no_gpu(config, train, validation):
             print('\n---------------------')
             print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
             feature_ = None
+            ys = None
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 50, 40, 1)
@@ -299,14 +300,20 @@ def _no_gpu(config, train, validation):
                 _, _loss, feature = sess.run([train_op, loss, feature],
                                              feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
                 if feature_ is None:
                     feature_ = feature
                 else:
                     feature_ = np.concatenate((feature_, feature), 0)
                 print("batch_%d  batch_loss=%.4f"%(batch_id, _loss), end='\r')
+            print('\n')
+            train.reset_batch_counter()
             for spkr in range(config.N_SPEAKER):
-                if len(feature[np.argmax(batch_y, 1) == spkr]):
-                    vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
+                if len(feature_[np.argmax(ys, 1) == spkr]):
+                    vector = np.mean(feature_[np.argmax(ys, 1) == spkr], axis=0)
                     if spkr in vectors.keys():
                         vector = (vectors[spkr] + vector) / 2
                     else:
@@ -339,6 +346,7 @@ def _no_gpu(config, train, validation):
                 else:
                     ys = np.concatenate((ys, batch_y), 0)
             vec_preds = []
+            validation.reset_batch_counter()
             for sample in range(feature.shape[0]):
                 score = -100
                 pred = -1
@@ -410,6 +418,7 @@ def _multi_gpu(config, train, validation):
                 print('\n---------------------')
                 print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
                 feature_ = None
+                ys = None
                 for batch_idx in range(total_batch):
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 50, 40, 1)
@@ -419,14 +428,20 @@ def _multi_gpu(config, train, validation):
                     _, _loss, feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
                     # print("train part done...")
                     avg_loss += _loss
+                    if ys is None:
+                        ys = batch_y
+                    else:
+                        ys = np.concatenate((ys, batch_y), 0)
                     if feature_ is None:
                         feature_ = feature
                     else:
                         feature_ = np.concatenate((feature_, feature), 0)
                     print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
+                print('\n')
+                train.reset_batch_counter()
                 for spkr in range(config.N_SPEAKER):
-                    if len(feature[np.argmax(batch_y, 1) == spkr]):
-                        vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
+                    if len(feature_[np.argmax(ys, 1) == spkr]):
+                        vector = np.mean(feature_[np.argmax(ys, 1) == spkr], axis=0)
                         if spkr in vectors.keys():
                             vector = (vectors[spkr] + vector) / 2
                         else:
@@ -467,6 +482,7 @@ def _multi_gpu(config, train, validation):
                         ys = np.concatenate((ys, batch_y), 0)
 
                 vec_preds = []
+                validation.reset_batch_counter()
                 for sample in range(feature.shape[0]):
                     score = -100
                     pred = -1

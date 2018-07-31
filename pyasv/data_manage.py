@@ -51,6 +51,9 @@ class DataManage(object):
         self.batch_counter = 0
         self.spkr_num = np.array(self.raw_labels).shape[-1]
 
+    def reset_batch_counter(self):
+        self.batch_counter = 0
+
     @property
     def next_batch(self):
         """``property`` to get next batch data.
@@ -65,7 +68,7 @@ class DataManage(object):
         the type of ``batch_frames`` and ``batch_labels`` is
         same as your input data.
         """
-        if (self.batch_counter+1) * self.batch_size < len(self.raw_frames):
+        if (self.batch_counter+1) * self.batch_size <= len(self.raw_frames):
             batch_frames = self.raw_frames[self.batch_counter * self.batch_size:
                                            (self.batch_counter+1) * self.batch_size]
             batch_labels = self.raw_labels[self.batch_counter * self.batch_size:
@@ -99,6 +102,9 @@ class DataManage4BigData(object):
             self.file_is_exist = True
         else:
             self.file_is_exist = False
+
+    def reset_batch_counter(self):
+        self.batch_count = 0
 
     def write_file(self, raw_frames, raw_labels):
         """Save your data to save_path/data.
