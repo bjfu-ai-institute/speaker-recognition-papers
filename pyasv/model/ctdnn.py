@@ -213,28 +213,32 @@ def _no_gpu(config, train, validation):
             start_time = time.time()
             avg_loss = 0.0
             total_batch = int(train.num_examples / config.BATCH_SIZE)
+            feature_ = None
             print('\n---------------------')
             print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
             for batch_id in range(total_batch):
-                print("batch_%d....."%batch_id)
+                print("batch_%d....."%batch_id, end='\r')
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
                 batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
                 _, _loss, feature = sess.run([train_op, loss, feature],
                                              feed_dict={x:batch_x, y:batch_y})
                 avg_loss += _loss
-                for spkr in range(config.N_SPEAKER):
-                    if len(feature[np.argmax(batch_y, 1) == spkr]):
-                        vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
-                        if spkr in vectors.keys():
-                            vector = (vectors[spkr] + vector)/2
-                            vectors[spkr] = vector
-                        else:   
-                            vector = vector
-                            vectors[spkr] = vector
+                if feature_ is None:
+                    feature_ = feature
+                else:
+                    feature_ = np.concatenate((feature_, feature), 0)
+            for spkr in range(config.N_SPEAKER):
+                if len(feature[np.argmax(batch_y, 1) == spkr]):
+                    vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
+                    if spkr in vectors.keys():
+                        vector = (vectors[spkr] + vector) / 2
                     else:
-                        if spkr not in vectors.keys():
-                            vectors[spkr] = np.zeros(400, dtype=np.float32)
+                        vector = vector
+                    vectors[spkr] = vector
+                else:
+                    if spkr not in vectors.keys():
+                        vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
             total_batch = int(validation.num_examples / config.N_GPU)
@@ -260,7 +264,7 @@ def _no_gpu(config, train, validation):
                     ys = np.concatenate((ys, batch_y), 0)
             vec_preds = []
             for sample in range(feature.shape[0]):
-                score = 1
+                score = -100
                 pred = -1
                 for spkr in vectors.keys():
                     if cosine(vectors[spkr], feature[sample]) > score:
@@ -329,8 +333,9 @@ def _multi_gpu(config, train, validation):
                 avg_loss = 0.0
                 print('\n---------------------')
                 print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+                feature_ = None
                 for batch_idx in range(total_batch):
-                    # print("batch_%d....."%batch_idx)
+                    print("batch_%d....."%batch_idx, end='\r')
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
                     inp_dict = dict()
@@ -339,18 +344,22 @@ def _multi_gpu(config, train, validation):
                     _, _loss, feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
                     # print("train part done...")
                     avg_loss += _loss
-                    for spkr in range(config.N_SPEAKER):
-                        if len(feature[np.argmax(batch_y, 1) == spkr]):
-                            vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
-                            if spkr in vectors.keys():
-                                vector = (vectors[spkr] + vector) / 2
-                            else:
-                                vector = vector
-                            vectors[spkr] = vector
+                    if feature_ is None:
+                        feature_ = feature
+                    else:
+                        feature_ = np.concatenate((feature_, feature), 0)
+                for spkr in range(config.N_SPEAKER):
+                    if len(feature[np.argmax(batch_y, 1) == spkr]):
+                        vector = np.mean(feature[np.argmax(batch_y, 1) == spkr], axis=0)
+                        if spkr in vectors.keys():
+                            vector = (vectors[spkr] + vector) / 2
                         else:
-                            if spkr not in vectors.keys():
-                                vectors[spkr] = np.zeros(400, dtype=np.float32)
-                    # print("vector part done....")
+                            vector = vector
+                        vectors[spkr] = vector
+                    else:
+                        if spkr not in vectors.keys():
+                            vectors[spkr] = np.zeros(400, dtype=np.float32)
+                # print("vector part done....")
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
 
