@@ -238,7 +238,7 @@ def _no_gpu(config, train, validation):
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 100, 64, 1)
-                _, _loss, feature = sess.run([train_op, loss, feature],
+                _, _loss, batch_feature = sess.run([train_op, loss, feature],
                                              feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
                 if ys is None:
@@ -246,9 +246,9 @@ def _no_gpu(config, train, validation):
                 else:
                     ys = np.concatenate((ys, batch_y), 0)
                 if feature_ is None:
-                    feature_ = feature
+                    feature_ = batch_feature
                 else:
-                    feature_ = np.concatenate((feature_, feature), 0)
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
                 print("batch_%d  batch_loss=%.4f"%(batch_id, _loss), end='\r')
             print('\n')
             train.reset_batch_counter()
@@ -265,31 +265,31 @@ def _no_gpu(config, train, validation):
                         vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
-            total_batch = int(validation.num_examples / config.N_GPU)
+            total_batch = int(validation.num_examples / config.BATCH_SIZE)
             ys = None
-            feature = None
+            feature_ = None
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
                 batch_x = batch_x.reshape(-1, 100, 64, 1)
                 batch_y, batch_feature = sess.run([y, feature],
                                                   feed_dict={x: batch_x, y: batch_y})
-                if feature is None:
-                    feature = batch_feature
+                if feature_ is None:
+                    feature_ = batch_feature
                 else:
-                    feature = np.concatenate((feature, batch_feature), 0)
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
                 if ys is None:
                     ys = batch_y
                 else:
                     ys = np.concatenate((ys, batch_y), 0)
             vec_preds = []
             validation.reset_batch_counter()
-            for sample in range(feature.shape[0]):
+            for sample in range(feature_.shape[0]):
                 score = -100
                 pred = -1
                 for spkr in vectors.keys():
-                    if cosine(vectors[spkr], feature[sample]) > score:
-                        score = cosine(vectors[spkr], feature[sample])
+                    if cosine(vectors[spkr], feature_[sample]) > score:
+                        score = cosine(vectors[spkr], feature_[sample])
                         pred = int(spkr)
                 vec_preds.append(pred)
             correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
@@ -362,7 +362,7 @@ def _multi_gpu(config, train, validation):
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
-                    _, _loss, feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
+                    _, _loss, batch_feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
                     # print("train part done...")
                     avg_loss += _loss
                     if ys is None:
@@ -370,9 +370,9 @@ def _multi_gpu(config, train, validation):
                     else:
                         ys = np.concatenate((ys, batch_y), 0)
                     if feature_ is None:
-                        feature_ = feature
+                        feature_ = batch_feature
                     else:
-                        feature_ = np.concatenate((feature_, feature), 0)
+                        feature_ = np.concatenate((feature_, batch_feature), 0)
                     print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
                 print('\n')
                 train.reset_batch_counter()
@@ -395,19 +395,19 @@ def _multi_gpu(config, train, validation):
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
 
-                total_batch = int(validation.num_examples / config.N_GPU)
+                total_batch = int(validation.num_examples / config.BATCH_SIZE)
                 ys = None
-                feature = None
+                feature_ = None
                 for batch_idx in range(total_batch):
 
                     batch_x, batch_y = validation.next_batch
                     batch_x = batch_x.reshape(-1, 100, 64, 1)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
                     batch_y, batch_feature = sess.run([all_y, get_feature], inp_dict)
-                    if feature is None:
-                        feature = batch_feature
+                    if feature_ is None:
+                        feature_ = batch_feature
                     else:
-                        feature = np.concatenate((feature, batch_feature), 0)
+                        feature_ = np.concatenate((feature_, batch_feature), 0)
                     if ys is None:
                         ys = batch_y
                     else:
@@ -415,12 +415,12 @@ def _multi_gpu(config, train, validation):
 
                 vec_preds = []
                 validation.reset_batch_counter()
-                for sample in range(feature.shape[0]):
+                for sample in range(feature_.shape[0]):
                     score = -100
                     pred = -1
                     for spkr in vectors.keys():
-                        if cosine(vectors[spkr], feature[sample]) > score:
-                            score = cosine(vectors[spkr], feature[sample])
+                        if cosine(vectors[spkr], feature_[sample]) > score:
+                            score = cosine(vectors[spkr], feature_[sample])
                             pred = int(spkr)
                     vec_preds.append(pred)
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)

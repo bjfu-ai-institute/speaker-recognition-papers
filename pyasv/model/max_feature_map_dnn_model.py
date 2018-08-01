@@ -324,7 +324,7 @@ def _no_gpu(config, train, validation):
                         vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
-            total_batch = int(validation.num_examples / config.N_GPU) - 1
+            total_batch = int(validation.num_examples / config.BATCH_SIZE) - 1
             preds = None
             feature = None
             ys = None
@@ -459,7 +459,7 @@ def _multi_gpu(config, train, validation):
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
 
-                total_batch = int(validation.num_examples / config.N_GPU) - 1
+                total_batch = int(validation.num_examples / config.BATCH_SIZE) - 1
                 preds = None
                 ys = None
                 feature = None
