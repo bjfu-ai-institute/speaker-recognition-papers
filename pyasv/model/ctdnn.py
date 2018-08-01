@@ -220,7 +220,6 @@ def _no_gpu(config, train, validation):
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
-                batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
                 _, _loss, feature = sess.run([train_op, loss, feature],
                                              feed_dict={x:batch_x, y:batch_y})
                 avg_loss += _loss
@@ -389,8 +388,8 @@ def _multi_gpu(config, train, validation):
                 ys = None
                 feature = None
                 for batch_idx in range(total_batch):
-
                     batch_x, batch_y = validation.next_batch
+                    batch_x = batch_x.reshape(-1, 9, 40, 1)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
 
                     batch_pred, batch_y_, batch_feature = sess.run([all_pred, all_y, get_feature], inp_dict)

@@ -331,6 +331,7 @@ def _no_gpu(config, train, validation):
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..." % batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
+                batch_x = batch_x.reshape(-1, 50, 40, 1)
                 batch_y, batch_pred, batch_feature = sess.run([y, pred, feature],
                                                               feed_dict={x: batch_x, y: batch_y})
                 if preds is None:
@@ -465,7 +466,7 @@ def _multi_gpu(config, train, validation):
                 for batch_idx in range(total_batch):
 
                     batch_x, batch_y = validation.next_batch
-
+                    batch_x = batch_x.reshape(-1, 50, 40, 1)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
                     batch_pred, batch_y, batch_feature = sess.run([all_pred, all_y, get_feature], inp_dict)
                     if preds is None:

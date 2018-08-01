@@ -237,8 +237,7 @@ def _no_gpu(config, train, validation):
             ys = None
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
-                batch_x = batch_x.reshape(-1, 9, 40, 1)
-                batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
+                batch_x = batch_x.reshape(-1, 100, 64, 1)
                 _, _loss, feature = sess.run([train_op, loss, feature],
                                              feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
@@ -272,6 +271,7 @@ def _no_gpu(config, train, validation):
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
+                batch_x = batch_x.reshape(-1, 100, 64, 1)
                 batch_y, batch_feature = sess.run([y, feature],
                                                   feed_dict={x: batch_x, y: batch_y})
                 if feature is None:
@@ -344,7 +344,7 @@ def _multi_gpu(config, train, validation):
             # sess = debug.LocalCLIDebugWrapperSession(sess=sess)
 
             saver = tf.train.Saver()
-            
+
             for epoch in range(config.MAX_STEP):
                 start_time = time.time()
                 payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
@@ -358,7 +358,7 @@ def _multi_gpu(config, train, validation):
                 ys = None
                 for batch_idx in range(total_batch):
                     batch_x, batch_y = train.next_batch
-                    batch_x = batch_x.reshape(-1, 9, 40, 1)
+                    batch_x = batch_x.reshape(-1, 100, 64, 1)
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
@@ -387,21 +387,21 @@ def _multi_gpu(config, train, validation):
                     else:
                         if spkr not in vectors.keys():
                             vectors[spkr] = np.zeros(400, dtype=np.float32)
-                        # print("vector part done....")   
+                        # print("vector part done....")
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
 
                 val_payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
-                
+
                 total_batch = int(validation.num_examples / config.N_GPU)
                 ys = None
                 feature = None
                 for batch_idx in range(total_batch):
 
                     batch_x, batch_y = validation.next_batch
-
+                    batch_x = batch_x.reshape(-1, 100, 64, 1)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
                     batch_y, batch_feature = sess.run([all_y, get_feature], inp_dict)
                     if feature is None:
