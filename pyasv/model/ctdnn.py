@@ -224,6 +224,7 @@ def _no_gpu(config, train, validation):
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
                 _, _loss, batch_feature = sess.run([train_op, loss, feature],
                                                    feed_dict={x: batch_x, y: batch_y})
+
                 avg_loss += _loss
                 if feature_ is None:
                     feature_ = batch_feature
