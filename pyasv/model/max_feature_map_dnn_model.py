@@ -78,7 +78,7 @@ class MaxFeatureMapDnn:
         out, mfm6 = self._inference(x)
         self._feature = out
         self._prediction = out
-        self._loss = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out)
+        self._loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out))
 
     def _inference(self, frames):
         conv_1 = self._conv2d(frames, name='Conv1',shape=[7, 7, 1, 128], 
@@ -297,17 +297,17 @@ def _no_gpu(config, train, validation):
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 50, 40, 1)
                 batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
-                _, _loss, feature = sess.run([train_op, loss, feature],
-                                             feed_dict={x: batch_x, y: batch_y})
+                _, _loss, batch_feature = sess.run([train_op, loss, feature],
+                                                   feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
                 if ys is None:
                     ys = batch_y
                 else:
                     ys = np.concatenate((ys, batch_y), 0)
                 if feature_ is None:
-                    feature_ = feature
+                    feature_ = batch_feature
                 else:
-                    feature_ = np.concatenate((feature_, feature), 0)
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
                 print("batch_%d  batch_loss=%.4f"%(batch_id, _loss), end='\r')
             print('\n')
             train.reset_batch_counter()
@@ -328,6 +328,9 @@ def _no_gpu(config, train, validation):
             preds = None
             feature = None
             ys = None
+            if total_batch < 1:
+                print("your validation dataset's size is less than one batch.")
+                exit(1)
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..." % batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
@@ -459,6 +462,9 @@ def _multi_gpu(config, train, validation):
                     print("Warning: Batch size can't to be divisible of N_GPU")
 
                 total_batch = int(validation.num_examples / config.N_GPU) - 1
+                if total_batch < 1:
+                    print("your validation dataset's size is less than one batch.")
+                    exit(1)
                 preds = None
                 ys = None
                 feature = None

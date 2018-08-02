@@ -75,7 +75,7 @@ class CTDnn:
         out, feature = self._inference(x)
         self._prediction = tf.nn.softmax(out)
         self._feature = feature
-        self._loss = tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out)
+        self._loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out))
 
     def _inference(self, frames):
 
@@ -112,7 +112,9 @@ class CTDnn:
 
         output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
 
-        return tf.nn.softmax(output), feature_layer,
+        output += 1e-10
+
+        return output, feature_layer,
 
     def _t_dnn(self, x, shape, strides, name):
         with tf.name_scope(name):
@@ -213,21 +215,20 @@ def _no_gpu(config, train, validation):
             start_time = time.time()
             avg_loss = 0.0
             total_batch = int(train.num_examples / config.BATCH_SIZE) - 1
-            feature_ = None
             print('\n---------------------')
             print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
+            feature_ = None
             ys = None
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
                 batch_x = batch_x.reshape(-1, 9, 40, 1)
-                batch_y = np.eye(train.spkr_num)[batch_y.reshape(-1)]
-                _, _loss, feature = sess.run([train_op, loss, feature],
-                                             feed_dict={x:batch_x, y:batch_y})
+                _, _loss, batch_feature = sess.run([train_op, loss, feature],
+                                                   feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
                 if feature_ is None:
-                    feature_ = feature
+                    feature_ = batch_feature
                 else:
-                    feature_ = np.concatenate((feature_, feature), 0)
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
                 if ys is None:
                     ys = batch_y
                 else:
@@ -248,9 +249,9 @@ def _no_gpu(config, train, validation):
                         vectors[spkr] = np.zeros(400, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
-            total_batch = int(validation.num_examples / config.N_GPU) - 1
+            total_batch = int(validation.num_examples / config.BATCH_SIZE) - 1
             preds = None
-            feature = None
+            feature_ = None
             ys = None
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx, end='\r')
@@ -261,22 +262,22 @@ def _no_gpu(config, train, validation):
                     preds = batch_pred
                 else:
                     preds = np.concatenate((preds, batch_pred), 0)
-                if feature is None:
-                    feature = batch_feature
+                if feature_ is None:
+                    feature_ = batch_feature
                 else:
-                    feature = np.concatenate((feature, batch_feature), 0)
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
                 if ys is None:
                     ys = batch_y
                 else:
                     ys = np.concatenate((ys, batch_y), 0)
             validation.reset_batch_counter()
             vec_preds = []
-            for sample in range(feature.shape[0]):
+            for sample in range(feature_.shape[0]):
                 score = -100
                 pred = -1
                 for spkr in vectors.keys():
-                    if cosine(vectors[spkr], feature[sample]) > score:
-                        score = cosine(vectors[spkr], feature[sample])
+                    if cosine(vectors[spkr], feature_[sample]) > score:
+                        score = cosine(vectors[spkr], feature_[sample])
                         pred = int(spkr)
                 vec_preds.append(pred)
             correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
@@ -289,7 +290,7 @@ def _no_gpu(config, train, validation):
         print('training done.')
 
 
-def _multi_gpu(config, train, validation):
+def _multi_gpu(config, train, validation, debug_mode=False):
     tf.reset_default_graph()
     with tf.Session() as sess:
         with tf.device('/cpu:0'):
@@ -329,7 +330,8 @@ def _multi_gpu(config, train, validation):
 
             print('run train op...')
             sess.run(tf.global_variables_initializer())
-
+            if debug_mode:
+                sess = debug.LocalCLIDebugWrapperSession(sess=sess)
             saver = tf.train.Saver()
 
             for epoch in range(config.MAX_STEP):
@@ -351,17 +353,17 @@ def _multi_gpu(config, train, validation):
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
-                    _, _loss, feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
+                    _, _loss, batch_feature = sess.run([apply_gradient_op, aver_loss_op, get_feature], inp_dict)
                     # print("train part done...")
                     avg_loss += _loss
                     if ys is None:
                         ys = batch_y
                     else:
-                        ys = np.concatenate((ys, batch_y))
+                        ys = np.concatenate((ys, batch_y), 0)
                     if feature_ is None:
-                        feature_ = feature
+                        feature_ = batch_feature
                     else:
-                        feature_ = np.concatenate((feature_, feature), 0)
+                        feature_ = np.concatenate((feature_, batch_feature), 0)
                     print("batch_%d, batch_loss=%.4f, payload_per_gpu=%d"%(batch_idx, _loss, payload_per_gpu), end='\r')
                 print("\n")
                 train.reset_batch_counter()
@@ -384,13 +386,13 @@ def _multi_gpu(config, train, validation):
                 if config.BATCH_SIZE % config.N_GPU:
                     print("Warning: Batch size can't to be divisible of N_GPU")
 
-                total_batch = int(validation.num_examples / config.N_GPU) - 1
+                total_batch = int(validation.num_examples / config.BATCH_SIZE) - 1
                 preds = None
                 ys = None
-                feature = None
+                feature_ = None
                 for batch_idx in range(total_batch):
-
                     batch_x, batch_y = validation.next_batch
+                    batch_x = batch_x.reshape(-1, 9, 40, 1)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
 
                     batch_pred, batch_y_, batch_feature = sess.run([all_pred, all_y, get_feature], inp_dict)
@@ -398,22 +400,23 @@ def _multi_gpu(config, train, validation):
                         preds = batch_pred
                     else:
                         preds = np.concatenate((preds, batch_pred), 0)
-                    if feature is None:
-                        feature = batch_feature
+                    if feature_ is None:
+                        feature_ = batch_feature
                     else:
-                        feature = np.concatenate((feature, batch_feature), 0)
+                        feature_ = np.concatenate((feature_, batch_feature), 0)
                     if ys is None:
                         ys = batch_y_
                     else:
                         ys = np.concatenate((ys, batch_y_), 0)
+                    
                 validation.reset_batch_counter()
                 vec_preds = []
-                for sample in range(feature.shape[0]):
+                for sample in range(feature_.shape[0]):
                     score = -100
                     pred = -1
                     for spkr in vectors.keys():
-                        if cosine(vectors[spkr], feature[sample]) > score:
-                            score = cosine(vectors[spkr], feature[sample])
+                        if cosine(vectors[spkr], feature_[sample]) > score:
+                            score = cosine(vectors[spkr], feature_[sample])
                             pred = int(spkr)
                     vec_preds.append(pred)
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
@@ -430,7 +433,7 @@ def cosine(vector1, vector2):
     return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
 
 
-def run(config, train, validation):
+def run(config, train, validation, debug_mode=False):
     """Train CTDNN model.
 
     Parameters
@@ -460,7 +463,7 @@ def run(config, train, validation):
             s += str(gpu_list[i])
         os.environ['CUDA_VISIBLE_DEVICES'] = s
         os.remove('./tmp')
-        _multi_gpu(config, train, validation)
+        _multi_gpu(config, train, validation, debug_mode)
 
 
 def restore():
@@ -475,17 +478,17 @@ def _main():
     from pyasv import Config
     sys.path.append("../..")
 
-    con = Config(name='ctdnn', n_speaker=100, batch_size=64, n_gpu=16, max_step=20, is_big_dataset=False,
+    con = Config(name='ctdnn', n_speaker=100, batch_size=64*8, n_gpu=8, max_step=20, is_big_dataset=False,
                  learning_rate=0.001, save_path='./save')
     x = np.random.random([6500, 9, 40, 1])
-    y = np.random.randint(0, 100, [6500, 1])
+    y = np.random.randint(0, 99, [6500, 1])
     train = DataManage(x, y, con)
 
-    x = np.random.random([640, 9, 40, 1])
-    y = np.random.randint(0, 100, [640, 1])
+    x = np.random.random([1500, 9, 40, 1])
+    y = np.random.randint(0, 99, [1500, 1])
     validation = DataManage(x, y, con)
 
-    run(con, train, validation)
+    run(con, train, validation, False)
 
 
 if __name__ == '__main__':
