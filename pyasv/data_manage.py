@@ -87,7 +87,7 @@ class DataManage4BigData(object):
     in each step we can still use next_batch to get batch data
     every step.
     """
-    def __init__(self, config):
+    def __init__(self, config, split_type, number_examples, number_speakers):
         """
         Parameters
         ----------
@@ -96,7 +96,9 @@ class DataManage4BigData(object):
             and save the data to save_path/data.
         """
         self.batch_size = config.BATCH_SIZE
-        self.url = os.path.join(config.SAVE_PATH, 'data')
+        self.url = os.path.join(config.SAVE_PATH, 'data', split_type)
+        self.num_examples = number_examples
+        self.spkr_num = number_speakers
         self.batch_count = 0
         if os.path.exists(self.url) and os.listdir(self.url):
             self.file_is_exist = True
@@ -118,18 +120,27 @@ class DataManage4BigData(object):
         """
         batch_size = self.batch_size
         local_batch_count = 0
+        self.spkr_num = np.array(raw_labels).shape[-1]
         if type(raw_frames) == np.ndarray:
             data_length = raw_frames.shape[0]
+            self.num_examples = data_length
         else:
             data_length = len(raw_frames)
+            self.num_examples = data_length
+            print("Total number of batches to be written to disk: ", int(data_length//batch_size))
         while local_batch_count * batch_size < data_length:
-            if local_batch_count * (batch_size+1) >= data_length:
+            if batch_size * (local_batch_count+1) >= data_length:
                 frames = raw_frames[local_batch_count * batch_size:]
                 labels = raw_labels[local_batch_count * batch_size:]
+                batch_length = data_length - (local_batch_count * batch_size)
+                print("Writing data to disk : Batch "+str(local_batch_count)+" having length "+str(batch_length))
                 np.savez_compressed(os.path.join(self.url, "data_%d.npz"%local_batch_count), frames=frames, labels=labels)    
+                break
             else:
                 frames = raw_frames[local_batch_count * batch_size: (local_batch_count+1) * batch_size]
                 labels = raw_labels[local_batch_count * batch_size: (local_batch_count+1) * batch_size]
+                batch_length = ((local_batch_count+1) * batch_size) - (local_batch_count * batch_size)
+                print("Writing data to disk : Batch "+str(local_batch_count)+" having length "+str(batch_length))
                 np.savez_compressed(os.path.join(self.url, "data_%d.npz"%local_batch_count), frames=frames, labels=labels)    
                 local_batch_count += 1
         self.file_is_exist = True

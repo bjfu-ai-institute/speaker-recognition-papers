@@ -81,36 +81,62 @@ class CTDnn:
 
         # Inference
         conv1 = self._conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
+        print(conv1.shape)
 
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
+        print(pool1.shape)
 
-        conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 128], [1, 1, 1, 1], 'VALID')
+        conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 256], [1, 1, 1, 1], 'VALID')
+        print(conv2.shape)
 
         pool2 = tf.nn.max_pool(conv2, ksize=[1, 1, 2, 1], strides=[1, 1, 2, 1], padding='VALID')
+        print(pool2.shape)
 
         pool2_flat = tf.reshape(pool2, [-1,
                                         pool2.get_shape().as_list()[1] *
                                         pool2.get_shape().as_list()[2] *
                                         pool2.get_shape().as_list()[3]])
+        print(pool2_flat.shape)
 
         bottleneck = self._full_connect(pool2_flat, 'bottleneck', 512)
+        print(bottleneck.shape)
 
         bottleneck_t = tf.reshape(bottleneck, [-1, 512, 1])
+        print(bottleneck_t.shape)
 
         td1 = self._t_dnn(bottleneck_t, name='td1', shape=[5, 1, 128], strides=1)
+        print(td1.shape)
         td1_flat = tf.reshape(td1, [-1, td1.get_shape().as_list()[1] * td1.get_shape().as_list()[2]])
+        print(td1_flat.shape)
 
-        p_norm1 = self._full_connect(td1_flat, name='P_norm1', units=1500)
-        p_norm1_t = tf.reshape(p_norm1, [-1, 1500, 1])
+        p_norm1 = self._full_connect(td1_flat, name='P_norm1', units=2000)
+        print(p_norm1.shape)
+        p_norm1_t = tf.reshape(p_norm1, [-1, 2000, 1])
+        print(p_norm1_t.shape)
 
-        td2 = self._t_dnn(p_norm1_t, name='td2', shape=[9, 1, 128], strides=1)
+        pnorm1 = self._p_norm(p_norm1_t)
+        print(pnorm1.shape)        
+
+        td2 = self._t_dnn(pnorm1, name='td2', shape=[9, 1, 128], strides=1)
+        print(td2.shape)
         td2_flat = tf.reshape(td2, [-1, td2.get_shape().as_list()[1] * td2.get_shape().as_list()[2]])
+        print(td2_flat.shape)
 
-        p_norm2 = self._full_connect(td2_flat, name='P_norm2', units=400)
+        p_norm2 = self._full_connect(td2_flat, name='P_norm2', units=2000)
+        print(p_norm2.shape)
+        p_norm2_t = tf.reshape(p_norm2, [-1, 2000, 1])
+        print(p_norm2_t.shape)
 
-        feature_layer = self._full_connect(p_norm2, name='feature_layer', units=400)
+        pnorm2 = self._p_norm(p_norm2_t)
+        print(pnorm2.shape)
+        pnorm2_output = tf.reshape(pnorm2, [-1, 400])
+        print(pnorm2_output.shape)
+
+        feature_layer = self._full_connect(pnorm2_output, name='feature_layer', units=400)
+        print(feature_layer.shape)
 
         output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
+        print(output.shape)
 
         output += 1e-10
 
@@ -144,6 +170,12 @@ class CTDnn:
         initial = tf.truncated_normal([shape], stddev=stddev)
         return tf.get_variable(initializer=initial, name=name)
 
+    def _p_norm(self, x):
+        y = tf.reshape(x, [-1,400,5,1])
+        squares = tf.square(y)
+        sum_squares = tf.reduce_sum(squares, axis = len(y.get_shape().as_list())-2)
+        root_sum_squares = tf.sqrt(sum_squares)        
+        return root_sum_squares
 
 def average_losses(loss):
     tf.add_to_collection('losses', loss)
@@ -296,7 +328,8 @@ def _multi_gpu(config, train, validation, debug_mode=False):
     with tf.Session() as sess:
         with tf.device('/cpu:0'):
             learning_rate = config.LR
-            opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            # opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
             print('build model...')
             print('build model on gpu tower...')
             models = []
@@ -351,6 +384,8 @@ def _multi_gpu(config, train, validation, debug_mode=False):
                 for batch_idx in range(total_batch):
                     batch_x, batch_y = train.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
+                    # Below line is required for big data set
+                    # batch_y = np.array((np.eye(config.N_SPEAKER)[np.array(batch_y).reshape(-1)]), dtype=np.float32)
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
@@ -394,6 +429,8 @@ def _multi_gpu(config, train, validation, debug_mode=False):
                 for batch_idx in range(total_batch):
                     batch_x, batch_y = validation.next_batch
                     batch_x = batch_x.reshape(-1, 9, 40, 1)
+                    # Below line is required for big data set
+                    # batch_y = np.array((np.eye(config.N_SPEAKER)[np.array(batch_y).reshape(-1)]), dtype=np.float32)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
 
                     batch_pred, batch_y_, batch_feature = sess.run([all_pred, all_y, get_feature], inp_dict)
