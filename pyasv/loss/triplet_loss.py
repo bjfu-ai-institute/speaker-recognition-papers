@@ -11,8 +11,6 @@
 """
 
 
-
-
 """Define functions to create the triplet loss with online triplet mining."""
 
 import tensorflow as tf
@@ -242,7 +240,7 @@ def batch_hard_triplet_loss(labels, embeddings, margin, squared=False):
     anchor_positive_dist = tf.multiply(mask_anchor_positive, pairwise_dist)
 
     # shape (batch_size, 1)
-    hardest_positive_dist = tf.reduce_max(anchor_positive_dist, axis=1, keep_dims=True)
+    hardest_positive_dist = tf.reduce_max(anchor_positive_dist, axis=1, keepdims=True)
     tf.summary.scalar("hardest_positive_dist", tf.reduce_mean(hardest_positive_dist))
 
     # For each anchor, get the hardest negative
@@ -251,11 +249,11 @@ def batch_hard_triplet_loss(labels, embeddings, margin, squared=False):
     mask_anchor_negative = tf.to_float(mask_anchor_negative)
 
     # We add the maximum value in each row to the invalid negatives (label(a) == label(n))
-    max_anchor_negative_dist = tf.reduce_max(pairwise_dist, axis=1, keep_dims=True)
+    max_anchor_negative_dist = tf.reduce_max(pairwise_dist, axis=1, keepdims=True)
     anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (1.0 - mask_anchor_negative)
 
     # shape (batch_size,)
-    hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keep_dims=True)
+    hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keepdims=True)
     tf.summary.scalar("hardest_negative_dist", tf.reduce_mean(hardest_negative_dist))
 
     # Combine biggest d(a, p) and smallest d(a, n) into final triplet loss

@@ -37,6 +37,8 @@ class DataManage(object):
         """
         assert len(raw_frames) == len(raw_labels)
         # must be one-hot encoding
+        np.random.shuffle(raw_frames)
+        np.random.shuffle(raw_labels)
         self.raw_frames = np.array(raw_frames, dtype=np.float32)
         raw_labels = np.array(raw_labels)
         if raw_labels.shape[-1] != config.N_SPEAKER:
@@ -120,12 +122,14 @@ class DataManage4BigData(object):
         """
         batch_size = self.batch_size
         local_batch_count = 0
-        self.spkr_num = np.array(raw_labels).shape[-1]
+        np.random.shuffle(raw_frames)
+        np.random.shuffle(raw_labels)
+        self.spkr_num = raw_labels.shape[-1]
         if type(raw_frames) == np.ndarray:
             data_length = raw_frames.shape[0]
             self.num_examples = data_length
         else:
-            data_length = len(raw_frames)
+            data_length = raw_frames.shape[0]
             self.num_examples = data_length
             print("Total number of batches to be written to disk: ", int(data_length//batch_size))
         while local_batch_count * batch_size < data_length:

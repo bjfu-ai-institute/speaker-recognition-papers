@@ -177,6 +177,7 @@ class CTDnn:
         root_sum_squares = tf.sqrt(sum_squares)        
         return root_sum_squares
 
+
 def average_losses(loss):
     tf.add_to_collection('losses', loss)
 
