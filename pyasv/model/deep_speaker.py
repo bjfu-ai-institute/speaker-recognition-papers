@@ -264,7 +264,7 @@ def _no_gpu(config, train, validation, out_channel):
                     vectors[spkr] = vector
                 else:
                     if spkr not in vectors.keys():
-                        vectors[spkr] = np.zeros(400, dtype=np.float32)
+                        vectors[spkr] = np.zeros(512, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
             total_batch = int(validation.num_examples / config.BATCH_SIZE)
@@ -334,7 +334,7 @@ def _multi_gpu(config, train, validation, out_channel):
             tower_x, tower_y, tower_losses, tower_grads, tower_feature = zip(*models)
             aver_loss_op = tf.reduce_mean(tower_losses)
             apply_gradient_op = opt.apply_gradients(average_gradients(tower_grads))
-            get_feature = tf.reshape(tf.stack(tower_feature, 0), [-1, 400])
+            get_feature = tf.reshape(tf.stack(tower_feature, 0), [-1, 512])
 
             all_y = tf.reshape(tf.stack(tower_y, 0), [-1, config.N_SPEAKER])
 
@@ -391,7 +391,7 @@ def _multi_gpu(config, train, validation, out_channel):
                         vectors[spkr] = vector
                     else:
                         if spkr not in vectors.keys():
-                            vectors[spkr] = np.zeros(400, dtype=np.float32)
+                            vectors[spkr] = np.zeros(512, dtype=np.float32)
                         # print("vector part done....")
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
