@@ -76,7 +76,7 @@ class MaxFeatureMapDnn:
 
     def _build_train_graph(self, x, y):
         out, mfm6 = self._inference(x)
-        self._feature = out
+        self._feature = mfm6
         self._prediction = out
         self._loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=out))
 
@@ -123,7 +123,7 @@ class MaxFeatureMapDnn:
                                         pool_5.get_shape().as_list()[1] *
                                         pool_5.get_shape().as_list()[2] *
                                         pool_5.get_shape().as_list()[3]])
-        fc_1 = self._full_connect(pool_5_flat, name='fc_1', units=2048)
+        fc_1 = self._full_connect(pool_5_flat, name='fc_1', units=800)
         mfm_6 = self._max_feature_map(fc_1, netType='fc')
         
         out = self._full_connect(mfm_6, name='out', units=self._n_speaker)
@@ -290,7 +290,7 @@ def _no_gpu(config, train, validation):
             avg_loss = 0.0
             total_batch = int(train.num_examples / config.BATCH_SIZE) - 1
             print('\n---------------------')
-            print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+            print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
             feature_ = None
             ys = None
             for batch_id in range(total_batch):
@@ -362,7 +362,7 @@ def _no_gpu(config, train, validation):
             correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
             val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
             stop_time = time.time()
             elapsed_time = stop_time - start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -420,7 +420,7 @@ def _multi_gpu(config, train, validation):
                 total_batch = int(train.num_examples / config.BATCH_SIZE) - 1
                 avg_loss = 0.0
                 print('\n---------------------')
-                print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+                print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
                 feature_ = None
                 ys = None
                 for batch_idx in range(total_batch):
@@ -442,6 +442,7 @@ def _multi_gpu(config, train, validation):
                         feature_ = np.concatenate((feature_, feature), 0)
                     print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
                 print('\n')
+
                 train.reset_batch_counter()
                 for spkr in range(config.N_SPEAKER):
                     if len(feature_[np.argmax(ys, 1) == spkr]):
@@ -503,7 +504,7 @@ def _multi_gpu(config, train, validation):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name+ ".ckpt"))
                 stop_time = time.time()
                 elapsed_time = stop_time - start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -543,8 +544,90 @@ def run(config, train, validation):
         _multi_gpu(config, train, validation)
 
 
-def restore():
-    print("not implemented now")
+def restore(config, enroll, test):
+    with tf.Graph().as_default() as g:
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        with tf.Session() as sess:
+            x = tf.placeholder(tf.float32, [None, 50, 40, 1])
+            if config.N_GPU == 0:
+                model = MaxFeatureMapDnn(config, x)
+            else:
+                with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
+                    model = MaxFeatureMapDnn(config, x)
+            get_feature = model.feature
+            saver = tf.train.Saver()
+            saver.restore(sess, os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            print("restore model succeed.")
+            total_batch = int(enroll.num_examples / config.BATCH_SIZE)
+            ys = None
+            feature_ = None
+            print("enrolling...")
+            for batch in range(total_batch):
+                batch_x, batch_y = enroll.next_batch
+
+                if batch_x.shape[0] != enroll.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            enrolled_vector = {}
+            for i in range(enroll.spkr_num):
+                enrolled_vector[i] = np.mean(feature_[np.argmax(ys, axis=1) == i], 0)
+
+            print("testing...")
+            total_batch = int(test.num_examples / config.BATCH_SIZE)
+            for batch in range(total_batch):
+                batch_x, batch_y = test.next_batch
+
+                if batch_x.shape[0] != test.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            support = 0
+            all_ = 0
+            print("writing the result in %s"%config.SAVE_PATH + "/result.txt")
+            result = []
+            with open(os.path.join(config.SAVE_PATH, 'result.txt'), 'w') as f:
+                vec_id = 0
+                for vec in feature_:
+                    score = -1
+                    pred = None
+                    scores = []
+                    for key in enrolled_vector.keys():
+                        tmp_score = cosine(vec, enrolled_vector[key])
+                        scores.append(tmp_score)
+                        if tmp_score > score:
+                            score = tmp_score
+                            pred = key
+                            if pred == np.argmax(ys, axis=1)[vec_id]:
+                                support += 1
+                            all_ += 1
+                    string = "No.%d vector, pred:" % vec_id + str(pred) + " "
+                    string += str(pred==np.argmax(ys, axis=1)[vec_id])+ " Score list:" + str(scores) + '\n'
+                    result.append(string)
+                    vec_id += 1
+                f.writelines("Acc:%.4f  Num_of_true:%d\n"%(support/all_, support))
+                for line in result:
+                    f.writelines(line)
+            print("done.")
 
 
 def _main():
@@ -555,17 +638,20 @@ def _main():
     from pyasv import Config
     sys.path.append("../..")
 
-    con = Config(name='ctdnn', n_speaker=100, batch_size=64, n_gpu=4, max_step=20, is_big_dataset=False,
+    con = Config(name='MFM', n_speaker=100, batch_size=64, n_gpu=2, max_step=5, is_big_dataset=False,
                  learning_rate=0.001, save_path='./save')
     x = np.random.random([6400, 50, 40, 1])
     y = np.random.randint(0, 100, [6400, 1])
     train = DataManage(x, y, con)
+    enroll = train
 
     x = np.random.random([640, 50, 40, 1])
     y = np.random.randint(0, 100, [640, 1])
     validation = DataManage(x, y, con)
+    test = validation
 
     run(con, train, validation)
+    restore(con, enroll, test)
 
 
 if __name__ == '__main__':

@@ -29,9 +29,9 @@ class CTDnn:
         self._save_path = config.SAVE_PATH
         self._vectors = np.zeros(shape=(self._n_speaker, 400))
 
-        try:
+        if y is not None:
             self._build_train_graph(x, y)
-        except NameError:
+        else:
             self._build_pred_graph(x)
 
     @property
@@ -81,62 +81,47 @@ class CTDnn:
 
         # Inference
         conv1 = self._conv2d(frames, 'conv1', [4, 8, 1, 128], [1, 1, 1, 1], 'VALID')
-        print(conv1.shape)
 
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 2, 3, 1], strides=[1, 2, 3, 1], padding='VALID')
-        print(pool1.shape)
 
         conv2 = self._conv2d(pool1, 'conv2', [2, 4, 128, 256], [1, 1, 1, 1], 'VALID')
-        print(conv2.shape)
 
         pool2 = tf.nn.max_pool(conv2, ksize=[1, 1, 2, 1], strides=[1, 1, 2, 1], padding='VALID')
-        print(pool2.shape)
 
         pool2_flat = tf.reshape(pool2, [-1,
                                         pool2.get_shape().as_list()[1] *
                                         pool2.get_shape().as_list()[2] *
                                         pool2.get_shape().as_list()[3]])
-        print(pool2_flat.shape)
 
         bottleneck = self._full_connect(pool2_flat, 'bottleneck', 512)
-        print(bottleneck.shape)
 
         bottleneck_t = tf.reshape(bottleneck, [-1, 512, 1])
-        print(bottleneck_t.shape)
 
-        td1 = self._t_dnn(bottleneck_t, name='td1', shape=[5, 1, 128], strides=1)
-        print(td1.shape)
+        td1 = self._t_dnn(bottleneck_t, name='td1', shape=[5, 1, 32], strides=1)
+
         td1_flat = tf.reshape(td1, [-1, td1.get_shape().as_list()[1] * td1.get_shape().as_list()[2]])
-        print(td1_flat.shape)
 
         p_norm1 = self._full_connect(td1_flat, name='P_norm1', units=2000)
-        print(p_norm1.shape)
+
         p_norm1_t = tf.reshape(p_norm1, [-1, 2000, 1])
-        print(p_norm1_t.shape)
 
         pnorm1 = self._p_norm(p_norm1_t)
-        print(pnorm1.shape)        
 
-        td2 = self._t_dnn(pnorm1, name='td2', shape=[9, 1, 128], strides=1)
-        print(td2.shape)
+        td2 = self._t_dnn(pnorm1, name='td2', shape=[9, 1, 32], strides=1)
+
         td2_flat = tf.reshape(td2, [-1, td2.get_shape().as_list()[1] * td2.get_shape().as_list()[2]])
-        print(td2_flat.shape)
 
         p_norm2 = self._full_connect(td2_flat, name='P_norm2', units=2000)
-        print(p_norm2.shape)
+
         p_norm2_t = tf.reshape(p_norm2, [-1, 2000, 1])
-        print(p_norm2_t.shape)
 
         pnorm2 = self._p_norm(p_norm2_t)
-        print(pnorm2.shape)
+
         pnorm2_output = tf.reshape(pnorm2, [-1, 400])
-        print(pnorm2_output.shape)
 
         feature_layer = self._full_connect(pnorm2_output, name='feature_layer', units=400)
-        print(feature_layer.shape)
 
         output = self._full_connect(feature_layer, name='output', units=self._n_speaker)
-        print(output.shape)
 
         output += 1e-10
 
@@ -173,7 +158,7 @@ class CTDnn:
     def _p_norm(self, x):
         y = tf.reshape(x, [-1,400,5,1])
         squares = tf.square(y)
-        sum_squares = tf.reduce_sum(squares, axis = len(y.get_shape().as_list())-2)
+        sum_squares = tf.reduce_sum(squares, axis=len(y.get_shape().as_list())-2)
         root_sum_squares = tf.sqrt(sum_squares)        
         return root_sum_squares
 
@@ -319,7 +304,7 @@ def _no_gpu(config, train, validation):
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
             stop_time = time.time()
             elapsed_time = stop_time-start_time
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
             print('Cost time: ' + str(elapsed_time) + ' sec.')
         print('training done.')
 
@@ -461,7 +446,7 @@ def _multi_gpu(config, train, validation, debug_mode=False):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -505,8 +490,90 @@ def run(config, train, validation, debug_mode=False):
         _multi_gpu(config, train, validation, debug_mode)
 
 
-def restore():
-    print("not implemented now")
+def restore(config, enroll, test):
+    with tf.Graph().as_default() as g:
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        with tf.Session() as sess:
+            x = tf.placeholder(tf.float32, [None, 9, 40, 1])
+            if config.N_GPU == 0:
+                model = CTDnn(config, x)
+            else:
+                with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
+                    model = CTDnn(config, x)
+            get_feature = model.feature
+            saver = tf.train.Saver()
+            saver.restore(sess, os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            print("restore model succeed.")
+            total_batch = int(enroll.num_examples / config.BATCH_SIZE)
+            ys = None
+            feature_ = None
+            print("enrolling...")
+            for batch in range(total_batch):
+                batch_x, batch_y = enroll.next_batch
+
+                if batch_x.shape[0] != enroll.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            enrolled_vector = {}
+            for i in range(enroll.spkr_num):
+                enrolled_vector[i] = np.mean(feature_[np.argmax(ys, axis=1) == i], 0)
+
+            print("testing...")
+            total_batch = int(test.num_examples / config.BATCH_SIZE)
+            for batch in range(total_batch):
+                batch_x, batch_y = test.next_batch
+
+                if batch_x.shape[0] != test.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            support = 0
+            all_ = 0
+            print("writing the result in %s"%config.SAVE_PATH + "/result.txt")
+            result = []
+            with open(os.path.join(config.SAVE_PATH, 'result.txt'), 'w') as f:
+                vec_id = 0
+                for vec in feature_:
+                    score = -1
+                    pred = None
+                    scores = []
+                    for key in enrolled_vector.keys():
+                        tmp_score = cosine(vec, enrolled_vector[key])
+                        scores.append(tmp_score)
+                        if tmp_score > score:
+                            score = tmp_score
+                            pred = key
+                            if pred == np.argmax(ys, axis=1)[vec_id]:
+                                support += 1
+                            all_ += 1
+                    string = "No.%d vector, pred:" % vec_id + str(pred) + " "
+                    string += str(pred==np.argmax(ys, axis=1)[vec_id])+ " Score list:" + str(scores) + '\n'
+                    result.append(string)
+                    vec_id += 1
+                f.writelines("Acc:%.4f  Num_of_true:%d\n"%(support/all_, support))
+                for line in result:
+                    f.writelines(line)
+            print("done.")
 
 
 def _main():
@@ -517,17 +584,21 @@ def _main():
     from pyasv import Config
     sys.path.append("../..")
 
-    con = Config(name='ctdnn', n_speaker=100, batch_size=64*8, n_gpu=8, max_step=20, is_big_dataset=False,
+    con = Config(name='ctdnn', n_speaker=100, batch_size=64*2, n_gpu=2, max_step=5, is_big_dataset=False,
                  learning_rate=0.001, save_path='./save')
+    #con.save('ctdnn')
     x = np.random.random([6500, 9, 40, 1])
     y = np.random.randint(0, 99, [6500, 1])
-    train = DataManage(x, y, con)
+    enroll = DataManage(x, y, con)
+    train = enroll
 
     x = np.random.random([1500, 9, 40, 1])
     y = np.random.randint(0, 99, [1500, 1])
-    validation = DataManage(x, y, con)
+    test = DataManage(x, y, con)
+    validation = test
 
-    run(con, train, validation, False)
+    # run(con, train, validation, False)
+    restore(con, enroll, test)
 
 
 if __name__ == '__main__':
