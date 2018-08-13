@@ -11,8 +11,6 @@
 """
 
 
-
-
 """Define functions to create the triplet loss with online triplet mining."""
 
 import tensorflow as tf

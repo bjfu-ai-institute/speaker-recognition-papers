@@ -19,7 +19,8 @@ class Config:
                  bn_epsilon=None,
                  slide_windows=None,
                  plda_rankf=None,
-                 plda_rankg=None):
+                 plda_rankg=None,
+                 deep_speaker_out_channel=None):
         """
         Parameters
         ----------
@@ -58,6 +59,7 @@ class Config:
             self.SLIDE_WINDOWS = slide_windows
             self.PLDA_F_RANK = plda_rankf
             self.PLDA_G_RANK = plda_rankg
+            self.DEEP_SPEAKER_OUT_CHANNEL = deep_speaker_out_channel
 
     def set(self,
             n_speaker=None,
@@ -73,7 +75,8 @@ class Config:
             bn_epsilon=None,
             slide_windows=None,
             plda_rankf=None,
-            plda_rankg=None):
+            plda_rankg=None,
+            deep_speaker_out_channel=None):
         """The ``set`` method is used for reset some config.
         """
         if n_speaker is not None:
@@ -104,6 +107,8 @@ class Config:
             self.PLDA_F_RANK = plda_rankf
         if plda_rankg is not None:
             self.PLDA_G_RANK = plda_rankg
+        if deep_speaker_out_channel is not None:
+            self.DEEP_SPEAKER_OUT_CHANNEL = deep_speaker_out_channel
 
     def save(self, name='global_config'):
         """This method is used for save your config to save_path

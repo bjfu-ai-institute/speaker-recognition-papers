@@ -11,7 +11,7 @@ from tensorflow.python import debug
 
 
 class DeepSpeaker:
-    def __init__(self, config, x, y=None, out_channel=[64, 128, 256, 512]):
+    def __init__(self, config, x, y=None):
         """Create deep speaker model.
 
         Parameters
@@ -20,7 +20,7 @@ class DeepSpeaker:
             The config of ctdnn model, no extra need.
         out_channel : ``list``
             The out channel of each res_block.::
-            
+
                 out_channel = [64, 128, 256, 512]
 
         Notes
@@ -30,8 +30,8 @@ class DeepSpeaker:
         we can use DeepSpeaker.feature to get these vector.
         """
         self._gpu_ind = 0
-        self.n_blocks = len(out_channel)
-        self.out_channel = out_channel
+        self.out_channel = config.DEEP_SPEAKER_OUT_CHANNEL
+        self.n_blocks = len(self.out_channel)
         self._name = config.MODEL_NAME
         self._n_speaker = config.N_SPEAKER
         self._max_step = config.MAX_STEP
@@ -75,7 +75,7 @@ class DeepSpeaker:
     def _build_train_graph(self, x, y):
         output = self._inference(x)
         self._feature = output
-        self._loss = self._triplet_loss(output, y)
+        self._loss = self._triplet_loss(inp=output, targets=y)
 
     def _inference(self, inp):
         for i in range(self.n_blocks):
@@ -87,10 +87,10 @@ class DeepSpeaker:
                 inp = self._residual_block(inp, self.out_channel[i], "residual_block_%d" % i,
                                            is_first_layer=True)
 
-        inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1], 
+        inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1],
                              strides=[1, 1, 1, 1], padding='SAME')
 
-        inp = tf.reshape(inp, [-1, inp.get_shape().as_list()[-1]])
+        inp = tf.reshape(inp, [-1, inp.get_shape().as_list()[1]*inp.get_shape().as_list()[2]*inp.get_shape().as_list()[3]])
         weight_affine = self._new_variable("affine_weight", [inp.get_shape().as_list()[-1], 512],
                                            weight_type="FC")
 
@@ -204,7 +204,7 @@ def feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y):
     return inp_dict
 
 
-def _no_gpu(config, train, validation, out_channel):
+def _no_gpu(config, train, validation):
     tf.reset_default_graph()
     with tf.Session() as sess:
         learning_rate = config.LR
@@ -212,10 +212,7 @@ def _no_gpu(config, train, validation, out_channel):
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         x = tf.placeholder(tf.float32, [None, 100, 64, 1])
         y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
-        if out_channel is not None:
-            model = DeepSpeaker(config=config, x=x, y=y, out_channel=out_channel)
-        else:
-            model = DeepSpeaker(config=config, x=x, y=y)
+        model = DeepSpeaker(config=config, x=x, y=y)
         loss = model.loss
         feature = model.feature
         train_op = opt.minimize(loss)
@@ -234,7 +231,7 @@ def _no_gpu(config, train, validation, out_channel):
             avg_loss = 0.0
             total_batch = int(train.num_examples / config.BATCH_SIZE)
             print('\n---------------------')
-            print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+            print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
             feature_ = None
             ys = None
             for batch_id in range(total_batch):
@@ -264,7 +261,7 @@ def _no_gpu(config, train, validation, out_channel):
                     vectors[spkr] = vector
                 else:
                     if spkr not in vectors.keys():
-                        vectors[spkr] = np.zeros(400, dtype=np.float32)
+                        vectors[spkr] = np.zeros(512, dtype=np.float32)
             avg_loss /= total_batch
             print('Train loss:%.4f' % (avg_loss))
             total_batch = int(validation.num_examples / config.BATCH_SIZE)
@@ -300,11 +297,11 @@ def _no_gpu(config, train, validation, out_channel):
             stop_time = time.time()
             elapsed_time = stop_time-start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
         print('training done.')
 
 
-def _multi_gpu(config, train, validation, out_channel):
+def _multi_gpu(config, train, validation):
     tf.reset_default_graph()
     with tf.Session() as sess:
         with tf.device('/cpu:0'):
@@ -320,10 +317,7 @@ def _multi_gpu(config, train, validation, out_channel):
                         with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
                             x = tf.placeholder(tf.float32, [None, 100, 64, 1])
                             y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
-                            if out_channel is not None:
-                                model = DeepSpeaker(config=config, x=x, y=y, out_channel=out_channel)
-                            else:
-                                model = DeepSpeaker(config=config, x=x, y=y)
+                            model = DeepSpeaker(config=config, x=x, y=y)
                             feature = model.feature
                             loss = model.loss
                             grads = opt.compute_gradients(loss)
@@ -334,7 +328,7 @@ def _multi_gpu(config, train, validation, out_channel):
             tower_x, tower_y, tower_losses, tower_grads, tower_feature = zip(*models)
             aver_loss_op = tf.reduce_mean(tower_losses)
             apply_gradient_op = opt.apply_gradients(average_gradients(tower_grads))
-            get_feature = tf.reshape(tf.stack(tower_feature, 0), [-1, 400])
+            get_feature = tf.reshape(tf.stack(tower_feature, 0), [-1, 512])
 
             all_y = tf.reshape(tf.stack(tower_y, 0), [-1, config.N_SPEAKER])
 
@@ -358,7 +352,7 @@ def _multi_gpu(config, train, validation, out_channel):
                 total_batch = int(train.num_examples / config.BATCH_SIZE)
                 avg_loss = 0.0
                 print('\n---------------------')
-                print('Epoch:%d, lr:%.4f' % (epoch, config.LR))
+                print('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, config.LR, total_batch))
                 feature_ = None
                 ys = None
                 for batch_idx in range(total_batch):
@@ -391,7 +385,7 @@ def _multi_gpu(config, train, validation, out_channel):
                         vectors[spkr] = vector
                     else:
                         if spkr not in vectors.keys():
-                            vectors[spkr] = np.zeros(400, dtype=np.float32)
+                            vectors[spkr] = np.zeros(512, dtype=np.float32)
                         # print("vector part done....")
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
@@ -431,7 +425,7 @@ def _multi_gpu(config, train, validation, out_channel):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name))
+                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -442,7 +436,7 @@ def cosine(vector1, vector2):
     return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
 
 
-def run(config, train, validation, out_channel=None):
+def run(config, train, validation):
     """Train DeepSpeaker model.
 
     Parameters
@@ -456,7 +450,7 @@ def run(config, train, validation, out_channel=None):
     """
     if config.N_GPU == 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = ""
-        _no_gpu(config, train, validation, out_channel)
+        _no_gpu(config, train, validation)
     else:
         if os.path.exists('./tmp'):
             os.rename('./tmp', './tmp-backup')
@@ -473,11 +467,93 @@ def run(config, train, validation, out_channel=None):
             s += str(gpu_list[i])
         os.environ['CUDA_VISIBLE_DEVICES'] = s
         os.remove('./tmp')
-        _multi_gpu(config, train, validation, out_channel)
+        _multi_gpu(config, train, validation)
 
 
-def restore():
-    print("not implemented now")
+def restore(config, enroll, test):
+    with tf.Graph().as_default() as g:
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        assert type(enroll) == (DataManage or DataManage4BigData)
+        with tf.Session() as sess:
+            x = tf.placeholder(tf.float32, [None, 100, 64, 1])
+            if config.N_GPU == 0:
+                model = DeepSpeaker(config, x)
+            else:
+                with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
+                    model = DeepSpeaker(config, x)
+            get_feature = model.feature
+            saver = tf.train.Saver()
+            saver.restore(sess, os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            print("restore model succeed.")
+            total_batch = int(enroll.num_examples / config.BATCH_SIZE)
+            ys = None
+            feature_ = None
+            print("enrolling...")
+            for batch in range(total_batch):
+                batch_x, batch_y = enroll.next_batch
+
+                if batch_x.shape[0] != enroll.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            enrolled_vector = {}
+            for i in range(enroll.spkr_num):
+                enrolled_vector[i] = np.mean(feature_[np.argmax(ys, axis=1) == i], 0)
+
+            print("testing...")
+            total_batch = int(test.num_examples / config.BATCH_SIZE)
+            for batch in range(total_batch):
+                batch_x, batch_y = test.next_batch
+
+                if batch_x.shape[0] != test.batch_size:
+                    print("Abandon the last batch because it is not enough.")
+                    break
+
+                batch_feature = sess.run(get_feature, feed_dict={x: batch_x})
+                if feature_ is None:
+                    feature_ = batch_feature
+                else:
+                    feature_ = np.concatenate((feature_, batch_feature), 0)
+                if ys is None:
+                    ys = batch_y
+                else:
+                    ys = np.concatenate((ys, batch_y), 0)
+            support = 0
+            all_ = 0
+            print("writing the result in %s"%config.SAVE_PATH + "/result.txt")
+            result = []
+            with open(os.path.join(config.SAVE_PATH, 'result.txt'), 'w') as f:
+                vec_id = 0
+                for vec in feature_:
+                    score = -1
+                    pred = None
+                    scores = []
+                    for key in enrolled_vector.keys():
+                        tmp_score = cosine(vec, enrolled_vector[key])
+                        scores.append(tmp_score)
+                        if tmp_score > score:
+                            score = tmp_score
+                            pred = key
+                            if pred == np.argmax(ys, axis=1)[vec_id]:
+                                support += 1
+                            all_ += 1
+                    string = "No.%d vector, pred:" % vec_id + str(pred) + " "
+                    string += str(pred==np.argmax(ys, axis=1)[vec_id])+ " Score list:" + str(scores) + '\n'
+                    result.append(string)
+                    vec_id += 1
+                f.writelines("Acc:%.4f  Num_of_true:%d\n"%(support/all_, support))
+                for line in result:
+                    f.writelines(line)
+            print("done.")
 
 
 def _main():
@@ -488,19 +564,22 @@ def _main():
     from pyasv import Config
     import sys
     sys.path.append("../..")
+    print("Model test")
+    print("input n_gpu", end="")
     a = int(eval(input()))
-    print(64*max(1, a))
-    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=20, is_big_dataset=False,
-                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01, bn_epsilon=1e-3)
-    x = np.random.random([6400, 100, 64, 1])
-    y = np.random.randint(0, 99, [6400, 1])
+    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=5, is_big_dataset=False,
+                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01, bn_epsilon=1e-3,
+                 deep_speaker_out_channel=[32, 64])
+    x = np.random.random([320, 100, 64, 1])
+    y = np.random.randint(0, 99, [320, 1])
     train = DataManage(x, y, con)
 
-    x = np.random.random([640, 100, 64, 1])
-    y = np.random.randint(0, 99, [640, 1])
+    x = np.random.random([64, 100, 64, 1])
+    y = np.random.randint(0, 99, [64, 1])
     validation = DataManage(x, y, con)
 
-    run(con, train, validation, out_channel=[32, 64])
+    # run(con, train, validation)
+    restore(con, train, validation)
 
 
 if __name__ == '__main__':
