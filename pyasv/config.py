@@ -17,7 +17,9 @@ class Config:
                  conv_weight_decay=None,
                  fc_weight_decay=None,
                  bn_epsilon=None,
-                 slide_windows=None):
+                 slide_windows=None,
+                 plda_rankf=None,
+                 plda_rankg=None):
         """
         Parameters
         ----------
@@ -54,6 +56,8 @@ class Config:
             self.FC_WEIGHT_DECAY = fc_weight_decay
             self.BN_EPSILON = bn_epsilon
             self.SLIDE_WINDOWS = slide_windows
+            self.PLDA_F_RANK = plda_rankf
+            self.PLDA_G_RANK = plda_rankg
 
     def set(self,
             n_speaker=None,
@@ -67,7 +71,9 @@ class Config:
             conv_weight_decay=None,
             fc_weight_dacay=None,
             bn_epsilon=None,
-            slide_windows=None):
+            slide_windows=None,
+            plda_rankf=None,
+            plda_rankg=None):
         """The ``set`` method is used for reset some config.
         """
         if n_speaker is not None:
@@ -94,6 +100,10 @@ class Config:
             self.BN_EPSILON = bn_epsilon
         if slide_windows is not None:
             self.SLIDE_WINDOWS = slide_windows
+        if plda_rankf is not None:
+            self.PLDA_F_RANK = plda_rankf
+        if plda_rankg is not None:
+            self.PLDA_G_RANK = plda_rankg
 
     def save(self, name='global_config'):
         """This method is used for save your config to save_path

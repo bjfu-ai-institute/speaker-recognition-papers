@@ -98,15 +98,7 @@ class DeepSpeaker:
 
         inp = tf.nn.relu(tf.matmul(inp, weight_affine) + bias_affine)
 
-        print(inp.get_shape().as_list())
-
-        dims = inp.get_shape()[-1]
-        mean, variance = tf.nn.moments(inp, axes=[0])
-        beta = tf.get_variable('output_beta', dims, tf.float32,
-                               initializer=tf.constant_initializer(value=0.0))
-        gamma = tf.get_variable('output_gamma', dims, tf.float32,
-                                initializer=tf.constant_initializer(value=0.0))
-        output = tf.nn.batch_normalization(inp, mean, variance, beta, gamma, self._bn_epsilon)
+        output = tf.nn.l2_normalize(inp)
 
         return output
 
@@ -137,9 +129,11 @@ class DeepSpeaker:
         return conv2 + padded_inp
 
     def _triplet_loss(self, inp, targets):
-        loss = triplet_loss.batch_hard_triplet_loss(targets, inp, 1.0)
-        #loss = tf.contrib.losses.metric_learning.triplet_semihard_loss(labels=targets,
-        #                                                               embeddings=inp)
+        if targets.get_shape().as_list()[-1] != 1:
+            targets = tf.argmax(targets, axis=1)
+        loss = triplet_loss.batch_hard_triplet_loss(targets, inp, 0.5)
+        # loss = tf.reduce_sum(tf.contrib.losses.metric_learning.triplet_semihard_loss(labels=targets,
+        #                                                                             embeddings=layer_stack[-1]))
         return loss
 
     def _batch_normalization(self, inp, name):
@@ -210,7 +204,7 @@ def feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y):
     return inp_dict
 
 
-def _no_gpu(config, train, validation):
+def _no_gpu(config, train, validation, out_channel):
     tf.reset_default_graph()
     with tf.Session() as sess:
         learning_rate = config.LR
@@ -218,14 +212,22 @@ def _no_gpu(config, train, validation):
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         x = tf.placeholder(tf.float32, [None, 100, 64, 1])
         y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
-        model = DeepSpeaker(config=config, x=x, y=y)
+        if out_channel is not None:
+            model = DeepSpeaker(config=config, x=x, y=y, out_channel=out_channel)
+        else:
+            model = DeepSpeaker(config=config, x=x, y=y)
         loss = model.loss
         feature = model.feature
         train_op = opt.minimize(loss)
         vectors = dict()
         print("done...")
         print('run train op...')
+        #sess = debug.LocalCLIDebugWrapperSession(sess=sess)
+
         sess.run(tf.global_variables_initializer())
+
+        #debug_mode
+
         saver = tf.train.Saver()
         for epoch in range(config.MAX_STEP):
             start_time = time.time()
@@ -302,7 +304,7 @@ def _no_gpu(config, train, validation):
         print('training done.')
 
 
-def _multi_gpu(config, train, validation):
+def _multi_gpu(config, train, validation, out_channel):
     tf.reset_default_graph()
     with tf.Session() as sess:
         with tf.device('/cpu:0'):
@@ -318,7 +320,10 @@ def _multi_gpu(config, train, validation):
                         with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
                             x = tf.placeholder(tf.float32, [None, 100, 64, 1])
                             y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
-                            model = DeepSpeaker(config, x, y)
+                            if out_channel is not None:
+                                model = DeepSpeaker(config=config, x=x, y=y, out_channel=out_channel)
+                            else:
+                                model = DeepSpeaker(config=config, x=x, y=y)
                             feature = model.feature
                             loss = model.loss
                             grads = opt.compute_gradients(loss)
@@ -341,7 +346,7 @@ def _multi_gpu(config, train, validation):
             sess.run(tf.global_variables_initializer())
 
             # debug_mode
-            # sess = debug.LocalCLIDebugWrapperSession(sess=sess)
+            #sess = debug.LocalCLIDebugWrapperSession(sess=sess)
 
             saver = tf.train.Saver()
 
@@ -437,9 +442,9 @@ def cosine(vector1, vector2):
     return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
 
 
-def run(config, train, validation):
+def run(config, train, validation, out_channel=None):
     """Train DeepSpeaker model.
-    
+
     Parameters
     ----------
     config : ``config``
@@ -450,7 +455,8 @@ def run(config, train, validation):
         validation dataset.
     """
     if config.N_GPU == 0:
-        _no_gpu(config, train, validation)
+        os.environ['CUDA_VISIBLE_DEVICES'] = ""
+        _no_gpu(config, train, validation, out_channel)
     else:
         if os.path.exists('./tmp'):
             os.rename('./tmp', './tmp-backup')
@@ -467,7 +473,7 @@ def run(config, train, validation):
             s += str(gpu_list[i])
         os.environ['CUDA_VISIBLE_DEVICES'] = s
         os.remove('./tmp')
-        _multi_gpu(config, train, validation)
+        _multi_gpu(config, train, validation, out_channel)
 
 
 def restore():
@@ -482,17 +488,19 @@ def _main():
     from pyasv import Config
     import sys
     sys.path.append("../..")
-    con = Config(name='deepspeaker', n_speaker=100, batch_size=64, n_gpu=4, max_step=20, is_big_dataset=False,
+    a = int(eval(input()))
+    print(64*max(1, a))
+    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=20, is_big_dataset=False,
                  learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01, bn_epsilon=1e-3)
     x = np.random.random([6400, 100, 64, 1])
-    y = np.random.randint(0, 100, [6400, 1])
+    y = np.random.randint(0, 99, [6400, 1])
     train = DataManage(x, y, con)
 
     x = np.random.random([640, 100, 64, 1])
-    y = np.random.randint(0, 100, [640, 1])
+    y = np.random.randint(0, 99, [640, 1])
     validation = DataManage(x, y, con)
 
-    run(con, train, validation)
+    run(con, train, validation, out_channel=[32, 64])
 
 
 if __name__ == '__main__':
