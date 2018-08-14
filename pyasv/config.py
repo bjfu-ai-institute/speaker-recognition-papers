@@ -112,7 +112,7 @@ class Config:
             self.PLDA_G_RANK = plda_rankg
         if deep_speaker_out_channel is not None:
             self.DEEP_SPEAKER_OUT_CHANNEL = deep_speaker_out_channel
-        if audio_n_filt in not None:
+        if audio_n_filt is not None:
             self.Audio_n_filt = audio_n_filt
 
     def save(self, name='global_config'):
