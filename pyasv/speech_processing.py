@@ -81,9 +81,9 @@ def slide_windows(feature, config):
             continue
         else:
             result_.append(np.array(feature[i-l:i+r+1]))
-    result = np.array(result_)  
+    result = np.array(result_)
     return result
-        
+
 
 def ext_mfcc_feature(url_path, config):
     """This function is used for extract MFCC feature of a dataset.
@@ -110,7 +110,7 @@ def ext_mfcc_feature(url_path, config):
             url, label = str(url).split(" ")
             index = eval(str(label).split("\n")[0])
             y, sr = librosa.load(url)
-            mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=13)
+            mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=config.Audio_n_filt)
             mfcc_delta = librosa.feature.delta(mfcc_, width=3)
             mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
             mfcc = np.vstack([mfcc_, np.vstack([mfcc_delta, mfcc_delta_delta])])
@@ -161,7 +161,7 @@ def ext_fbank_feature(url_path, config):
             fbank = np.dot(stft.T, melW.T)
             fbank = slide_windows(fbank)
             """
-            fbank = calc_fbank(url)
+            fbank = calc_fbank(url, config)
             fbank = slide_windows(fbank, config)
             for i in fbank:
                 fbanks.append(i)
@@ -169,7 +169,7 @@ def ext_fbank_feature(url_path, config):
         return fbanks, labels
 
 
-def calc_fbank(url):
+def calc_fbank(url, config):
     """Calculate Fbank feature of a audio file.
 
     Parameters
@@ -183,15 +183,15 @@ def calc_fbank(url):
         Fbank feature of this audio.
     """
     sample_rate, signal = read(url)
-    pre_emphasis = 0.97
-    frame_size = 0.025
-    frame_stride = 0.010
-    NFFT = 512
-    nfilt = 64
-    
+    pre_emphasis = 0.97                           #config.Audio_emphasis
+    frame_size = 0.025                            #config.Audio_frame_size
+    frame_stride =  0.01                          #config.Audio_frame_stride
+    NFFT = 512                                    #config.Audio_NFFT
+    nfilt = config.Audio_n_filt
+
     emphasized_signal = np.append(signal[0], signal[1:] - pre_emphasis * signal[:-1])
     # convert from seconds to samples
-    frame_length, frame_step = frame_size * sample_rate, frame_stride * sample_rate  
+    frame_length, frame_step = frame_size * sample_rate, frame_stride * sample_rate
     signal_length = len(emphasized_signal)
     frame_length = int(round(frame_length))
     frame_step = int(round(frame_step))
@@ -203,7 +203,7 @@ def calc_fbank(url):
 
     # Pad Signal to make sure that all frames have equal number of samples
     # without truncating any samples from the original signal
-    pad_signal = np.append(emphasized_signal, z) 
+    pad_signal = np.append(emphasized_signal, z)
 
     indices = np.tile(np.arange(0, frame_length), (num_frames, 1)) + \
               np.tile(np.arange(0, num_frames * frame_step, frame_step), (frame_length, 1)).T
