@@ -297,13 +297,16 @@ def _no_gpu(config, train, validation):
             stop_time = time.time()
             elapsed_time = stop_time-start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
+            abs_save_path = os.path.abspath(os.path.join(model._save_path, model._name + ".ckpt"))
+            saver.save(sess=sess, save_path=abs_save_path)
         print('training done.')
 
 
 def _multi_gpu(config, train, validation):
     tf.reset_default_graph()
-    with tf.Session() as sess:
+    con = tf.ConfigProto(allow_soft_placement=True)
+    con.gpu_options.allow_growth = True
+    with tf.Session(config=con) as sess:
         with tf.device('/cpu:0'):
             learning_rate = config.LR
             opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -312,7 +315,7 @@ def _multi_gpu(config, train, validation):
             models = []
             for gpu_id in range(config.N_GPU):
                 with tf.device('/gpu:%d' % gpu_id):
-                    print('tower:%d...' % gpu_id)
+                    print('GPU:%d...' % gpu_id)
                     with tf.name_scope('tower_%d' % gpu_id):
                         with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
                             x = tf.placeholder(tf.float32, [None, 100, 64, 1])
@@ -425,7 +428,8 @@ def _multi_gpu(config, train, validation):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
+                abs_save_path = os.path.abspath(os.path.join(model._save_path, model._name + ".ckpt"))
+                saver.save(sess=sess, save_path=abs_save_path)
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -452,10 +456,23 @@ def run(config, train, validation):
         os.environ['CUDA_VISIBLE_DEVICES'] = ""
         _no_gpu(config, train, validation)
     else:
+
         if os.path.exists('./tmp'):
             os.rename('./tmp', './tmp-backup')
-        os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
-        memory_gpu=[int(x.split()[2]) for x in open('tmp','r').readlines()]
+        if sys.platform[:3] == 'win':
+            os.system("powershell \"nvidia-smi -q -d Memory | Select-String Free > ./tmp\"")
+            memory_gpu = open('tmp', 'r', encoding='utf-16').readlines()[1:-2]
+            memory_gpu = [int(x.split()[2]) for x in memory_gpu]
+            mem_ = []
+            for i in range(len(memory_gpu)):
+                if i%2 == 0:
+                    mem_.append(memory_gpu[i])
+            memory_gpu = mem_
+
+        else:
+            os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
+            memory_gpu = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+        memory_gpu = np.array(memory_gpu, dtype=np.int32)
         gpu_list = []
         for gpu in range(config.N_GPU):
             gpu_list.append(str(np.argmax(memory_gpu)))
@@ -473,7 +490,6 @@ def run(config, train, validation):
 def restore(config, enroll, test):
     with tf.Graph().as_default() as g:
         assert type(enroll) == (DataManage or DataManage4BigData)
-        assert type(enroll) == (DataManage or DataManage4BigData)
         with tf.Session() as sess:
             x = tf.placeholder(tf.float32, [None, 100, 64, 1])
             if config.N_GPU == 0:
@@ -483,7 +499,8 @@ def restore(config, enroll, test):
                     model = DeepSpeaker(config, x)
             get_feature = model.feature
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            abs_save_path = os.path.abspath(os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            saver.restore(sess, abs_save_path)
             print("restore model succeed.")
             total_batch = int(enroll.num_examples / config.BATCH_SIZE)
             ys = None
@@ -560,6 +577,9 @@ def _main():
     """
     Test model.
     """
+    """
+    Test model.
+    """
     from pyasv.data_manage import DataManage
     from pyasv import Config
     import sys
@@ -567,19 +587,26 @@ def _main():
     print("Model test")
     print("input n_gpu", end="")
     a = int(eval(input()))
-    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=5, is_big_dataset=False,
-                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01, bn_epsilon=1e-3,
-                 deep_speaker_out_channel=[32, 64])
+    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=2, is_big_dataset=True,
+                 url_of_bigdataset_temp_file='./',
+                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01,
+                 bn_epsilon=1e-3, deep_speaker_out_channel=[64, 128, 256, 512])
     x = np.random.random([320, 100, 64, 1])
     y = np.random.randint(0, 99, [320, 1])
-    train = DataManage(x, y, con)
+
+    train = DataManage4BigData(con, 'train')
+    train.write_file(x, y)
 
     x = np.random.random([64, 100, 64, 1])
     y = np.random.randint(0, 99, [64, 1])
-    validation = DataManage(x, y, con)
 
-    # run(con, train, validation)
-    restore(con, train, validation)
+    validation = DataManage4BigData(con, 'validation')
+    validation.write_file(x, y)
+
+    run(con, train, validation)
+
+    train.clear()
+    validation.clear()
 
 
 if __name__ == '__main__':

@@ -304,14 +304,17 @@ def _no_gpu(config, train, validation):
             print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
             stop_time = time.time()
             elapsed_time = stop_time-start_time
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
+            abs_save_path = os.path.abspath(os.path.join(model._save_path, model._name + ".ckpt"))
+            saver.save(sess=sess, save_path=abs_save_path)
             print('Cost time: ' + str(elapsed_time) + ' sec.')
         print('training done.')
 
 
 def _multi_gpu(config, train, validation, debug_mode=False):
     tf.reset_default_graph()
-    with tf.Session() as sess:
+    con = tf.ConfigProto(allow_soft_placement=True)
+    con.gpu_options.allow_growth = True
+    with tf.Session(config=con) as sess:
         with tf.device('/cpu:0'):
             learning_rate = config.LR
             # opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -446,7 +449,8 @@ def _multi_gpu(config, train, validation, debug_mode=False):
                 correct_pred = np.equal(np.argmax(ys, 1), vec_preds)
                 val_accuracy = np.mean(np.array(correct_pred, dtype='float'))
                 print('Val Accuracy: %0.4f%%' % (100.0 * val_accuracy))
-                saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
+                abs_save_path = os.path.abspath(os.path.join(model._save_path, model._name + ".ckpt"))
+                saver.save(sess=sess, save_path=abs_save_path)
                 stop_time = time.time()
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
@@ -466,16 +470,30 @@ def run(config, train, validation, debug_mode=False):
         the config of model.
     train : ``DataManage``
         train dataset.
-    validation
+    validation : ``DataManage``
         validation dataset.
+    debug_mode : ``bool``
+        if true, sess will be replaced by tfdbg's sess.
     """
     if config.N_GPU == 0:
         _no_gpu(config, train, validation)
     else:
         if os.path.exists('./tmp'):
             os.rename('./tmp', './tmp-backup')
-        os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
-        memory_gpu=[int(x.split()[2]) for x in open('tmp','r').readlines()]
+        if sys.platform[:3] == 'win':
+            os.system("powershell \"nvidia-smi -q -d Memory | Select-String Free > ./tmp\"")
+            memory_gpu = open('tmp', 'r', encoding='utf-16').readlines()[1:-2]
+            memory_gpu = [int(x.split()[2]) for x in memory_gpu]
+            mem_ = []
+            for i in range(len(memory_gpu)):
+                if i%2 == 0:
+                    mem_.append(memory_gpu[i])
+            memory_gpu = mem_
+
+        else:
+            os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > ./tmp')
+            memory_gpu = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+        memory_gpu = np.array(memory_gpu, dtype=np.int32)
         gpu_list = []
         for gpu in range(config.N_GPU):
             gpu_list.append(str(np.argmax(memory_gpu)))
@@ -491,8 +509,22 @@ def run(config, train, validation, debug_mode=False):
 
 
 def restore(config, enroll, test):
+    """
+
+    Parameters
+    ----------
+    config : ``Config``
+        config of your model. It's recommended to use same config which you use in train step.
+    enroll : ``DataManage``
+        enroll feature dataset.
+    test
+        test feature dataset.
+
+    Returns
+    -------
+    Will write the result file to save_path/result.txt
+    """
     with tf.Graph().as_default() as g:
-        assert type(enroll) == (DataManage or DataManage4BigData)
         assert type(enroll) == (DataManage or DataManage4BigData)
         with tf.Session() as sess:
             x = tf.placeholder(tf.float32, [None, 9, 40, 1])
@@ -503,7 +535,8 @@ def restore(config, enroll, test):
                     model = CTDnn(config, x)
             get_feature = model.feature
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            abs_save_path = os.path.abspath(os.path.join(config.SAVE_PATH, config.MODEL_NAME + ".ckpt"))
+            saver.restore(sess, abs_save_path)
             print("restore model succeed.")
             total_batch = int(enroll.num_examples / config.BATCH_SIZE)
             ys = None
@@ -597,7 +630,7 @@ def _main():
     test = DataManage(x, y, con)
     validation = test
 
-    # run(con, train, validation, False)
+    run(con, train, validation, False)
     restore(con, enroll, test)
 
 

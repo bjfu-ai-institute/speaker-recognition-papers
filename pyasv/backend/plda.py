@@ -83,7 +83,7 @@ class PLDA:
         alpha2 = numpy.linalg.slogdet(K2)[1]
         constant = alpha2 / 2.0 - alpha1
 
-        #Compute score
+        # Compute score
         test_tmp = B.dot(test.T)
         enroll_tmp = B.dot(enroll.T)
         tmp1 = test_tmp.T.dot(K1)
