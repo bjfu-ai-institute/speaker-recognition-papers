@@ -18,6 +18,7 @@ DataManage4BigData
 import numpy as np
 import os
 import h5py
+import shutil
 
 
 class DataManage(object):
@@ -143,7 +144,9 @@ class DataManage4BigData(object):
         """
         batch_size = self.batch_size
         local_batch_count = 0
+
         raw_frames, raw_labels = self.random_shuffle_union(raw_frames, raw_labels)
+
         raw_labels = np.array(raw_labels)
         if raw_labels.shape[-1] != self.spkr_num:
             raw_labels = np.eye(self.spkr_num)[raw_labels.reshape(-1)]
@@ -176,6 +179,13 @@ class DataManage4BigData(object):
             with h5py.File(os.path.join(self.url, 'write_count.h5')) as f:
                 del f['write_count']
                 f.create_dataset('write_count', data=self.write_count)
+
+    def clear(self):
+        shutil.rmtree(self.url)
+        self.write_count = 0
+        self.num_examples = 0
+        self.batch_count = 0
+        self.file_is_exist = False
 
     @property
     def next_batch(self):
