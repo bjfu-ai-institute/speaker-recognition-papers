@@ -29,9 +29,7 @@ class DeepSpeaker:
         Because we use the output of last layer as speaker vector.
         we can use DeepSpeaker.feature to get these vector.
         """
-        self._gpu_ind = 0
         self.out_channel = config.DEEP_SPEAKER_OUT_CHANNEL
-        self.n_blocks = len(self.out_channel)
         self._name = config.MODEL_NAME
         self._n_speaker = config.N_SPEAKER
         self._max_step = config.MAX_STEP
@@ -43,6 +41,8 @@ class DeepSpeaker:
         self._learning_rate = config.LR
         self._batch_size = config.BATCH_SIZE
         self._vectors = dict()
+        self._check_None()
+        self.n_blocks = len(self.out_channel)
         if y is not None:
             self._build_train_graph(x, y)
         else:
@@ -77,18 +77,35 @@ class DeepSpeaker:
         self._feature = output
         self._loss = self._triplet_loss(inp=output, targets=y)
 
+    def _check_None(self):
+        dic = self.__dict__
+        exit_status = False
+        for key in dic.keys():
+            if dic[key] is None:
+                print("Error: %s is a required parameter, but it is not defined in config."%key)
+                exit_status = True
+        if exit_status:
+            exit()
+
     def _inference(self, inp):
         for i in range(self.n_blocks):
             if i > 0:
+                inp_channel = inp.get_shape().as_list()[-1]
+                inp = self._conv2d(name='conv5%d'%i, shape=[5, 5, inp_channel, self.out_channel[i]],
+                                   strides=[1, 2, 2, 1], x=inp, padding='VALID')
                 inp = self._residual_block(inp, self.out_channel[i], "residual_block_%d" % i,
                                            is_first_layer=False)
 
             else:
+                inp_channel = inp.get_shape().as_list()[-1]
+                inp = self._conv2d(name='conv5%d' % i, shape=[5, 5, inp_channel, self.out_channel[i]],
+                                   strides=[1, 2, 2, 1], x=inp, padding='VALID')
                 inp = self._residual_block(inp, self.out_channel[i], "residual_block_%d" % i,
                                            is_first_layer=True)
+            print(inp.get_shape().as_list())
 
-        inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1],
-                             strides=[1, 1, 1, 1], padding='SAME')
+        inp = tf.nn.avg_pool(inp, ksize=[1, 3, 1, 1],
+                             strides=[1, 1, 1, 1], padding='VALID')
 
         inp = tf.reshape(inp, [-1, inp.get_shape().as_list()[1]*inp.get_shape().as_list()[2]*inp.get_shape().as_list()[3]])
         weight_affine = self._new_variable("affine_weight", [inp.get_shape().as_list()[-1], 512],
@@ -114,16 +131,14 @@ class DeepSpeaker:
         if is_first_layer:
             weight = self._new_variable(name=name+"_conv", shape=[3, 3, inp_channel, out_channel],
                                         weight_type="Conv")
-            conv1 = tf.nn.conv2d(inp, weight, strides=[1, 1, 1, 1], padding='SAME')
+            conv1 = tf.nn.conv2d(inp, weight, strides=[1, 1, 1, 1], padding="SAME")
         else:
             conv1 = self._relu_conv_layer(inp, [3, 3, inp_channel, out_channel], name=name+"_conv1",
                                           stride=stride, padding='SAME', bn_after_conv=False)
         conv2 = self._relu_conv_layer(conv1, [3, 3, out_channel, out_channel], name=name+"_conv2",
                                       stride=1, padding='SAME', bn_after_conv=False)
         if increased:
-            pool_inp = tf.nn.avg_pool(inp, ksize=[1, 2, 2, 1],
-                                      strides=[1, 2, 2, 1], padding='SAME')
-            padded_inp = tf.pad(pool_inp, [[0, 0], [0, 0], [0, 0], [inp_channel//2, inp_channel//2]])
+            padded_inp = tf.pad(inp, [[0, 0], [0, 0], [0, 0], [inp_channel//2, inp_channel//2]])
         else:
             padded_inp = inp
         return conv2 + padded_inp
@@ -132,8 +147,8 @@ class DeepSpeaker:
         if targets.get_shape().as_list()[-1] != 1:
             targets = tf.argmax(targets, axis=1)
         loss = triplet_loss.batch_hard_triplet_loss(targets, inp, 0.5)
-        # loss = tf.reduce_sum(tf.contrib.losses.metric_learning.triplet_semihard_loss(labels=targets,
-        #                                                                             embeddings=layer_stack[-1]))
+        # loss = tf.contrib.losses.metric_learning.triplet_semihard_loss(labels=targets,
+        #                                                              embeddings=inp)
         return loss
 
     def _batch_normalization(self, inp, name):
@@ -164,6 +179,13 @@ class DeepSpeaker:
             conv_layer = tf.nn.conv2d(relu_layer, weight,
                                       strides=[1, stride, stride, 1], padding=padding)
             return conv_layer
+
+    def _conv2d(self, x, name, shape, strides, padding):
+        with tf.name_scope(name):
+            weights = self._new_variable(shape=shape, name=name+'_w', weight_type="Conv")
+            biases = self._new_variable(shape=[shape[-1]], name=name+'_b', weight_type="Conv")
+        return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(x, weights,
+                                                      strides=strides, padding=padding), biases, name=name + "_output"))
 
     def _new_variable(self, name, shape, weight_type, init=tf.contrib.layers.xavier_initializer()):
         if weight_type == "Conv":
@@ -297,7 +319,7 @@ def _no_gpu(config, train, validation):
             stop_time = time.time()
             elapsed_time = stop_time-start_time
             print('Cost time: ' + str(elapsed_time) + ' sec.')
-            saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
+            # saver.save(sess=sess, save_path=os.path.join(model._save_path, model._name + ".ckpt"))
         print('training done.')
 
 
@@ -567,19 +589,20 @@ def _main():
     print("Model test")
     print("input n_gpu", end="")
     a = int(eval(input()))
-    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=5, is_big_dataset=False,
-                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01, bn_epsilon=1e-3,
-                 deep_speaker_out_channel=[32, 64])
+    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=5, is_big_dataset=True,
+                 url_of_bigdataset_temp_file='./',
+                 learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01,
+                 bn_epsilon=1e-3, deep_speaker_out_channel=[64, 128, 256, 512])
     x = np.random.random([320, 100, 64, 1])
     y = np.random.randint(0, 99, [320, 1])
-    train = DataManage(x, y, con)
-
+    train = DataManage4BigData(con, '', x.shape[0])
+    train.write_file(x, y)
     x = np.random.random([64, 100, 64, 1])
     y = np.random.randint(0, 99, [64, 1])
-    validation = DataManage(x, y, con)
-
-    # run(con, train, validation)
-    restore(con, train, validation)
+    validation = DataManage4BigData(con, '', x.shape[0])
+    validation.write_file(x, y)
+    run(con, train, validation)
+    #restore(con, train, validation)
 
 
 if __name__ == '__main__':

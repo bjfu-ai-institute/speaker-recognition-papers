@@ -14,6 +14,7 @@ Python-ASV
     :name: mastertoc
 
     introduction
+    tutorial
     loss
     model
     config
