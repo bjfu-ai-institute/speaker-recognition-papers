@@ -75,13 +75,16 @@ def slide_windows(feature, config):
     if type(feature)!=np.ndarray:
         feature = np.array(feature)
     result_ = []
-    l, r = config.SLIDE_WINDOWS
-    for i in range(feature.shape[0]-r):
-        if i < l:
-            continue
-        else:
-            result_.append(np.array(feature[i-l:i+r+1]))
-    result = np.array(result_)
+    if config.SLIDE_WINDOWS is not None:
+        l, r = config.SLIDE_WINDOWS
+        for i in range(feature.shape[0]-r):
+            if i < l:
+                continue
+            else:
+                result_.append(np.array(feature[i-l:i+r+1]))
+        result = np.array(result_)
+    else:
+        result = feature
     return result
 
 
