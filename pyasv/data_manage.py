@@ -218,6 +218,9 @@ class DataManage4BigData(object):
 
     @staticmethod
     def random_shuffle_union(x, y):
+        if type(x) != np.ndarray or type(y) != np.ndarray:
+            x = np.array(x)
+            y = np.array(y)
         randomize = np.arange(len(x))
         np.random.shuffle(randomize)
         x = x[randomize]
