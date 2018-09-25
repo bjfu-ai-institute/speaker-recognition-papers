@@ -73,4 +73,6 @@ pyasv/MANIFEST.in
 pyasv/README.txt
 pyasv/LICENSE.txt
 pyasv/model/dense.py
+pyasv/model/attention.py
 pyasv/model/dualpathnet.py
+pyasv/model/save

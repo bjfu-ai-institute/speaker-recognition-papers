@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import pyasv.loss.triplet_loss as triplet_loss
 import time
+from scipy.spatial.distance import cosine
 from pyasv.data_manage import DataManage
 from pyasv.data_manage import DataManage4BigData
 from tensorflow.python import debug
@@ -92,28 +93,29 @@ class DeepSpeaker:
             if i > 0:
                 inp_channel = inp.get_shape().as_list()[-1]
                 inp = self._conv2d(name='conv5%d'%i, shape=[5, 5, inp_channel, self.out_channel[i]],
-                                   strides=[1, 2, 2, 1], x=inp, padding='VALID')
+                                   strides=[1, 2, 2, 1], x=inp, padding='SAME')
                 inp = self._residual_block(inp, self.out_channel[i], "residual_block_%d" % i,
                                            is_first_layer=False)
 
             else:
                 inp_channel = inp.get_shape().as_list()[-1]
                 inp = self._conv2d(name='conv5%d' % i, shape=[5, 5, inp_channel, self.out_channel[i]],
-                                   strides=[1, 2, 2, 1], x=inp, padding='VALID')
+                                   strides=[1, 2, 2, 1], x=inp, padding='SAME')
                 inp = self._residual_block(inp, self.out_channel[i], "residual_block_%d" % i,
                                            is_first_layer=True)
             print(inp.get_shape().as_list())
 
-        inp = tf.nn.avg_pool(inp, ksize=[1, 3, 1, 1],
-                             strides=[1, 1, 1, 1], padding='VALID')
+        inp = tf.reduce_mean(inp, axis=1)
 
-        inp = tf.reshape(inp, [-1, inp.get_shape().as_list()[1]*inp.get_shape().as_list()[2]*inp.get_shape().as_list()[3]])
+        inp = tf.reshape(inp, [-1, inp.get_shape().as_list()[1]*inp.get_shape().as_list()[2]])
+        print(inp.get_shape().as_list())
         weight_affine = self._new_variable("affine_weight", [inp.get_shape().as_list()[-1], 512],
                                            weight_type="FC")
 
         bias_affine = self._new_variable("affine_bias", [512], "FC")
 
         inp = tf.nn.relu(tf.matmul(inp, weight_affine) + bias_affine)
+        print(inp.get_shape().as_list())
 
         output = tf.nn.l2_normalize(inp)
 
@@ -232,7 +234,7 @@ def _no_gpu(config, train, validation):
         learning_rate = config.LR
         print('build model...')
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        x = tf.placeholder(tf.float32, [None, 100, 64, 1])
+        x = tf.placeholder(tf.float32, [None, None, 64, 1])
         y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
         model = DeepSpeaker(config=config, x=x, y=y)
         loss = model.loss
@@ -292,7 +294,8 @@ def _no_gpu(config, train, validation):
             for batch_idx in range(total_batch):
                 print("validation in batch_%d..."%batch_idx, end='\r')
                 batch_x, batch_y = validation.next_batch
-                batch_x = batch_x.reshape(-1, 100, 64, 1)
+                if batch_x.shape[3] != 1:
+                    batch_x = np.expand_dims(batch_x, axis=3)
                 batch_y, batch_feature = sess.run([y, feature],
                                                   feed_dict={x: batch_x, y: batch_y})
                 if feature_ is None:
@@ -342,7 +345,7 @@ def _multi_gpu(config, train, validation):
                     print('GPU:%d...' % gpu_id)
                     with tf.name_scope('tower_%d' % gpu_id):
                         with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
-                            x = tf.placeholder(tf.float32, [None, 100, 64, 1])
+                            x = tf.placeholder(tf.float32, [None, None, 64, 1])
                             y = tf.placeholder(tf.float32, [None, config.N_SPEAKER])
                             model = DeepSpeaker(config=config, x=x, y=y)
                             feature = model.feature
@@ -384,7 +387,8 @@ def _multi_gpu(config, train, validation):
                 ys = None
                 for batch_idx in range(total_batch):
                     batch_x, batch_y = train.next_batch
-                    batch_x = batch_x.reshape(-1, 100, 64, 1)
+                    if batch_x.shape[3] != 1:
+                        batch_x = np.expand_dims(batch_x, 3)
                     inp_dict = dict()
                     # print("data part done...")
                     inp_dict = feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y)
@@ -458,10 +462,6 @@ def _multi_gpu(config, train, validation):
                 elapsed_time = stop_time-start_time
                 print('Cost time: ' + str(elapsed_time) + ' sec.')
             print('training done.')
-
-
-def cosine(vector1, vector2):
-    return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * (np.linalg.norm(vector2)))
 
 
 def run(config, train, validation):
@@ -611,26 +611,27 @@ def _main():
     print("Model test")
     print("input n_gpu", end="")
     a = int(eval(input()))
-    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=2, is_big_dataset=True,
+    con = Config(name='deepspeaker', n_speaker=100, batch_size=32*max(1, a), n_gpu=a, max_step=2, is_big_dataset=False,
                  url_of_bigdataset_temp_file='./',
                  learning_rate=0.001, save_path='./save', conv_weight_decay=0.01, fc_weight_decay=0.01,
                  bn_epsilon=1e-3, deep_speaker_out_channel=[64, 128, 256, 512])
     x = np.random.random([320, 100, 64, 1])
     y = np.random.randint(0, 99, [320, 1])
 
-    train = DataManage4BigData(con, 'train')
-    train.write_file(x, y)
+    train = DataManage(x, y, con)
+    #train = DataManage4BigData(con, 'train')
+    #train.write_file(x, y)
 
     x = np.random.random([64, 100, 64, 1])
     y = np.random.randint(0, 99, [64, 1])
 
-    validation = DataManage4BigData(con, 'validation')
-    validation.write_file(x, y)
+    validation = DataManage(x, y, con)
+    #validation.write_file(x, y)
 
     run(con, train, validation)
 
-    train.clear()
-    validation.clear()
+    #train.clear()
+    #validation.clear()
 
 
 if __name__ == '__main__':
