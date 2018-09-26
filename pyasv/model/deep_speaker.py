@@ -260,7 +260,8 @@ def _no_gpu(config, train, validation):
             ys = None
             for batch_id in range(total_batch):
                 batch_x, batch_y = train.next_batch
-                batch_x = batch_x.reshape(-1, 100, 64, 1)
+                if batch_x.shape[3] != 1:
+                    batch_x = np.expand_dims(batch_x, 3)
                 _, _loss, batch_feature = sess.run([train_op, loss, feature],
                                              feed_dict={x: batch_x, y: batch_y})
                 avg_loss += _loss
@@ -296,7 +297,7 @@ def _no_gpu(config, train, validation):
                 batch_x, batch_y = validation.next_batch
                 if batch_x.shape[3] != 1:
                     batch_x = np.expand_dims(batch_x, axis=3)
-                batch_y, batch_feature = sess.run([y, feature],
+                _, batch_feature = sess.run([y, feature],
                                                   feed_dict={x: batch_x, y: batch_y})
                 if feature_ is None:
                     feature_ = batch_feature
@@ -329,7 +330,7 @@ def _no_gpu(config, train, validation):
         print('training done.')
 
 
-def _multi_gpu(config, train, validation):
+def _multi_gpu(config, train, validation, enroll=None):
     tf.reset_default_graph()
     con = tf.ConfigProto(allow_soft_placement=True)
     con.gpu_options.allow_growth = True
@@ -406,18 +407,49 @@ def _multi_gpu(config, train, validation):
                     print("batch_%d  batch_loss=%.4f"%(batch_idx, _loss), end='\r')
                 print('\n')
                 train.reset_batch_counter()
-                for spkr in range(config.N_SPEAKER):
-                    if len(feature_[np.argmax(ys, 1) == spkr]):
-                        vector = np.mean(feature_[np.argmax(ys, 1) == spkr], axis=0)
-                        if spkr in vectors.keys():
-                            vector = (vectors[spkr] + vector) / 2
+                if enroll is None:
+                    for spkr in range(config.N_SPEAKER):
+                        if len(feature_[np.argmax(ys, 1) == spkr]):
+                            vector = np.mean(feature_[np.argmax(ys, 1) == spkr], axis=0)
+                            if spkr in vectors.keys():
+                                vector = (vectors[spkr] + vector) / 2
+                            else:
+                                vector = vector
+                            vectors[spkr] = vector
                         else:
-                            vector = vector
-                        vectors[spkr] = vector
-                    else:
-                        if spkr not in vectors.keys():
-                            vectors[spkr] = np.zeros(512, dtype=np.float32)
+                            if spkr not in vectors.keys():
+                                vectors[spkr] = np.zeros(512, dtype=np.float32)
                         # print("vector part done....")
+                else:
+                    en_payload_per_gpu = int(config.BATCH_SIZE//config.N_GPU)
+                    if config.BATCH_SIZE % config.N_GPU:
+                        print("Warning: Batch size can't to be divisible of N_GPU")
+
+                    total_batch = int(enroll.num_examples / config.BATCH_SIZE)
+                    ys = None
+                    feature_ = None
+                    for batch_idx in range(total_batch):
+                        batch_x, batch_y = validation.next_batch
+                        if batch_x.shape[3] != 1:
+                            batch_x = np.expand_dims(batch_x, 3)
+                        inp_dict = feed_all_gpu({}, models, en_payload_per_gpu, batch_x, batch_y)
+                        _, batch_feature = sess.run([all_y, get_feature], inp_dict)
+                        if feature_ is None:
+                            feature_ = batch_feature
+                        else:
+                            feature_ = np.concatenate((feature_, batch_feature), 0)
+                        if ys is None:
+                            ys = batch_y
+                        else:
+                            ys = np.concatenate((ys, batch_y), 0)
+                    enroll.reset_batch_counter()
+                    for vec_id in range(feature_):
+                        vec = feature_[vec_id]
+                        spkr = ys[vec_id]
+                        if spkr not in vectors.keys():
+                            vectors[spkr] = vec
+                        else:
+                            vectors[spkr] = 0.5 * (vectors[spkr] + vec)
                 avg_loss /= total_batch
                 print('Train loss:%.4f' % (avg_loss))
 
@@ -429,11 +461,11 @@ def _multi_gpu(config, train, validation):
                 ys = None
                 feature_ = None
                 for batch_idx in range(total_batch):
-
                     batch_x, batch_y = validation.next_batch
-                    batch_x = batch_x.reshape(-1, 100, 64, 1)
+                    if batch_x.shape[3] != 1:
+                        batch_x = np.expand_dims(batch_x, 3)
                     inp_dict = feed_all_gpu({}, models, val_payload_per_gpu, batch_x, batch_y)
-                    batch_y, batch_feature = sess.run([all_y, get_feature], inp_dict)
+                    _, batch_feature = sess.run([all_y, get_feature], inp_dict)
                     if feature_ is None:
                         feature_ = batch_feature
                     else:
@@ -464,7 +496,7 @@ def _multi_gpu(config, train, validation):
             print('training done.')
 
 
-def run(config, train, validation):
+def run(config, train, validation, enroll=None):
     """Train DeepSpeaker model.
 
     Parameters
@@ -508,7 +540,7 @@ def run(config, train, validation):
             s += str(gpu_list[i])
         os.environ['CUDA_VISIBLE_DEVICES'] = s
         os.remove('./tmp')
-        _multi_gpu(config, train, validation)
+        _multi_gpu(config, train, validation, enroll)
 
 
 def restore(config, enroll, test):
@@ -624,11 +656,11 @@ def _main():
 
     x = np.random.random([64, 100, 64, 1])
     y = np.random.randint(0, 99, [64, 1])
-
+    enroll = DataManage(x, y, con)
     validation = DataManage(x, y, con)
     #validation.write_file(x, y)
 
-    run(con, train, validation)
+    run(con, train, validation, enroll)
 
     #train.clear()
     #validation.clear()
