@@ -50,16 +50,17 @@ cmvn
 
 """
 import librosa
-import os
+import time
 import numpy as np
-from scipy import signal
+import logging
 import scipy
 import resampy
+from pyasv.basic import ops
 from scipy.io.wavfile import read
 from scipy.fftpack import dct
 
 
-def slide_windows(feature, config):
+def slide_windows(feature, slide_windows):
     """concat the feature with the frame before and after it.
 
     Parameters
@@ -75,8 +76,8 @@ def slide_windows(feature, config):
     if type(feature)!=np.ndarray:
         feature = np.array(feature)
     result_ = []
-    if config.SLIDE_WINDOWS is not None:
-        l, r = config.SLIDE_WINDOWS
+    if slide_windows is not None:
+        l, r = slide_windows
         for i in range(feature.shape[0]-r):
             if i < l:
                 continue
@@ -106,23 +107,38 @@ def ext_mfcc_feature(url_path, config):
         The label of fbank feature.
 
     """
+    logger = logging.getLogger(config.model_name)
+
     with open(url_path, 'r') as urls:
-        mfccs = []
         labels = []
+        url_list = []
         for url in list(urls):
-            url, label = str(url).split(" ")
+            line, label = str(url).split(" ")
             index = eval(str(label).split("\n")[0])
-            y, sr = librosa.load(url)
-            mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=config.Audio_n_filt)
-            mfcc_delta = librosa.feature.delta(mfcc_, width=3)
-            mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
-            mfcc = np.vstack([mfcc_, np.vstack([mfcc_delta, mfcc_delta_delta])])
-            mfcc = cmvn(mfcc)
-            mfcc = slide_windows(mfcc, config)
-            for i in mfcc:
-                mfccs.append(i)
-                labels.append(index)
-        return mfccs, labels
+            labels.append([index])
+            url_list.append(line)
+
+    logger.info("Extracting MFCC feature, utt_nums is %d" % len(url_list))
+
+    n_filt = [config.feature_dims for i in range(len(url_list))]
+    slides = [config.slides for i in range(len(url_list))]
+    mfccs = ops.multi_processing(calc_mfcc, zip(url_list, n_filt, slides), config.n_threads)
+
+    logger.info("Extracting MFCC feature succeed")
+    return mfccs, labels
+
+
+def calc_mfcc(url, n_filt, slide_l, slide_r):
+    y, sr = librosa.load(url)
+    mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=n_filt)
+    mfcc_delta = librosa.feature.delta(mfcc_, width=3)
+    mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
+    mfcc = np.vstack([mfcc_, np.vstack([mfcc_delta, mfcc_delta_delta])])
+    mfcc = cmvn(mfcc)
+    if (slide_r and slide_l) is not None:
+        slides = [slide_l, slide_r]
+        mfcc = slide_windows(mfcc, slides)
+    return mfcc
 
 
 def ext_fbank_feature(url_path, config):
@@ -147,32 +163,28 @@ def ext_fbank_feature(url_path, config):
     Changeable concat size is in the todolist
 
     """
+    logger = logging.getLogger(config.model_name)
+
+    url_list = []
+    labels = []
     with open(url_path, 'r') as urls:
-        fbanks = []
-        labels = []
-        for url in list(urls):
-            url, label = str(url).split(" ")
+        for line in list(urls):
+            url, label = str(line).split(" ")
             index = eval(str(label).split("\n")[0])
-            #label = np.zeros(config.N_SPEAKER)
-            #label[index] = 1
-            """
-            # I am not sure I use librosa in right way.
-            y, sr = librosa.load(url)
-            stft = librosa.core.stft(y)
-            melW=librosa.filters.mel(sr=sr, n_fft=2048,n_mels=40,fmin=0.,fmax=22100)
-            melW /= np.max(melW, axis=-1)[:,None]
-            fbank = np.dot(stft.T, melW.T)
-            fbank = slide_windows(fbank)
-            """
-            fbank = calc_fbank(url, config)
-            fbank = slide_windows(fbank, config)
-            for i in fbank:
-                fbanks.append(i)
-                labels.append(index)
-        return fbanks, labels
+            url_list.append(url)
+            labels.append([index])
+
+    logger.info("Extracting fbank feature, utt_nums is %d" % len(url_list))
+
+    n_filt = [config.feature_dims for i in range(len(url_list))]
+    slides = [config.slides for i in range(len(url_list))]
+    fbanks = ops.multi_processing(calc_fbank, zip(url_list, n_filt, slides), config.n_threads)
+
+    logger.info("Extracting fbank feature succeed")
+    return fbanks, labels
 
 
-def calc_fbank(url, config):
+def calc_fbank(url, n_filt, slide_l=None, slide_r=None):
     """Calculate Fbank feature of a audio file.
 
     Parameters
@@ -190,7 +202,7 @@ def calc_fbank(url, config):
     frame_size = 0.025                            #config.Audio_frame_size
     frame_stride =  0.01                          #config.Audio_frame_stride
     NFFT = 512                                    #config.Audio_NFFT
-    nfilt = config.Audio_n_filt
+    nfilt = n_filt
 
     emphasized_signal = np.append(signal[0], signal[1:] - pre_emphasis * signal[:-1])
     # convert from seconds to samples
@@ -236,6 +248,9 @@ def calc_fbank(url, config):
     filter_banks = 20 * np.log10(filter_banks)
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
     filter_banks = cmvn(filter_banks)
+    if (slide_r and slide_l) is not None:
+        slides = [slide_l, slide_r]
+        filter_banks = slide_windows(filter_banks, slides)
     return filter_banks
 
 

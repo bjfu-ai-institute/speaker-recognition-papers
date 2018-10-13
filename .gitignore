@@ -76,3 +76,5 @@ pyasv/model/dense.py
 pyasv/model/attention.py
 pyasv/model/dualpathnet.py
 pyasv/model/save
+
+try/
