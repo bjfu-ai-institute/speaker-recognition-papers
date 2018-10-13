@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../..')
 from pyasv.model.deepspeaker import DeepSpeaker
 from pyasv.basic import ops
 from pyasv.speech_processing import ext_fbank_feature
@@ -96,9 +98,9 @@ def limit_len(data):
 if __name__ == '__main__':
     config = TrainConfig('../config.json')
     config.save_path = '.'
-    train_url = '/home/fhq/all_data/ohm/url/train'
-    enroll_url = '/home/student/fhq/enroll'
-    test_url = '/home/student/fhq/test'
+    train_url = '/home/data/speaker-recognition/url/train'
+    enroll_url = '/home/data/speaker-recognition/url/enroll'
+    test_url = '/home/data/speaker-recognition/url/test'
     gen = TFrecordGen(config)
     x, y = ext_fbank_feature(train_url, config)
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
@@ -111,6 +113,7 @@ if __name__ == '__main__':
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
     gen.write(x, y, 'Test.record')
     logger = logging.getLogger(config.model_name)
+    """
     import os
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     logger.info("Feature proccessing done.")
@@ -121,6 +124,7 @@ if __name__ == '__main__':
     train = train.make_one_shot_iterator()
 
     multi_gpu(config, train)
+    """
     """
     enroll = TFrecordReader('Enroll.record', (100, 64), (1))
     enroll = enroll.read(config.batch_size, shuffle=True)
