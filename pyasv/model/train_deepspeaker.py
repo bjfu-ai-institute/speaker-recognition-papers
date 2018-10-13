@@ -26,26 +26,23 @@ def multi_gpu(config, train_data, test=None, enroll=None):
             opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
             logger.info('build model...')
             logger.info('build model on gpu tower...')
-            tower_y, tower_loss, tower_grads, tower_ouput = [], [], [], []
             for gpu_id in range(config.n_gpu):
                 with tf.device('/gpu:%d' % gpu_id):
                     logger.info('GPU:%d...' % gpu_id)
                     with tf.name_scope('tower_%d' % gpu_id):
-                        with tf.variable_scope('cpu_variables', reuse=tf.AUTO_REUSE):
+                        with tf.variable_scope('gpu_variables', reuse=tf.AUTO_REUSE):
                             x, y = train_data.get_next()
                             model = DeepSpeaker(config, out_channel=[64, 128, 256, 512])
                             output = model.inference(x)
-                            tower_ouput.append(output)
                             loss = model.loss(output, y)
-                            tower_loss.append(loss)
                             grads = opt.compute_gradients(loss)
-                            tower_grads.append(grads)
+                            ops.tower_to_collection(tower_y=y, tower_losses=loss, tower_grads=grads, tower_output=output)
                         logger.info('build model on gpu tower done.')
             logger.info('reduce model on cpu...')
-            aver_loss_op = tf.reduce_mean(tower_loss)
-            apply_gradient_op = opt.apply_gradients(ops.average_gradients(tower_grads))
-            all_y = tf.reshape(tf.stack(tower_y, 0), [-1, 1])
-            all_output = tf.reshape(tf.stack(tower_ouput, 0), [-1, 400])
+            aver_loss_op = tf.reduce_mean(tf.get_collection('tower_losses'))
+            apply_gradient_op = opt.apply_gradients(ops.average_gradients(tf.get_collection('tower_grads')))
+            all_y = tf.reshape(tf.stack(tf.get_collection('tower_y'), 0), [-1, 1])
+            all_output = tf.reshape(tf.stack(tf.get_collection('tower_output'), 0), [-1, 400])
             vectors = dict()
             logger.info('reduce model on cpu done.')
             logger.info('run train op...')
@@ -111,8 +108,7 @@ if __name__ == '__main__':
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
     gen.write(x, y, 'Test.record')
     logger = logging.getLogger(config.model_name)
-    import os
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    
     logger.info("Feature proccessing done.")
 
     train = TFrecordReader('Train.record', (100, 64), (1))
@@ -130,3 +126,9 @@ if __name__ == '__main__':
     test = test.read(config.batch_size, shuffle=True)
     test = test.prefetch(config.batch_size)
     """
+    text_dataset = tf.data.TextLineDataset("file.txt")
+    array_dataset = tf.data.Dataset.from_tensor_slice(np.ndarray)
+    bytes_dataset = tf.data.TFRecordDataset("file.record")
+
+
+    

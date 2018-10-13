@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tf.data
 import numpy as np
 import os
 from scipy.spatial.distance import cosine
