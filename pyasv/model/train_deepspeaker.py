@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../..')
 from pyasv.model.deepspeaker import DeepSpeaker
 from pyasv.basic import ops
 from pyasv.speech_processing import ext_fbank_feature
@@ -93,22 +95,32 @@ def limit_len(data):
 if __name__ == '__main__':
     config = TrainConfig('../config.json')
     config.save_path = '.'
-    train_url = '/home/fhq/all_data/ohm/url/train'
-    enroll_url = '/home/student/fhq/enroll'
-    test_url = '/home/student/fhq/test'
-    gen = TFrecordGen(config)
-    x, y = ext_fbank_feature(train_url, config)
-    x = ops.multi_processing(limit_len, x, config.n_threads, True)
-    gen.write(x, y, 'Train.record')
+    train_urls = ['/home/data/speaker-recognition/url/train_1', '/home/data/speaker-recognition/url/train_2','/home/data/speaker-recognition/url/train_3']
+    enroll_url = '/home/data/speaker-recognition/url/enroll'
+    test_url = '/home/data/speaker-recognition/url/test'
+    
+    gen_train = TFrecordGen(config, 'Train.record')
+    for train_url in train_urls:
+        x, y = ext_fbank_feature(train_url, config)
+        x = ops.multi_processing(limit_len, x, config.n_threads, True)
+        gen_train.write(x, y)
+        del x, y
+    
+    gen_enroll = TFrecordGen(config, 'Enroll.record')
     x, y = ext_fbank_feature(enroll_url, config)
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
-    gen.write(x, y, 'Enroll.record')
-    x, y = ext_fbank_feature(test_url, config)
+    gen_enroll.write(x, y)
 
+    gen_test = TFrecordGen(config, 'Test.record')
+    x, y = ext_fbank_feature(test_url, config)
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
-    gen.write(x, y, 'Test.record')
+    gen.write(x, y)
     logger = logging.getLogger(config.model_name)
-    
+
+    """
+    import os
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
     logger.info("Feature proccessing done.")
 
     train = TFrecordReader('Train.record', (100, 64), (1))
@@ -118,6 +130,7 @@ if __name__ == '__main__':
 
     multi_gpu(config, train)
     """
+    """
     enroll = TFrecordReader('Enroll.record', (100, 64), (1))
     enroll = enroll.read(config.batch_size, shuffle=True)
     enroll = enroll.prefetch(config.batch_size)
@@ -126,9 +139,6 @@ if __name__ == '__main__':
     test = test.read(config.batch_size, shuffle=True)
     test = test.prefetch(config.batch_size)
     """
-    text_dataset = tf.data.TextLineDataset("file.txt")
-    array_dataset = tf.data.Dataset.from_tensor_slice(np.ndarray)
-    bytes_dataset = tf.data.TFRecordDataset("file.record")
 
 
     

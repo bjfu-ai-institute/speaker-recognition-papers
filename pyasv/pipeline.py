@@ -6,26 +6,29 @@ from tensorflow.contrib import slim
 
 
 class TFrecordGen:
-    def __init__(self, config):
+    def __init__(self, config, file_name):
         self.log = logging.getLogger(config.model_name)
         self.url = config.save_path
         self.num_threads = config.n_threads
+        self.file_name = file_name
+        self.writer = tf.python_io.TFRecordWriter(file_name)
 
-    def write(self, data, label, name):
-        output_file = os.path.join(self.url, name)
-        self.log.info("Writing %s, received data shape is %s, label shape is %s"%(output_file,
+    def write(self, data, label):
+        output_file = os.path.join(self.url, self.file_name)
+        self.log.info("Writing to %s, received data shape is %s, label shape is %s"%(output_file,
                                                                                   np.array(data).shape,
                                                                                   np.array(label).shape))
-        with tf.python_io.TFRecordWriter(output_file) as writer:
-            for i, j in zip(data, label):
-                feature_dict = {
-                    'data': tf.train.Feature(float_list=tf.train.FloatList(value=np.array(i).reshape(-1,))),
-                    'label': tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(j).reshape(-1,)))
-                }
-                example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
-                writer.write(example.SerializeToString())
-        self.log.info("Writing %s finished." % output_file)
+        for i, j in zip(data, label):
+            feature_dict = {
+                'data': tf.train.Feature(float_list=tf.train.FloatList(value=np.array(i).reshape(-1,))),
+                'label': tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(j).reshape(-1,)))
+            }
+            example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
+            self.writer.write(example.SerializeToString())
+        self.log.info("Writing to %s finished." % output_file)
 
+    def close(self):
+        self.writer.close()
 
 class TFrecordReader:
     def __init__(self, files, data_shape, label_shape, descriptions=None):
