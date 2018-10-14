@@ -114,7 +114,7 @@ if __name__ == '__main__':
     gen_test = TFrecordGen(config, 'Test.record')
     x, y = ext_fbank_feature(test_url, config)
     x = ops.multi_processing(limit_len, x, config.n_threads, True)
-    gen.write(x, y)
+    gen_test.write(x, y)
     logger = logging.getLogger(config.model_name)
 
     """
