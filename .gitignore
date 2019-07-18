@@ -54,7 +54,7 @@ __pycache__
 data
 .vscode
 log.txt
-test.py
+xvector/test.py
 mydense*
 
 #
@@ -74,7 +74,17 @@ pyasv/README.txt
 pyasv/LICENSE.txt
 pyasv/model/dense.py
 pyasv/model/attention.py
-pyasv/model/dualpathnet.py
 pyasv/model/save
+pyasv/test/.
+
+# other repo.
+deepclustering/
+deepspeaker/
+ctdnn/
+GE2E/
+xvector/
+tmp/
+irm/
 
 try/
+.vs

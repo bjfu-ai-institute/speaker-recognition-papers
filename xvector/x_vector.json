@@ -1,0 +1,12 @@
+{
+  "lr": 1e-7,
+  "max_step": 100,
+  "batch_num_per_epoch": 2000,
+  "n_gpu": 2,
+  "n_threads": 10,
+  "model_name": "xvector",
+  "save_path": "/home/fhq/save/xvector",
+  "n_speaker": 184,
+  "num_utt_per_class": 10,
+  "num_classes_per_batch": 5
+}

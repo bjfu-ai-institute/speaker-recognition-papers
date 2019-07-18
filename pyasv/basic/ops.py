@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import os
-from scipy.spatial.distance import cosine
 import multiprocessing as mp
 import sys
 
@@ -30,7 +29,7 @@ def feed_all_gpu(inp_dict, models, payload_per_gpu, batch_x, batch_y):
 
 def update_embeddings(vectors, embeddings, ys, config):
     for spkr in range(config.n_speaker):
-        if embeddings[np.argmax(ys, 1) == spkr]:
+        if len(embeddings[np.where(np.argmax(ys, 1) == spkr)]) != 0:
             vector = np.mean(embeddings[np.where(np.argmax(ys, 1) == spkr)], axis=0)
             if spkr in vectors.keys():
                 vector = (vectors[spkr] + vector) / 2
@@ -63,7 +62,7 @@ def system_gpu_status(config):
             memory_gpu = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
         memory_gpu = np.array(memory_gpu, dtype=np.int32)
         gpu_list = []
-        for gpu in range(config.n_gpu):
+        for _ in range(config.n_gpu):
             gpu_list.append(str(np.argmax(memory_gpu)))
             memory_gpu[np.argmax(memory_gpu)] = -10000
         s = ""
@@ -80,30 +79,27 @@ def tower_to_collection(**kwargs):
         tf.add_to_collection('key', kwargs[key])
 
 
-def get_score_matrix(embeddings, vectors):
-    score_matrix = []
-    for utt in embeddings:
-        row = []
-        for spkr in vectors.keys():
-            score = cosine(vectors[spkr], utt)
-            row.append(score)
-        score_matrix.append(row)
-    return np.array(score_matrix)
-
-
-def calc_acc(score_matrix, ys):
-    if ys.shape[-1] != 1:
-        label = np.argmax(ys, 1)
+def cosine(q, a, normalized=True, w=None, b=None):
+    if normalized:
+        return tf.reduce_sum(q * a, -1)
+    pooled_len_1 = tf.sqrt(tf.reduce_sum(q * q, -1))
+    pooled_len_2 = tf.sqrt(tf.reduce_sum(a * a, -1))
+    pooled_mul_12 = tf.reduce_sum(q * a, -1)
+    score = tf.div(pooled_mul_12, pooled_len_1 * pooled_len_2 +1e-8, name="scores")
+    if w is None and b is None:
+        return score
+    elif w is not None and b is not None:
+        return w * score + b
     else:
-        label = ys
-    pred = np.argmax(score_matrix, axis=1)
-    Pos = np.where(label == pred)[0].shape[0]
-    All = label.shape[0]
-    return Pos / All
+        raise ValueError("`w` `b` should have value same time.")
 
 
-def calc_eer(score_matrix, ys):
-    pass
+def normalize(inputs):
+    return inputs / tf.sqrt(tf.reduce_sum(inputs ** 2, axis=-1, keep_dims=True)+1e-10)
+
+
+def get_score_matrix():
+    """"""
 
 
 def multi_processing(func, jobs, proccess_num, use_list_params=False):
@@ -113,3 +109,5 @@ def multi_processing(func, jobs, proccess_num, use_list_params=False):
         else:
             res = pool.map(func, jobs)
     return res
+
+

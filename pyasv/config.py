@@ -1,86 +1,65 @@
-import json
+import yaml
 import os
 import logging
-
-
-__TrainError__ = ['lr', 'max_step', 'batch_size', 'batch_nums_per_epoch']
-__SystemError__ = ['save_path', 'n_threads', 'model_name']
-__DataError__ = ['feature_dims', 'n_speaker', 'batch_size']
-
-__SystemWarning__ = ['n_gpu']
-__DataWarning__ = ['slides']
+import time
 
 
 class Config:
-    def __init__(self, config, **kwargs):
-        with open(config, 'r') as f:
-            dic = json.load(f)
-            self.__dict__ = dic
-        self.__init_infolist()
-        self._check_error()
-        self._check_warning()
-        self._set_log()
+    def __init__(self, config):
+        self.read_yaml(config)
+        name = time.strftime("backup-%Y-%m-%d-%H-%M-%S", time.localtime())
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+        for dd in ['log', 'graph', 'model']:
+            if os.path.exists(os.path.join(self.save_path, dd)):
+                try:
+                    os.mkdir(os.path.join(self.save_path, name))
+                except:
+                    pass
+                os.rename(os.path.join(self.save_path, dd),
+                          os.path.join(self.save_path, name, dd))
+                logging.info('Moving %s to backup' % dd)
+            os.mkdir(os.path.join(self.save_path, dd))
+        self._set_project_loggers()
 
-    def __init_infolist(self):
-        self.error = []
-        self.warning = []
+    def set_value(self, **kwargs):
+        for key in kwargs.keys():
+            self.__dict__[key] = kwargs[key]
 
-    def _check_error(self):
-        if 'model_name' not in self.__dict__.keys():
-            self.model_name = 'model'
-        logger = logging.getLogger(self.model_name)
-        exit_status = False
-        for key in self.error:
-            if key not in self.__dict__.keys():
-                logger.error('Missing parameters %s' % key)
-                exit_status = True
-        if exit_status:
-            exit()
-
-    def _check_warning(self):
-        logger = logging.getLogger(self.model_name)
-        for key in self.warning:
-            if key not in self.__dict__.keys():
-                logger.warning('Missing parameters %s' % key)
-
-    def save(self, name='config.json'):
-        """This method is used for save your config to save_path
-
-        Parameters
-        ----------
-        name : ``str``.
-            the name of your config file.
-        """
+    def save(self, name='config.yaml'):
         with open(os.path.join(self.save_path, name), 'w') as f:
             dic = self.__dict__
-            json.dump(dic, f, indent=4)
+            yaml.dump(dic, f, indent=4)
 
-    def _set_log(self):
-        logger = logging.getLogger('%s'%self.model_name)
+    def _set_project_loggers(self):
+        formatter = logging.Formatter('%(asctime)s [%(filename)s: %(lineno)d] %(levelname)s: %(message)s',
+                                      '%m-%d %H:%M:%S')
+        self._single_logger('data', formatter)
+        self._single_logger('train', formatter)
+    
+    def _single_logger(self, name, formatter):
+        logger = logging.getLogger(name)
         logger.setLevel(logging.DEBUG)
-        fh = logging.FileHandler('log_%s.txt'%self.model_name)
-        ch = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s [%(filename)s line:%(lineno)d]-%(levelname)s: %(message)s',
-                                      '%Y-%m-%d %H:%M:%S')
+        fh = logging.FileHandler(self.save_path+'/log/%s.txt' % name)
+        #ch = logging.StreamHandler()
         fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
+        #ch.setFormatter(formatter)
         logger.addHandler(fh)
-        logger.addHandler(ch)
+        #logger.addHandler(ch)
 
-
-class FeatureConfig(Config):
-    def __init__(self, config_path):
-        super().__init__(config_path)
-
-    def __init_infolist(self):
-        self.error = __DataError__ + __SystemError__
-        self.warning = __DataWarning__
-
-
-class TrainConfig(Config):
-    def __init__(self, config_path):
-        super().__init__(config_path)
-
-    def __init_infolist(self):
-        self.error = __DataError__ + __SystemError__ + __TrainError__
-        self.warning = __DataWarning__ + __SystemWarning__
+    def read_yaml(self, file_path):
+        with open(file_path, 'r') as f:
+            dic = yaml.load(f)
+            self.lr = dic['lr']
+            self.max_step = dic['max_step']
+            self.save_path: [str, bool] = dic['save_path']
+            self.model_name: [str, bool] = dic['model_name']
+            self.feature_dims: [int, bool] = dic['feature_dims']
+            self.n_gpu: int = dic['n_gpu']
+            self.n_threads = dic['n_threads']
+            self.n_speaker = dic['n_speaker']
+            self.slides = dic['slides']
+            self.sample_rate: int = dic['sample_rate']
+            self.fix_len: int = dic['fix_len']
+            self.num_utt_per_class = dic['num_utt_per_class']
+            self.num_classes_per_batch = dic['num_classes_per_batch']
