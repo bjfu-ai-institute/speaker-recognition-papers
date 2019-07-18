@@ -3,14 +3,11 @@ import scipy
 import h5py
 import sys
 sys.path.append('../..')
-from pyasv.data_manage import DataManage
-from pyasv.data_manage import DataManage4BigData
 import pyasv
 
 
 class PLDA:
     def __init__(self, load_path=None, config=None, data=None):
-        assert type(data) == (DataManage or DataManage4BigData)
         # reading parameters.
         if load_path is not None:
             self.load(load_path)
@@ -198,19 +195,6 @@ class PLDA:
         phi = numpy.dot(phi, ch)
         return phi
 
-def _test():
-    config = pyasv.Config(plda_rankf=150, plda_rankg=150, batch_size=3000, n_speaker=100, max_step=5)
-    x = numpy.random.random([600, 200])
-    y = numpy.random.randint(0, 99, [600, 1])
-    train = DataManage(x, y, config)
-    model = PLDA(config=config, data=train)
-    x = numpy.random.random([600, 200])
-    y = numpy.random.randint(0, 99, [600, 1])
-    enroll = DataManage(x, y, config)
-    x = numpy.random.random([600, 200])
-    y = numpy.random.randint(0, 99, [600, 1])
-    test = DataManage(x, y, config)
-    model.score(enroll, test)
 
 if __name__ == '__main__':
-    _test()
+    pass

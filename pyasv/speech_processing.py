@@ -107,7 +107,7 @@ def ext_mfcc_feature(url_path, config):
         The label of fbank feature.
 
     """
-    logger = logging.getLogger(config.model_name)
+    logger = logging.getLogger('data')
 
     with open(url_path, 'r') as urls:
         labels = []
@@ -122,14 +122,19 @@ def ext_mfcc_feature(url_path, config):
 
     n_filt = [config.feature_dims for i in range(len(url_list))]
     slides = [config.slides for i in range(len(url_list))]
-    mfccs = ops.multi_processing(calc_mfcc, zip(url_list, n_filt, slides), config.n_threads)
-
+    if hasattr(config, 'min_db'):
+        dbs = [config.min_db for i in range(len(url_list))]
+        mfccs = ops.multi_processing(calc_mfcc, zip(url_list, n_filt, slides, dbs), config.n_threads)
+    else:
+        mfccs = ops.multi_processing(calc_mfcc, zip(url_list, n_filt, slides), config.n_threads)
     logger.info("Extracting MFCC feature succeed")
     return mfccs, labels
 
 
-def calc_mfcc(url, n_filt, slide_l, slide_r):
+def calc_mfcc(url, n_filt, slide_l, slide_r, min_db=None):
     y, sr = librosa.load(url)
+    if min_db is not None:
+        y = naive_vad(y, min_db)
     mfcc_ = librosa.feature.mfcc(y, sr, n_mfcc=n_filt)
     mfcc_delta = librosa.feature.delta(mfcc_, width=3)
     mfcc_delta_delta = librosa.feature.delta(mfcc_delta, width=3)
@@ -141,6 +146,17 @@ def calc_mfcc(url, n_filt, slide_l, slide_r):
     return mfcc
 
 
+def naive_vad(y, min_db):
+    points = librosa.effects.split(y, top_db=min_db)
+    y_ = None
+    for i, j in zip(points):
+        if y_ is None:
+            y_ = y[i:j]
+        else:
+            y_ = np.concatenate(y_, y[i:j])
+    return y_
+
+
 def ext_fbank_feature(url_path, config):
     """This function is used for extract features of one dataset.
 
@@ -149,7 +165,7 @@ def ext_fbank_feature(url_path, config):
     url_path : ``str``
         The path of the 'PATH' file.
     config : ``config``
-        config of feature. (To decide if we need slide_window, and params of slide_window)
+        config of feature. (Contain the parameters of slide_window and feature_dims)
 
     Returns
     -------
@@ -163,7 +179,7 @@ def ext_fbank_feature(url_path, config):
     Changeable concat size is in the todolist
 
     """
-    logger = logging.getLogger(config.model_name)
+    logger = logging.getLogger('data')
 
     url_list = []
     labels = []
@@ -175,16 +191,35 @@ def ext_fbank_feature(url_path, config):
             labels.append([index])
 
     logger.info("Extracting fbank feature, utt_nums is %d" % len(url_list))
-
+    if config.fix_len is not None:
+        max_len = get_max_audio_time(url_list)
+        max_lens = [max_len for i in range(len(url_list))]
+    else:
+        max_lens = [None for i in range(len(url_list))]
     n_filt = [config.feature_dims for i in range(len(url_list))]
-    slides = [config.slides for i in range(len(url_list))]
-    fbanks = ops.multi_processing(calc_fbank, zip(url_list, n_filt, slides), config.n_threads)
+    if config.slides is not None:
+        slide_l = [config.slides[0] for i in range(len(url_list))]
+        slide_r = [config.slides[1] for i in range(len(url_list))]
+    else:
+        slide_l = [None for i in range(len(url_list))]
+        slide_r = [None for i in range(len(url_list))]
+
+    fbanks = ops.multi_processing(calc_fbank, zip(url_list, n_filt, slide_l, slide_r, max_lens), config.n_threads)
 
     logger.info("Extracting fbank feature succeed")
     return fbanks, labels
 
 
-def calc_fbank(url, n_filt, slide_l=None, slide_r=None):
+def get_max_audio_time(url_list):
+    max_len = 0
+    for i in url_list:
+        y, _ = librosa.load(i)
+        if y.shape[0] > max_len:
+            max_len = y.shape[0]
+    return max_len
+
+
+def calc_fbank(url, n_filt, slide_l=None, slide_r=None, max_len=None):
     """Calculate Fbank feature of a audio file.
 
     Parameters
@@ -198,56 +233,14 @@ def calc_fbank(url, n_filt, slide_l=None, slide_r=None):
         Fbank feature of this audio.
     """
     sample_rate, signal = read(url)
-    pre_emphasis = 0.97                           #config.Audio_emphasis
-    frame_size = 0.025                            #config.Audio_frame_size
-    frame_stride =  0.01                          #config.Audio_frame_stride
-    NFFT = 512                                    #config.Audio_NFFT
-    nfilt = n_filt
+    y, sr = librosa.load(url)
+    if max_len is not None:
+        y = librosa.util.fix_length(y, max_len)
+    filter_banks = librosa.feature.melspectrogram(y, sr, n_fft=512, n_mels=n_filt).T
 
-    emphasized_signal = np.append(signal[0], signal[1:] - pre_emphasis * signal[:-1])
-    # convert from seconds to samples
-    frame_length, frame_step = frame_size * sample_rate, frame_stride * sample_rate
-    signal_length = len(emphasized_signal)
-    frame_length = int(round(frame_length))
-    frame_step = int(round(frame_step))
-    # Make sure that we have at least 1 frame
-    num_frames = int(np.ceil(float(np.abs(signal_length - frame_length)) / frame_step))
-
-    pad_signal_length = num_frames * frame_step + frame_length
-    z = np.zeros((pad_signal_length - signal_length))
-
-    # Pad Signal to make sure that all frames have equal number of samples
-    # without truncating any samples from the original signal
-    pad_signal = np.append(emphasized_signal, z)
-
-    indices = np.tile(np.arange(0, frame_length), (num_frames, 1)) + \
-              np.tile(np.arange(0, num_frames * frame_step, frame_step), (frame_length, 1)).T
-    frames = pad_signal[indices.astype(np.int32, copy=False)]
-    frames *= np.hamming(frame_length)
-    mag_frames = np.absolute(np.fft.rfft(frames, NFFT))  # Magnitude of the FFT
-    pow_frames = ((1.0 / NFFT) * ((mag_frames) ** 2))  # Power Spectrum
-
-    low_freq_mel = 0
-    high_freq_mel = (2595 * np.log10(1 + (sample_rate / 2) / 700))  # Convert Hz to Mel
-    mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # Equally spaced in Mel scale
-    hz_points = (700 * (10**(mel_points / 2595) - 1))  # Convert Mel to Hz
-    bin = np.floor((NFFT + 1) * hz_points / sample_rate)
-
-    fbank = np.zeros((nfilt, int(np.floor(NFFT / 2 + 1))))
-    for m in range(1, nfilt + 1):
-        f_m_minus = int(bin[m - 1])   # left
-        f_m = int(bin[m])             # center
-        f_m_plus = int(bin[m + 1])    # right
-
-        for k in range(f_m_minus, f_m):
-            fbank[m - 1, k] = (k - bin[m - 1]) / (bin[m] - bin[m - 1])
-        for k in range(f_m, f_m_plus):
-            fbank[m - 1, k] = (bin[m + 1] - k) / (bin[m + 1] - bin[m])
-    filter_banks = np.dot(pow_frames, fbank.T)
-    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
-    filter_banks = 20 * np.log10(filter_banks)
-    filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
-    filter_banks = cmvn(filter_banks)
+    if slide_l == 0 and slide_r == 0:
+        slide_l = None
+        slide_r = None
     if (slide_r and slide_l) is not None:
         slides = [slide_l, slide_r]
         filter_banks = slide_windows(filter_banks, slides)
@@ -330,3 +323,56 @@ def cmvn(feature):
         else:
             feature[:, col] = feature[:, col] - mean_m[col]
     return feature
+
+
+def get_stft(path=None, y=None, sr=None, NFFT=None, frame_size=None):
+    if frame_size is None:
+        frame_size = 0.025
+    if NFFT is None:
+        NFFT = 1024
+    if (path is None and y is None) or (path is not None and y is not None):
+        raise ValueError("Determine path or y")
+    if path is not None:
+        y, sr = librosa.load(path)
+    fft_res = librosa.stft(y, n_fft=NFFT, hop_length=int(frame_size*sr))[:, :(NFFT//2 + 1)]
+    mag_spec = np.abs(fft_res)
+    phase_spec = np.angle(fft_res)
+    return mag_spec.T, phase_spec.T
+
+
+def ext_spec_feature(url_path, config):
+    logger = logging.getLogger('data')
+
+    with open(url_path, 'r') as urls:
+        labels = []
+        url_list = []
+        for url in list(urls):
+            line, label = str(url).split(" ")
+            index = eval(str(label).split("\n")[0])
+            labels.append([index])
+            url_list.append(line)
+
+    logger.info("Extracting Spec feature, utt_nums is %d" % len(url_list))
+    NFFT = [config.NFFT for i in range(len(url_list))]
+    frame_size = [config.frame_size for i in range(len(url_list))]
+    (mag_spec, phase_spec) = ops.multi_processing(get_stft, zip(url_list, NFFT, frame_size), config.n_threads)
+
+    logger.info("Extracting Spec feature succeed")
+
+    return mag_spec, phase_spec
+
+
+def mix_audio(path_1, path_2, sr=None):
+    assert len(path_1) == len(path_2)
+    res = []
+    with open(path_1, 'r') as f:
+        list_1 = f.readlines()
+    with open(path_2, 'r') as f:
+        list_2 = f.readlines()
+    for i, j in zip(list_1, list_2):
+        y1, _ = librosa.load(i, sr=sr)
+        y2, _ = librosa.load(j, sr=sr)
+        len_noise = len(y2)
+        st_p = np.random.randint(0, len(y1) - len_noise - 1)
+        res.append(np.add(y1[st_p:st_p+len_noise], y2))
+
