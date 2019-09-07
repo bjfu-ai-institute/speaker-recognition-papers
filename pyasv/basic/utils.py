@@ -5,6 +5,7 @@ import numpy as np
 import os
 import sys
 import logging
+import numba
 from scipy.spatial.distance import cdist
 
 
@@ -30,6 +31,7 @@ class AudioViewer:
             else:
                 plt.savefig(os.path.join(self.save_path, file_name))
             self.spec_ids += 1
+        plt.close()
 
     def draw_wav(self, y, sr, file_name=None):
         plt.figure()
@@ -42,6 +44,7 @@ class AudioViewer:
             else:
                 plt.savefig(os.path.join(self.save_path, file_name))
             self.wave_ids += 1
+        plt.close()
 
 
 def folder_size(path='.'):
@@ -83,34 +86,64 @@ def calc_acc(score_matrix, ys):
     return Pos / All
 
 
-def calc_eer(score_matrix, ys, save_path, plot=True, threshold_up=1.0, threshold_down=-1.0, dot_num=100000):
+def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):
     if not isinstance(score_matrix, np.ndarray):
         score_matrix = np.array(score_matrix)
-    if ys.shape[-1] != 1 and len(ys.shape) > 1:
-        logging.warning("ys isn't 1-d array or dense index, converting.")
-        ys = np.argmax(ys, -1)
+    if ys.shape[-1] == 1 and len(ys.shape) > 1:
+        ys = ys.reshape(-1,)
+        ys = np.eye(np.max(ys + 1))[ys]
+        ys_con = np.ones_like(ys) - ys
+    def _get_false_alarm_rate(threshold):
+        pos = np.array(score_matrix >= threshold, dtype=np.int32)
+        if np.sum(pos) == 0:
+            return 0
+        false_pos = np.array((pos - ys) > 0, dtype=np.int32)
+        return np.sum(false_pos) / np.sum(pos)
+
+    def _get_false_reject_rate(threshold):
+        neg = np.array(score_matrix < threshold, dtype=np.int32)
+        if np.sum(neg) == 0:
+            return 0
+        false_neg = np.array((neg - ys_con) > 0, dtype=np.int32)
+        return np.sum(false_neg) / np.sum(neg)
+
+    def _dichotomy(start, end, func, result, threshold=1e-5):
+        mid = (start + end) / 2
+        while abs(func(mid) - result) > threshold or (start - end) <= threshold:
+            if func(mid) > result:
+                end = mid
+                mid = (mid + start) / 2
+            else:
+                start = mid
+                mid = (mid + end) / 2
+        return mid
+
+    # threshold_up = _dichotomy(-1.0, 1.0, _get_false_reject_rate, 1e-3)
+    # threshold_down = _dichotomy(-1.0, 1.0, _get_false_alarm_rate, 1e-3)
+    threshold_up = 1.0
+    threshold_down = -1.0
+
     step_size = (threshold_up - threshold_down) /  (dot_num + 1)
     threshold = threshold_up
     best_eer = 1000
+    residual = 1000
     if plot:  x_cord, y_cord = [], []
-    for i in range(dot_num):
+    for _ in range(dot_num):
         threshold -= step_size
-        false_negative = 0
-        false_positive = 0
-        for idx in range(score_matrix.shape[0]):
-            for idy in range(score_matrix[idx].shape[0]):
-                if score_matrix[idx][idy] < threshold and ys[idx] == idy: false_negative += 1
-                if score_matrix[idx][idy] >= threshold and ys[idx] != idy: false_positive += 1
+        fa_rate = _get_false_alarm_rate(threshold)
+        fr_rate = _get_false_reject_rate(threshold)
         if plot:
-            x_cord.append(false_positive / (score_matrix.shape[0] * score_matrix.shape[1]))
-            y_cord.append(false_negative / (score_matrix.shape[0] * score_matrix.shape[1]))
-        best_eer = min(best_eer, false_negative / false_positive)
+            x_cord.append(fr_rate)
+            y_cord.append(fa_rate)
+        if residual > abs(fr_rate - fa_rate): 
+            best_eer = max(fr_rate, fa_rate)
+            residual = abs(fr_rate - fa_rate)
     if plot:
         figure = plt.figure()
         fig_1 = figure.add_subplot(111)
         fig_1.set_title('DET Curves')
         plt.xlabel('False Alarm probability (in%)')
         plt.ylabel('Miss Probability (in%)')
-        fig_1.scatter(x_cord, y_cord, c='r', marker='.')
+        fig_1.plot(x_cord, y_cord, c='blue')
         plt.savefig(save_path)
-
+    return best_eer

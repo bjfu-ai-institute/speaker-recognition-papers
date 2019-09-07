@@ -1,8 +1,8 @@
 import sys
 sys.path.append('../..')
-from lstmp.lstmp import LSTMP
+from lstmp import LSTMP
 from pyasv.basic import ops
-from pyasv.config import TrainConfig
+from pyasv.config import Config
 import logging
 import tensorflow as tf
 import time
@@ -82,7 +82,7 @@ def parse(proto):
 
 if __name__ == '__main__':
     config = '../pyasv/config.json'
-    config = TrainConfig(config)
+    config = Config(config)
     #reader = TFrecordReader('../pyasv/model/Train.record', (100, 64), (1))
     num_classes = 800
     num_classes_per_batch = 200

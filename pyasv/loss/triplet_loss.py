@@ -1,23 +1,6 @@
-"""
-.. note::
-    Reference from https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/model/triplet_loss.py
-    Thanks for Olivier Moindrot.
-
-.. automethod::
-    pyasv.loss.triplet_loss.batch_all_triplet_loss
-
-.. automethod::
-    pyasv.loss.triplet_loss.batch_hard_triplet_loss
-"""
-
-
 """Define functions to create the triplet loss with online triplet mining."""
 
 import tensorflow as tf
-
-
-__all__ = ['batch_all_triplet_loss',
-           'batch_hard_triplet_loss']
 
 
 def _pairwise_distances(embeddings, squared=False):

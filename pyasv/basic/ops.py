@@ -5,6 +5,12 @@ import multiprocessing as mp
 import sys
 
 
+def clip_grad(tower_grad, clip_value):
+    grads, vars = zip(*tower_grad)
+    grads_clip, _ = tf.clip_by_global_norm(grads, clip_value)
+    return zip(grads_clip, vars)
+
+
 def average_gradients(tower_grads):
     average_grads = []
     for grad_and_vars in zip(*tower_grads):
@@ -76,26 +82,34 @@ def system_gpu_status(config):
 
 def tower_to_collection(**kwargs):
     for key in kwargs.keys():
-        tf.add_to_collection('key', kwargs[key])
+        tf.add_to_collection(key, kwargs[key])
 
 
-def cosine(q, a, normalized=True, w=None, b=None):
+def cosine(q, a, normalized=True, w=None, b=None, dis=False):
+    if dis and (w or b):
+        raise ValueError("`w`, `b` are `weight`, `bias` of cosine similarity.")
+    w = w if w is not None else 1
+    b = b if b is not None else 0
     if normalized:
-        return tf.reduce_sum(q * a, -1)
-    pooled_len_1 = tf.sqrt(tf.reduce_sum(q * q, -1))
-    pooled_len_2 = tf.sqrt(tf.reduce_sum(a * a, -1))
-    pooled_mul_12 = tf.reduce_sum(q * a, -1)
-    score = tf.div(pooled_mul_12, pooled_len_1 * pooled_len_2 +1e-8, name="scores")
-    if w is None and b is None:
-        return score
-    elif w is not None and b is not None:
-        return w * score + b
-    else:
-        raise ValueError("`w` `b` should have value same time.")
+        if dis:
+            return 1 - tf.reduce_sum(q * a, -1, keepdims=True)
+        return w * tf.reduce_sum(q * a, -1, keepdims=True)
+    q_ = tf.sqrt(tf.reduce_sum(q ** 2, -1, keepdims=True) + 1e-10)
+    a_ = tf.sqrt(tf.reduce_sum(a ** 2, -1, keepdims=True) + 1e-10)
+    score = (w * tf.reduce_sum(q * a, -1, keepdims=True) + b) / q_ / a_
+    if dis:
+        score = 1 - score
+    return score
 
 
 def normalize(inputs):
     return inputs / tf.sqrt(tf.reduce_sum(inputs ** 2, axis=-1, keep_dims=True)+1e-10)
+
+
+def calc_acc(score_mat, y_):
+    return tf.reduce_sum(tf.cast(tf.equal(tf.reshape(tf.argmax(score_mat,
+                                                               axis=-1, output_type=tf.int32),
+                                                     (-1, 1)), y_), tf.int32)) / tf.shape(y_)[0]
 
 
 def get_score_matrix():
@@ -109,5 +123,3 @@ def multi_processing(func, jobs, proccess_num, use_list_params=False):
         else:
             res = pool.map(func, jobs)
     return res
-
-

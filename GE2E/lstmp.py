@@ -1,44 +1,76 @@
 import sys
-sys.path.append('../..')
-import numpy as np
+sys.path.append('../')
 import logging
 from pyasv.basic import model
 from pyasv import layers
 from pyasv import Config
 from pyasv import ops
+from pyasv import utils
+from pyasv import loss
+import numpy as np
+import h5py
+from scipy.spatial.distance import cdist
 import tensorflow as tf
 import os
 import time
 
 
 class LSTMP(model.Model):
+    """GE2E Loss model based on LSTM."""
     def __init__(self, config, lstm_units, layer_num):
+        """
+        :param config: ``Config``
+        :param lstm_units: Hidden layer unit of LSTM.
+        :param layer_num: Number of LSTM layers.
+        """
         super().__init__(config)
         self.units = lstm_units
         self._feature = None  # define in self.inference
+        self._score = None    # define in self.loss
         self.layer_num = layer_num
         self.logger = logging.getLogger('train')
         self.embed_size = lstm_units
-        self._idx = [tf.fill([2], i) for i in range(config.n_speaker)]
         self.batch_size = self.config.num_classes_per_batch * self.config.num_classes_per_batch
+        self.n_speaker_test = config.n_speaker_test
 
     @property
     def feature(self):
-        return self._feature
+        """operation to get embeddings."""
+        if self._score: return self._feature
+        else:  self.logger.error("Can't use `feature` property before use inference.")
+
+    @property
+    def score_mat(self):
+        """operation to get score matrix."""
+        if self._score: return self._score
+        else: self.logger.error("Can't use `score_mat` property before call `self.loss`.")
 
     def inference(self, x, is_training=True):
+        """inference operation.
+        :param x: input of model. should be tensor or placeholder.
+        :param is_training: bool, set dropout while training.
+        """
         with tf.variable_scope('Forward', reuse=tf.AUTO_REUSE):
-            with tf.variable_scope('LSTM_0', reuse=tf.AUTO_REUSE):
-                outputs, state = layers.lstm(x, self.units, is_training, 1, self.config.batch_size)
-            for i in range(self.layer_num-1):
-                with tf.variable_scope('LSTM_%d'%(i+1), reuse=tf.AUTO_REUSE):
-                    outputs, state = layers.lstm(outputs, self.units, is_training, 1, self.config.batch_size)
-            #with tf.variable_scope('Output', reuse=tf.AUTO_REUSE) as scope:
-            #    output = layers.full_connect(outputs[-1], name='fc_1', units=self.embed_size)
+            with tf.variable_scope('LSTM', reuse=tf.AUTO_REUSE):
+                outputs, _ = layers.lstm(x, self.units, is_training, self.layer_num)
             self._feature = outputs[-1]
         return outputs[-1]
 
-    def train(self, train_data, graph=None):
+    def loss(self, embeddings, loss_type='softmax'):
+        with tf.variable_scope("loss", reuse=tf.AUTO_REUSE):
+            b = tf.get_variable(name='loss_b', shape=[], dtype=tf.float32, initializer=tf.constant_initializer(-5.0))
+            w = tf.get_variable(name='loss_w', shape=[], dtype=tf.float32, initializer=tf.constant_initializer(10.0))    
+            embeddings = tf.reshape(embeddings, [self.config.num_classes_per_batch, 
+                                                 self.config.num_utt_per_class,
+                                                 self.embed_size])
+            return loss.generalized_end_to_end_loss(embeddings, w=w, b=b)
+
+    def train(self, train_data, valid=None):
+        """Interface to train model.
+        
+        :param train_data: `tf.data.dataset`
+        :param valid: dict, defaults to None. contain enroll and test data like {'t_x:0': [...], 'e_x:0': [...], 'e_y:0': ...}
+        """
         logger = logging.getLogger('train')
         tf_config = tf.ConfigProto(allow_soft_placement=True)
         tf_config.gpu_options.allow_growth = True
@@ -48,97 +80,86 @@ class LSTMP(model.Model):
         tower_y, tower_losses, tower_grads, tower_output = [], [], [], []
         for gpu_id in range(self.config.n_gpu):
             with tf.device('/gpu:%d' % gpu_id):
-                with tf.variable_scope('gpu_variables', reuse=tf.AUTO_REUSE):
-                    x, y = train_data.get_next()
-                    logging.info(x.get_shape())
-                    logging.info(y.get_shape())
-                    output = self.inference(x)
-                    tower_output.append(output)
-                    losses = self.loss(output)
-                    tower_losses.append(losses)
-                    grads = opt.compute_gradients(losses)
-                    tower_grads.append(grads)
+                x, y = train_data.get_next()
+                x = tf.transpose(x, [1, 0, 2])
+                output = self.inference(x)
+                tower_output.append(output)
+                losses = self.loss(output)
+                tower_losses.append(losses)
+                grads = ops.clip_grad(opt.compute_gradients(losses), 3.0)
+                grads = [(0.01 * i, j) if (j.name == 'loss/loss_b:0' or j.name == 'loss/loss_w:0') else (i, j) for i, j in grads]
+                tower_grads.append(grads)
+        # handle batch loss
         aver_loss_op = tf.reduce_mean(tower_losses)
         apply_gradient_op = opt.apply_gradients(ops.average_gradients(tower_grads))
         tf.summary.scalar('loss', aver_loss_op)
         all_output = tf.reshape(tf.stack(tower_output, 0), [-1, self.embed_size])
+        
+        # init
+        emb = self.init_validation()
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
         summary_op = tf.summary.merge_all()
         summary_writer = tf.summary.FileWriter(os.path.join(self.config.save_path, 'graph'), sess.graph)
+        log_flag = 0
+        
         for epoch in range(self.config.max_step):
             start_time = time.time()
-            avg_loss, log_flag = 0.0, 0
-            logger.info('Epoch:%d, lr:%.4f, total_batch=%d' % (epoch, self.config.lr,
-                                                               self.config.batch_nums_per_epoch))
+            logger.info('Epoch:%d, lr:%.4f, total_batch=%d' %
+                        (epoch, self.config.lr, self.config.batch_nums_per_epoch))
+            avg_loss = 0.0
             for batch_idx in range(self.config.batch_nums_per_epoch):
-                _, _loss, batch_out, summary_str = sess.run(
-                    [apply_gradient_op, aver_loss_op, all_output, summary_op])
+                _, _loss, _, summary_str = sess.run([apply_gradient_op, aver_loss_op, all_output, summary_op])
                 avg_loss += _loss
                 log_flag += 1
                 if log_flag % 100 == 0 and log_flag != 0:
-                    log_flag = 0
                     duration = time.time() - start_time
                     start_time = time.time()
-                    logger.info('At %d batch, present batch loss is %.4f, %.2f batches/sec' % (
-                    batch_idx, _loss, 100.0 * self.config.n_gpu / duration))
+                    logger.info('At %d batch, present batch loss is %.4f, %.2f batches/sec' %
+                                (batch_idx, _loss, 100 * self.config.n_gpu / duration))
+                if log_flag % 600 == 0 and log_flag != 0:
+                    test_x, test_y, enroll_x, enroll_y = valid['t_x'], valid['t_y'], valid['e_x'], valid['e_y']
+                    acc, _ = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess, step=epoch)
+                    logger.info('At %d epoch after %d batch, acc is %.6f'
+                                % (epoch, batch_idx, acc))
                 summary_writer.add_summary(summary_str, epoch * self.config.batch_nums_per_epoch + batch_idx)
             avg_loss /= self.config.batch_nums_per_epoch
-            logger.info('Train average loss:%.4f' % (avg_loss))
-            abs_save_path = os.path.abspath(os.path.join(self.config.save_path,
+            logger.info('Train average loss:%.4f' % avg_loss)
+            abs_save_path = os.path.abspath(os.path.join(self.config.save_path, 'model',
                                                          self.config.model_name + ".ckpt"))
             saver.save(sess=sess, save_path=abs_save_path)
         logger.info('training done.')
 
-    def predict(self, x, y, graph):
-        pass
+    def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, step=0):
+        t_emb = sess.run(emb, feed_dict={"t_x:0": test_x})
+        e_emb = sess.run(emb, feed_dict={"t_x:0": enroll_x})
+        #emb_file = h5py.File(os.path.join(self.config.save_path, 'log', 'mean_embeddings_%d.h5')%step, 'w')
+        spkr_embeddings = np.array([np.mean(e_emb[enroll_y.reshape(-1,) == i], 0)
+                                    for i in range(self.n_speaker_test)], dtype=np.float32)
+        #emb_file.create_dataset(name='enroll', data=spkr_embeddings)
+        score_mat = np.array([np.reshape(1 - cdist(spkr_embeddings[i].reshape(1, 400), t_emb, metric='cosine'), (-1, ))
+                              for i in range(self.n_speaker_test)]).T
+        print(score_mat)
+        score_idx = np.argmax(score_mat, -1)
+        #emb_file.create_dataset(name='score_mat', data=score_mat)
+        #emb_file.close()
+        return np.sum(score_idx == test_y.reshape(-1,)) / score_idx.shape[0], score_mat
 
-    def loss(self, embeddings, Type='softmax'):
-        with tf.variable_scope("loss") as scope:
-            if type(embeddings) != tf.Tensor:
-                embeddings = tf.stack(embeddings)
-            embeddings = tf.reshape([self.config.num_classes_per_batch,
-                                     self.config.num_utt_per_class,
-                                     self.embed_size])
-            self.logger.debug("Embedding shape", embeddings.get_shape().as_list())
-            # x - n_speaker , y - n_utt per speaker , _ - feature dims
-            X, Y = self.config.num_classes_per_batch, self.config.num_utt_per_class
+    def init_validation(self):
+        """Get validation operation."""
+        inp = tf.placeholder(dtype=tf.float32, shape=[None, 251, self.config.feature_dims], name='t_x')
+        # score_mat = self._valid(p_test_x, p_enroll_x, p_enroll_y)
+        emb = self.inference(tf.transpose(inp, [1, 0, 2]))
+        return emb
 
-            b = tf.get_variable(name='GE2Eloss_b', shape=[], dtype=tf.float32)
-            w = tf.get_variable(name='GE2Eloss_w', shape=[], dtype=tf.float32)
-
-            # inp shape is [spkr_num, utt_per_spkr, embedding_dim]
-            # result shape is [spkr_num, embedding_dim]
-            mean_per_spkr = tf.reduce_mean(embeddings, axis=1)
-
-            self.logger.debug("Center shape", mean_per_spkr.get_shape().as_list())
-
-            # shape = [ spkr_num, utt_num, embedding_dim ]
-            # every person's center except current utt.
-            mean_except_one = (tf.reduce_sum(embeddings, axis=1, keep_dims=True) - embeddings) / (Y - 1)
-            S = tf.concat(
-                [tf.concat([ops.cosine(mean_except_one[i, :, :], embeddings[j, :, :]) if i == j
-                            else tf.reduce_sum(mean_per_spkr[i, :] * embeddings[j, :, :], axis=1, keep_dims=True)
-                            for i in range(X)], axis=1) for j in range(X)], axis=0)
-            # data shape is [spkr_num, utt_per_spkr, embedding_dim]
-            # The shape of S is [spkr_num, utt_per_spkr, spkr_num]
-            #S = ops.cosine(embeddings, mean_per_spkr, w=w, b=b)
-
-            self.logger.debug(S.get_shape().as_list())
-
-            S_per_spkr = tf.reduce_sum(S, axis=-1)
-
-            self.logger.debug(S_per_spkr.get_shape().as_list())
-
-            L = 2 * S - S_per_spkr
-
-            self.logger.debug(L.get_shape().as_list())
-        return tf.reduce_sum(L)
-
-
-if __name__ == '__main__':
-    x = tf.placeholder(dtpye=tf.float32, shape=[32, 150, 64])
-    config = Config('lstmp.yaml')
-    model = LSTMP(config, 400, 3)
-    out = model.inference(x)
-    model.loss(out)
+    def predict(self, data, model_dir):
+        with tf.Session() as sess:
+            emb = self.init_validation()
+            saver = tf.train.Saver()
+            saver.restore(sess, model_dir)
+            test_x, test_y, enroll_x, enroll_y = data['t_x'], data['t_y'], data['e_x'], data['e_y']
+            acc, score_mat = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess)
+            eer = utils.calc_eer(score_mat, test_y,
+                                 save_path=os.path.join(self.config.save_path, 'graph', 'eer.png'))
+            self.logger.info("acc: %.6f \teer: %.6f" % (acc, eer))
+            return acc, eer

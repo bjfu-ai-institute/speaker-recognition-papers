@@ -12,3 +12,4 @@ from pyasv.pipeline import TFrecordClassBalanceReader
 from pyasv.pipeline import TFrecordClassBalanceGen
 from pyasv.pipeline import TFrecordGen
 from pyasv.pipeline import TFrecordReader
+from pyasv import speech

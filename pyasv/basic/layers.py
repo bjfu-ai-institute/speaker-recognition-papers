@@ -63,7 +63,7 @@ def full_connect(x, name, units, activation='relu'):
         return "activation param should be one of [relu, tanh, softmax, None] now."
 
 
-def lstm(x, units, is_training, layers, batch_size, forget_bias=1.0, output_keep_prob=0.5):
+def lstm(x, units, is_training, layers, forget_bias=1.0, output_keep_prob=0.9):
     shapes = x.get_shape().as_list()
     _, seq_len, _ = shapes[-3], shapes[-2], shapes[-1]
     stack_rnn = []
@@ -73,7 +73,7 @@ def lstm(x, units, is_training, layers, batch_size, forget_bias=1.0, output_keep
             cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=output_keep_prob)
         stack_rnn.append(cell)
     cell = tf.contrib.rnn.MultiRNNCell(stack_rnn, state_is_tuple=True)
-    outputs, states = tf.nn.dynamic_rnn(cell=cell, inputs=x, dtype=tf.float32)
+    outputs, states = tf.nn.dynamic_rnn(cell=cell, inputs=x, dtype=tf.float32, time_major=True)
     return outputs, states
 
 
@@ -92,7 +92,7 @@ def Blstm(x, n_hidden, sequence_length, input_keep_prob=1, output_keep_prob=1, d
         output_keep_prob=output_keep_prob)
     outputs, state = tf.nn.bidirectional_dynamic_rnn(
         lstm_fw_cell, lstm_bw_cell, x,
-        sequence_length=sequence_length,  #[FRAMES_PER_SAMPLE] * self.batch_size
+        sequence_length=sequence_length,  # [FRAMES_PER_SAMPLE] * self.batch_size
         dtype=tf.float32)
     return outputs, state
 
