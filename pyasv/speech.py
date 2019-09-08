@@ -127,7 +127,7 @@ class FilterBank(FeatureExtractor):
         spec = librosa.core.stft(y=y, n_fft=n_fft, hop_length=hop_length, win_length=hop_length)
         mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
         spec = np.abs(spec) ** 2
-        fbank = np.log10(np.dot(mel_basis, spec) + 1e-6)
+        fbank = np.log10(np.dot(mel_basis, spec) + 1e-6).T
         # fbank = librosa.feature.melspectrogram(y, sr=sr, n_fft=n_fft, n_mels=n_mels).T
         if length is not None:
             fbank = pad(fbank, length=length, axis=0, mode="repeat")

@@ -8,7 +8,7 @@ class Config:
     def __init__(self, config):
         self.read_yaml(config)
         self.defaults = self.get_defaults()
-        self._set_project_loggers()
+
 
     def set_value(self, **kwargs):
         for key in kwargs.keys():
@@ -19,7 +19,7 @@ class Config:
             dic = self.__dict__
             yaml.dump(dic, f, indent=4)
 
-    def _set_project_loggers(self):
+    def set_project_loggers(self):
         formatter = logging.Formatter('%(asctime)s [%(filename)s: %(lineno)d] %(levelname)s: %(message)s',
                                       '%m-%d %H:%M:%S')
         self._single_logger('data', formatter)
