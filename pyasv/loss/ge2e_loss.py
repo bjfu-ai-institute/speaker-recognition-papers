@@ -38,7 +38,7 @@ def generalized_end_to_end_loss(embeddings, w, b, loss_type='softmax', return_sc
 
         # false score minus true score.
         # sum of all minus the resut of true score times 2.
-        _l = - 2 * _s_correct + tf.log(tf.reduce_sum(tf.exp(_s), axis=-1) + 1e-10)
+        _l = - 2 * _s_correct + tf.log(tf.reduce_sum(tf.exp(_s), axis=-1) + 1e-8)
     elif loss_type == 'contrast':
         _s_per_spkr = tf.reduce_max(_s, axis=-1)
         _l = tf.stack([1 - tf.sigmoid(_s[i * X:(i + 1) * X, :, i]) + _s_per_spkr[i, :] for i in range(X)])

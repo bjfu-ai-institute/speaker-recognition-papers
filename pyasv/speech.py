@@ -48,8 +48,8 @@ class FeatureExtractor:
         self.process_num = config.n_threads
         self.fix_len = config.fix_len
         self.hop_length = config.hop_length
-        self.fix_len = (self.sample_rate * self.fix_len) // self.hop_length
         self.sample_rate = config.sample_rate
+        self.fix_len = (self.sample_rate * self.fix_len) // self.hop_length
         self.dims = config.feature_dims
         self.slides = config.slides
         self.logger = logging.getLogger("data")

@@ -5,9 +5,9 @@ import multiprocessing as mp
 import sys
 
 
-def clip_grad(tower_grad, clip_value):
+def clip_grad(tower_grad, clip_min, clip_max):
     grads, vars = zip(*tower_grad)
-    grads_clip, _ = tf.clip_by_global_norm(grads, clip_value)
+    grads_clip = [tf.clip_by_value(g, clip_value_min=clip_min, clip_value_max=clip_max) for g in grads]
     return zip(grads_clip, vars)
 
 
