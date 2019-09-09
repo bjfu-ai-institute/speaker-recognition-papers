@@ -5,11 +5,15 @@ import multiprocessing as mp
 import sys
 
 
-def clip_grad(tower_grad, clip_min, clip_max):
+def clip_grad_by_value(tower_grad, clip_min, clip_max):
     grads, vars = zip(*tower_grad)
     grads_clip = [tf.clip_by_value(g, clip_value_min=clip_min, clip_value_max=clip_max) for g in grads]
     return zip(grads_clip, vars)
 
+def clip_grad_by_norm(tower_grad, value):
+    grads, vars = zip(*tower_grad)
+    grads_clip = tf.clip_by_norm(grads, clip_norm=value)
+    return zip(grads_clip, vars)
 
 def average_gradients(tower_grads):
     average_grads = []

@@ -58,7 +58,8 @@ class LSTMP(model.Model):
             with tf.variable_scope('LSTM', reuse=tf.AUTO_REUSE):
                 outputs, _ = layers.lstm(x, self.units, is_training, self.layer_num)
             self._feature = outputs[-1]
-        return outputs[-1]
+            out = ops.normalize(outputs[-1])
+        return out
 
     def loss(self, embeddings, loss_type='softmax'):
         with tf.variable_scope("loss", reuse=tf.AUTO_REUSE):

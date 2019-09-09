@@ -24,8 +24,8 @@ def generalized_end_to_end_loss(embeddings, w, b, loss_type='softmax', return_sc
     # shape = [ spkr_num, utt_num, embedding_dim ]
     # every person's center except current utt.
     mean_except_one = ops.normalize((tf.reduce_sum(embeddings, axis=1, keepdims=True) - embeddings) / (Y - 1))
-    _s = tf.squeeze(tf.abs(w) * tf.stack([[ops.cosine(mean_except_one[i, :, :], embeddings[j, :, :]) if i == j
-                        else ops.cosine(mean_per_spkr[i, :], embeddings[j, :, :])
+    _s = tf.squeeze(tf.abs(w) * tf.stack([[ops.cosine(mean_except_one[i, :, :], embeddings[j, :, :], normalized=False) if i == j
+                        else ops.cosine(mean_per_spkr[i, :], embeddings[j, :, :], normalized=False)
                         for i in range(X)] for j in range(X)]) + b, axis=-1)
     _s = tf.transpose(_s, [0, 2, 1])
     
@@ -38,7 +38,7 @@ def generalized_end_to_end_loss(embeddings, w, b, loss_type='softmax', return_sc
 
         # false score minus true score.
         # sum of all minus the resut of true score times 2.
-        _l = - 2 * _s_correct + tf.log(tf.reduce_sum(tf.exp(_s), axis=-1) + 1e-8)
+        _l = tf.log(tf.reduce_sum(tf.exp(_s), axis=-1) + 1e-10) - _s_correct
     elif loss_type == 'contrast':
         _s_per_spkr = tf.reduce_max(_s, axis=-1)
         _l = tf.stack([1 - tf.sigmoid(_s[i * X:(i + 1) * X, :, i]) + _s_per_spkr[i, :] for i in range(X)])
