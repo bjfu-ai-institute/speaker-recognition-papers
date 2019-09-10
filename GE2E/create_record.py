@@ -65,7 +65,7 @@ def create_url(config, urls, enroll=None, test=None):
         for line in datas:
             url, spk = line.replace("\n", "").split(' ')
             id2utt_test[spk2id_test[spk]].append(url)
-            write_dict_to_text(os.path.join(config.save_path, 'url', "test_tmp"), id2utt_test)
+        write_dict_to_text(os.path.join(config.save_path, 'url', "test_tmp"), id2utt_test)
         return len(id2utt_train.keys()), len(id2utt_test.keys())
 
 
