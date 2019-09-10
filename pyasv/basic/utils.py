@@ -88,15 +88,22 @@ def calc_acc(score_matrix, ys):
 
 
 def tensorboard_embedding(save_path, writer, emb, label):
-    with open(os.path.join(save_path, "graph", 'emb_label.tsv'), 'w') as f:
-        for l in label:
-            f.writelines("%d\n"%l)
-    emb = tf.Variable(emb)
-    config = projector.ProjectorConfig()
-    embedding = config.embeddings.add()
-    embedding.tensor_name = emb.name
-    embedding.metadata_path = os.path.join(save_path, "graph", 'emb_label.tsv')
-    projector.visualize_embeddings(writer, config)
+    g = tf.Graph()
+    with g.as_default():
+        emb_tensor = tf.get_variable(name='emb_projector', shape=emb.shape,
+                                     initializer=tf.constant_initializer(value=emb))
+        with tf.Session(graph=g) as sess:
+            sess.run(emb_tensor.initializer)
+            saver = tf.train.Saver([emb_tensor.shape])
+            saver.save(sess, os.path.join(save_path, "graph", 'emb.ckpt'))
+            with open(os.path.join(save_path, "graph", 'emb_label.tsv'), 'w') as f:
+                for l in label:
+                    f.writelines("%d\n"%l)
+            config = projector.ProjectorConfig()
+            embedding = config.embeddings.add()
+            embedding.tensor_name = emb.name
+            embedding.metadata_path = os.path.join(save_path, "graph", 'emb_label.tsv')
+            projector.visualize_embeddings(writer, config)
 
 
 def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):

@@ -20,7 +20,7 @@ def new_variable(name, shape, weight_decay=0.001,
     return new_var
 
 
-def t_dnn(x, length, strides, name, out=None, padding='VALID', init=tf.constant_initializer(value=1)):
+def t_dnn(x, length, strides, name, out=None, padding='VALID', init=tf.contrib.layers.xavier_initializer()):
     dimension = len(x.get_shape().as_list())
     if out is None:
         out = x.shape[-1]
@@ -59,6 +59,8 @@ def full_connect(x, name, units, activation='relu'):
         return tf.nn.softmax(tf.nn.bias_add(tf.matmul(x, weights), biases))
     elif activation == 'None':
         return tf.nn.bias_add(tf.matmul(x, weights), biases)
+    elif activation == 'leakyrelu':
+        return tf.nn.leaky_relu(tf.nn.bias_add(tf.matmul(x, weights), biases))
     else:
         return "activation param should be one of [relu, tanh, softmax, None] now."
 

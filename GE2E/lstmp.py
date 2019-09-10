@@ -121,7 +121,7 @@ class LSTMP(model.Model):
 
                 avg_loss += _loss
                 log_flag += 1
-
+                
                 if log_flag % 100 == 0 and log_flag != 0:
                     duration = time.time() - start_time
                     start_time = time.time()

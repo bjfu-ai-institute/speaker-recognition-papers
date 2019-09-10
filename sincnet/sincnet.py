@@ -24,7 +24,7 @@ def to_hz(mel):
     return 700 * (10 ** (mel / 2595) - 1)
 
 
-def sinc_layer(x, out_channels, kernel_size, stride, padding, dilation, sample_rate, min_low_hz, min_band_hz):
+def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, min_band_hz):
     if type(x) == np.ndarray:
         if len(x.shape) == 2:
             dim = x.shape[-1]
@@ -82,5 +82,36 @@ def sinc_layer(x, out_channels, kernel_size, stride, padding, dilation, sample_r
     return tf.nn.conv1d(input=x, filters=filters, stride=stride)
 
 
-class SincNet():
-    pass
+class SincNet_ID(model.Model):
+    def __init__(self, config, out_channel, kernel_size, is_training):
+        super().__init__(config)
+        self.ks = kernel_size
+        self.out = out_channel
+
+    def inference(self, x):
+        with tf.variable_scope('sinc', reuse=tf.AUTO_REUSE):
+            out = layers.layer_norm(x, 'ln_inp')
+            out = sinc_layer(out, out_channels=self.out, kernel_size=self.ks,
+                             stride=1, sample_rate=self.config.sample_rate,
+                             min_low_hz=30, min_band_hz=50)
+            out = layers.layer_norm(out, 'ln')
+        with tf.variable_scope('conv1d_1', reuse=tf.AUTO_REUSE):
+            out = layers.t_dnn(out, length=3, strides=1, out=60, name='c1')
+            out = layers.layer_norm(out, 'ln')
+        with tf.variable_scope('conv1d_2', reuse=tf.AUTO_REUSE):
+            out = layers.t_dnn(out, length=3, strides=1, out=60, name='c1')
+            out = layers.layer_norm(out, 'ln')
+        with tf.variable_scope('fc_1', reuse=tf.AUTO_REUSE):
+            out = layers.full_connect(out, name='fc1', units=2048, activation='leakyrelu')
+            out = layers.layer_norm(out, 'ln')
+
+        with tf.variable_scope('fc_2', reuse=tf.AUTO_REUSE):
+            out = layers.full_connect(out, name='fc2', units=2048, activation='leakyrelu')
+            out = layers.layer_norm(out, 'ln')
+        with tf.variable_scope('fc_3', reuse=tf.AUTO_REUSE):
+            out = layers.full_connect(out, name='fc3', units=2048, activation='leakyrelu')
+            out = layers.layer_norm(out, 'ln')
+        with tf.variable_scope('output', reuse=tf.AUTO_REUSE):
+            out = layers.full_connect(out, name='out', units=self.config.n_speaker)
+            # pre softmax, calc loss with tf.cross_entr..... and predict with tf.nn.softmax
+        return tf.nn.softmax(out)
