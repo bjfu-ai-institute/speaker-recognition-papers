@@ -69,6 +69,7 @@ def sinc_layer(x, out_channels, kernel_size, stride, padding, dilation, sample_r
     f_times_t_low = tf.matmul(low, n_)
     f_times_t_high = tf.matmul(high, n_)
 
+    # After simplification.
     band_pass_left = 2*((tf.math.sin(f_times_t_high) - tf.math.sin(f_times_t_low))/n_)*window
     band_pass_center = 2 * tf.reshape(band, [-1, 1])
     band_pass_right = tf.reverse(band_pass_left, axis=[1])
@@ -79,7 +80,6 @@ def sinc_layer(x, out_channels, kernel_size, stride, padding, dilation, sample_r
     filters = tf.transpose(filters, [2, 0, 1])
 
     return tf.nn.conv1d(input=x, filters=filters, stride=stride)
-
 
 
 class SincNet():

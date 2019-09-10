@@ -21,7 +21,7 @@ rm */__pycache__* -rf
 # mv ../exp ./
 
 # rsync -av -e 'ssh -p 15043' --exclude-from='.vscode/exclude.lst' ./* room@speaker.is99kdf.xyz:~/work/paper_se_test/$1
-rsync -av -e 'ssh ' --exclude-from='.idea/exclude.lst' ./* $user@$site:~/code/
+rsync -av -e 'ssh ' --exclude-from='.idea/exclude.lst' ./* $user@$site:~/speaker_recognition/
 # -a ：递归到目录，即复制所有文件和子目录。另外，打开归档模式和所有其他选项（相当于 -rlptgoD）
 # -v ：详细输出
 # -e ssh ：使用 ssh 作为远程 shell，这样所有的东西都被加密

@@ -5,7 +5,8 @@ import numpy as np
 import os
 import sys
 import logging
-import numba
+import tensorflow as tf
+from tensorflow.contrib.tensorboard.plugins import projector
 from scipy.spatial.distance import cdist
 
 
@@ -84,6 +85,18 @@ def calc_acc(score_matrix, ys):
     Pos = np.where(label == pred)[0].shape[0]
     All = label.shape[0]
     return Pos / All
+
+
+def tensorboard_embedding(save_path, writer, emb, label):
+    with open(os.path.join(save_path, "graph", 'emb_label.tsv'), 'w') as f:
+        for l in label:
+            f.writelines("%d\n"%l)
+    emb = tf.Variable(emb)
+    config = projector.ProjectorConfig()
+    embedding = config.embeddings.add()
+    embedding.tensor_name = emb.name
+    embedding.metadata_path = os.path.join(save_path, "graph", 'emb_label.tsv')
+    projector.visualize_embeddings(writer, config)
 
 
 def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):

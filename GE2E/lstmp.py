@@ -91,19 +91,22 @@ class LSTMP(model.Model):
                 tower_output.append(output)
                 losses = self.loss(output)
                 tower_losses.append(losses)
-                grads = ops.clip_grad(opt.compute_gradients(losses), -3.0, 3.0)
+                grads = ops.clip_grad_by_value(opt.compute_gradients(losses), -3.0, 3.0)
                 grads = [(0.01 * i, j) if (j.name == 'loss/loss_b:0' or j.name == 'loss/loss_w:0') else (i, j) for i, j in grads]
                 tower_grads.append(grads)
         # handle batch loss
         aver_loss_op = tf.reduce_mean(tower_losses)
         apply_gradient_op = opt.apply_gradients(ops.average_gradients(tower_grads))
-        tf.summary.scalar('loss', aver_loss_op)
         all_output = tf.reshape(tf.stack(tower_output, 0), [-1, self.embed_size])
         
         # init
         emb = self.init_validation()
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
+
+        tf.summary.scalar('loss', aver_loss_op)
+        tf.summary.scalar('w', tf.get_default_graph().get_operation_by_name('loss/loss_w').outputs[0])
+        tf.summary.scalar('b', tf.get_default_graph().get_operation_by_name('loss/loss_b').outputs[0])
         summary_op = tf.summary.merge_all()
         summary_writer = tf.summary.FileWriter(os.path.join(self.config.save_path, 'graph'), sess.graph)
         log_flag = 0
@@ -114,8 +117,8 @@ class LSTMP(model.Model):
                         (epoch, self.config.lr, self.config.batch_nums_per_epoch))
             avg_loss = 0.0
             for batch_idx in range(self.config.batch_nums_per_epoch):
-                print(sess.run(x).shape)
                 _, _loss, _, summary_str = sess.run([apply_gradient_op, aver_loss_op, all_output, summary_op])
+
                 avg_loss += _loss
                 log_flag += 1
 
@@ -124,9 +127,11 @@ class LSTMP(model.Model):
                     start_time = time.time()
                     logger.info('At %d batch, present batch loss is %.4f, %.2f batches/sec' %
                                 (batch_idx, _loss, 100 * self.config.n_gpu / duration))
-                if log_flag % 600 == 0 and log_flag != 0:
+                if log_flag % 5000 == 0 and log_flag != 0:
                     test_x, test_y, enroll_x, enroll_y = valid['t_x'], valid['t_y'], valid['e_x'], valid['e_y']
-                    acc, _ = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess, step=epoch)
+                    acc, tup = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess, step=epoch)
+                    _, emb, label = tup
+                    utils.tensorboard_embedding(self.config.save_path, summary_writer, emb=emb, label=label)
                     logger.info('At %d epoch after %d batch, acc is %.6f'
                                 % (epoch, batch_idx, acc))
                 summary_writer.add_summary(summary_str, epoch * self.config.batch_nums_per_epoch + batch_idx)
@@ -150,7 +155,7 @@ class LSTMP(model.Model):
         score_idx = np.argmax(score_mat, -1)
         #emb_file.create_dataset(name='score_mat', data=score_mat)
         #emb_file.close()
-        return np.sum(score_idx == test_y.reshape(-1,)) / score_idx.shape[0], score_mat
+        return np.sum(score_idx == test_y.reshape(-1,)) / score_idx.shape[0], (score_mat, e_emb, enroll_y)
 
     def init_validation(self):
         """Get validation operation."""

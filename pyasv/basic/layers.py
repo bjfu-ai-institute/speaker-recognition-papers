@@ -109,6 +109,14 @@ def _max_feature_map(x, netType='conv'):
     return y
 
 
+def layer_norm(x, name, eps=1e-6):
+    with tf.variable_scope(name):
+        mean, var = tf.nn.moments(x, axis=-1)
+        gamma = new_variable('gamma', shape=[], init=tf.constant_initializer(value=1.0))
+        beta = new_variable('beta', shape=[], init=tf.constant_initializer(value=0.0))
+    return gamma * (x - mean) / (tf.sqrt(var) + eps) + beta
+
+
 def static_pooling(x):
     dim = len(x.get_shape().as_list())
     if dim > 3 and x.shape[-1] != 1:
