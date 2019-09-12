@@ -1,0 +1,20 @@
+batch_nums_per_epoch: 120
+defaults: null
+feature_dims: 64
+fix_len: 8
+hop_length: 512
+lr: 0.0001
+max_step: 10000
+model_name: ge2e
+n_fft: 512
+n_gpu: 1
+n_speaker: 370
+n_speaker_test: 30
+n_threads: 6
+num_classes_per_batch: 16
+num_utt_per_class: 4
+sample_rate: 16000
+save_path: /home/fhq/save/g-test
+slides:
+- 0
+- 0
