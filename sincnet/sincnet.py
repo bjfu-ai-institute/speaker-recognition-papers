@@ -1,5 +1,6 @@
 import sys
 sys.path.append('../')
+from GE2E.lstmp import LSTMP
 import logging
 from pyasv.basic import model
 from pyasv import layers
@@ -29,14 +30,14 @@ def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, mi
         if len(x.shape) == 2:
             dim = x.shape[-1]
             in_channel = 1
-            x = x.reshape(-1, 1, dim)
+            x = x.reshape(-1, dim, 1)
         else:
             in_channel = x.shape[1]
     else:
         if len(x.get_shape()) == 2:
             in_channel = 1
-            dim = x.get_shape()
-            x = tf.reshape(x, shape=[-1, 1, dim])
+            dim = x.get_shape()[-1]
+            x = tf.reshape(x, shape=[-1, dim, 1])
         else:
             in_channel = x.get_shape().as_list()[1]
     if not kernel_size % 2:
@@ -58,7 +59,7 @@ def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, mi
     band_hz_ = tf.reshape(band_hz_, [-1, 1])
 
     n_lin = np.linspace(0, (kernel_size-1)/2-1, int(kernel_size/2))
-    window = 0.54 - 0.46 * tf.math.cos(2 * math.pi * n_lin / kernel_size)
+    window = tf.cast(0.54 - 0.46 * tf.math.cos(2 * math.pi * n_lin / kernel_size), dtype=tf.float32)
 
     n_ = 2 * math.pi * np.arange(-(kernel_size - 1)/2.0, 0).reshape(1, -1) / sample_rate
 
@@ -66,8 +67,8 @@ def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, mi
     high = tf.clip_by_value(low + min_band_hz + tf.abs(band_hz_),
                             min_low_hz, sample_rate / 2)
     band = (high - low)[:, 0]
-    f_times_t_low = tf.matmul(low, n_)
-    f_times_t_high = tf.matmul(high, n_)
+    f_times_t_low = tf.matmul(tf.cast(low, dtype=tf.float32), tf.cast(n_, tf.float32))
+    f_times_t_high = tf.matmul(tf.cast(high, dtype=tf.float32), tf.cast(n_, tf.float32))
 
     # After simplification.
     band_pass_left = 2*((tf.math.sin(f_times_t_high) - tf.math.sin(f_times_t_low))/n_)*window
@@ -77,9 +78,9 @@ def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, mi
     filters = tf.reshape(tf.concat([band_pass_left, band_pass_center, band_pass_right], axis=1),
                          shape=[out_channels, 1, kernel_size])
     #[80, 1, 251] => [251, 1, 80]
-    filters = tf.transpose(filters, [2, 0, 1])
-
-    return tf.nn.conv1d(input=x, filters=filters, stride=stride)
+    filters = tf.transpose(filters, [2, 1, 0])
+    print(filters.get_shape().as_list())
+    return tf.nn.conv1d(input=x, filters=filters, stride=stride, padding='VALID')
 
 
 class SincNet_ID(model.Model):
@@ -104,14 +105,38 @@ class SincNet_ID(model.Model):
         with tf.variable_scope('fc_1', reuse=tf.AUTO_REUSE):
             out = layers.full_connect(out, name='fc1', units=2048, activation='leakyrelu')
             out = layers.layer_norm(out, 'ln')
-
         with tf.variable_scope('fc_2', reuse=tf.AUTO_REUSE):
             out = layers.full_connect(out, name='fc2', units=2048, activation='leakyrelu')
-            out = layers.layer_norm(out, 'ln')
+            out = layers.batch_normalization(out, 'ln', epsilon=1e-6)
         with tf.variable_scope('fc_3', reuse=tf.AUTO_REUSE):
             out = layers.full_connect(out, name='fc3', units=2048, activation='leakyrelu')
-            out = layers.layer_norm(out, 'ln')
+            out = layers.batch_normalization(out, 'ln', epsilon=1e-6)
         with tf.variable_scope('output', reuse=tf.AUTO_REUSE):
             out = layers.full_connect(out, name='out', units=self.config.n_speaker)
             # pre softmax, calc loss with tf.cross_entr..... and predict with tf.nn.softmax
         return tf.nn.softmax(out)
+
+
+    def train(self):
+        pass
+
+
+class GE2EwithSincFeature(LSTMP):
+    def __init__(self, config, dropout_prob, layer_num, lstm_units, out_channel_sinc, kernel_size_sinc):
+        super().__init__(config, lstm_units=lstm_units, layer_num=layer_num, dropout_prob=dropout_prob)
+        self.ocs = out_channel_sinc
+        self.ks = kernel_size_sinc
+
+    def inference(self, x, is_training=True):
+        with tf.variable_scope("sinc", reuse=tf.AUTO_REUSE):
+            x = sinc_layer(x, kernel_size=self.ks, out_channels=self.ocs,
+                           stride=1, sample_rate=self.config.sample_rate,
+                           min_low_hz=30, min_band_hz=50)
+            x = tf.reduce_sum(x ** 2, axis=1)
+        return super().inference(x)
+
+    def summary(self):
+        tf.summary.tensor_summary('low_hz', self.get_tensor("sinc/filter_low_hz"))
+        tf.summary.tensor_summary('band_hz', self.get_tensor("sinc/filter_high_hz"))
+        summary_op = super().summary()
+        return summary_op

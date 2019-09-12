@@ -49,7 +49,6 @@ class FeatureExtractor:
         self.fix_len = config.fix_len
         self.hop_length = config.hop_length
         self.sample_rate = config.sample_rate
-        self.fix_len = (self.sample_rate * self.fix_len) // self.hop_length
         self.dims = config.feature_dims
         self.slides = config.slides
         self.logger = logging.getLogger("data")
@@ -119,11 +118,12 @@ class FilterBank(FeatureExtractor):
     """Class for extracting fbank feature."""
     def __init__(self, url_folder, config, file_name='train'):
         super().__init__(url_folder, config, file_name)
+        self.fix_len = (self.sample_rate * self.fix_len) // self.hop_length
 
     @staticmethod
     def _extract_one(url, sample_rate, n_fft, n_mels, length=None, hop_length=512):
         y, sr = librosa.load(url, sr=sample_rate)
-        y, _ = librosa.effects.trim(y, frame_length=n_fft, hop_length=hop_length)
+        y, _ = librosa.effects.trim(y, frame_length=hop_length, hop_length=hop_length)
         spec = librosa.core.stft(y=y, n_fft=n_fft, hop_length=hop_length, win_length=hop_length)
         mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
         spec = np.abs(spec) ** 2
@@ -148,14 +148,44 @@ class FilterBank(FeatureExtractor):
         return fbanks, labels
 
 
+class RawAudio(FeatureExtractor):
+    def __init__(self, url_folder, config, file_name='train'):
+        super().__init__(url_folder, config, file_name)
+        self.fix_len = self.sample_rate * self.fix_len
+
+    @staticmethod
+    def _extract_one(url, sample_rate, hop_length, length):
+        y, sr = librosa.load(url, sr=sample_rate)
+        y, _ = librosa.effects.trim(y, frame_length=hop_length, hop_length=hop_length)
+        if length is not None:
+            y = pad(y, length=length, axis=0, mode='repeat')
+        return np.squeeze(y)
+
+
+    def extract(self, url_list):
+        labels = [item[1] for item in url_list]
+        url_list = [item[0] for item in url_list]
+        self.logger.info("Start extract %d audio." % len(url_list))
+        param = zip(url_list, [self.sample_rate for i in range(len(url_list))],
+                              [self.hop_length for i in range(len(url_list))],
+                              [self.fix_len for i in range(len(url_list))])
+        ys = ops.multi_processing(self._extract_one, param, self.process_num)
+        if self.slides != [None, None] and self.slides != [0, 0]:
+            slides = [self.slides for i in range(len(ys))]
+            ys = ops.multi_processing(slide_windows, zip(ys, slides), self.process_num)
+        return ys, labels
+
+
 class MFCC(FeatureExtractor):
     """Class for extracting MFCC feature"""
     def __init__(self, url_folder, config, file_name='train'):
         super().__init__(url_folder, config, file_name)
+        self.fix_len = (self.sample_rate * self.fix_len) // self.hop_length
 
     @staticmethod
-    def _extract_one(url, sample_rate, n_fft, n_mels, length=None):
+    def _extract_one(url, sample_rate, n_fft, hop_length, n_mels, length=None):
         y, sr = librosa.load(url, sr=sample_rate)
+        y, _ = librosa.effects.trim(y, frame_length=hop_length, hop_length=hop_length)
         fbank = librosa.feature.melspectrogram(y, sr=sr, n_fft=n_fft, n_mels=n_mels)
         mfcc = librosa.feature.mfcc(S=fbank, sr=sr)
         mfcc_delta_1 = librosa.feature.delta(mfcc)
@@ -170,9 +200,10 @@ class MFCC(FeatureExtractor):
         url_list = [item[0] for item in url_list]
         self.logger.info("Start extract %d audio." % len(url_list))
         param = zip(url_list, [self.sample_rate for i in range(len(url_list))],
-                    [self.n_fft for i in range(len(url_list))],
-                    [self.dims for i in range(len(url_list))],
-                    [self.fix_len for i in range(len(url_list))])
+                              [self.n_fft for i in range(len(url_list))],
+                              [self.hop_length for i in range(len(url_list))],
+                              [self.dims for i in range(len(url_list))],
+                              [self.fix_len for i in range(len(url_list))])
         mfccs = ops.multi_processing(self._extract_one, param, self.process_num)
         if self.slides != [None, None] and self.slides != [0, 0]:
             slides = [self.slides for i in range(len(mfccs))]

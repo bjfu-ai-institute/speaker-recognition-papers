@@ -70,6 +70,15 @@ class LSTMP(model.Model):
                                                  self.embed_size])
             return loss.generalized_end_to_end_loss(embeddings, w=w, b=b)
 
+
+    def summary(self):
+        tf.summary.scalar('loss', self.get_tensor("ave_loss"))
+        tf.summary.scalar('w', self.get_tensor("loss/loss_w"))
+        tf.summary.scalar('b', self.get_tensor("loss/loss_b"))
+        summary_op = tf.summary.merge_all()
+        return summary_op
+
+
     def train(self, train_data, valid=None):
         """Interface to train model.
         
@@ -95,19 +104,17 @@ class LSTMP(model.Model):
                 grads = [(0.01 * i, j) if (j.name == 'loss/loss_b:0' or j.name == 'loss/loss_w:0') else (i, j) for i, j in grads]
                 tower_grads.append(grads)
         # handle batch loss
-        aver_loss_op = tf.reduce_mean(tower_losses)
+        aver_loss_op = tf.reduce_mean(tower_losses, name='ave_loss')
         apply_gradient_op = opt.apply_gradients(ops.average_gradients(tower_grads))
         all_output = tf.reshape(tf.stack(tower_output, 0), [-1, self.embed_size])
-        
+
+        summary_op = self.summary()
         # init
         emb = self.init_validation()
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver()
 
-        tf.summary.scalar('loss', aver_loss_op)
-        tf.summary.scalar('w', tf.get_default_graph().get_operation_by_name('loss/loss_w').outputs[0])
-        tf.summary.scalar('b', tf.get_default_graph().get_operation_by_name('loss/loss_b').outputs[0])
-        summary_op = tf.summary.merge_all()
+
         summary_writer = tf.summary.FileWriter(os.path.join(self.config.save_path, 'graph'), sess.graph)
         log_flag = 0
         

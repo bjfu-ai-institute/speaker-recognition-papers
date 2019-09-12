@@ -167,3 +167,18 @@ def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):
         fig_1.plot(x_cord, y_cord, c='blue')
         plt.savefig(save_path)
     return best_eer
+
+
+def write_dict_to_text(path, dic, key_before_value=True, data_one_line=False, spaced=" "):
+    with open(path, 'w') as f:
+        for key in dic.keys():
+            if type(dic[key]) == list or type(dic[key]) == set:
+                if data_one_line:
+                    data = "%s " % key
+                    for dat in dic[key]:
+                        data += dat + spaced
+                    f.writelines(data + '\n')
+                else:
+                    for dat in dic[key]:
+                        data = "%s %s\n" % (dat, key)
+                        f.writelines(data)
