@@ -48,7 +48,6 @@ Temporary Items
 .apdisk
 workspace.xml
 .idea
-main.py
 data_url.py
 __pycache__
 data
