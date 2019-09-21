@@ -150,7 +150,11 @@ class LSTMP(model.Model):
             saver.save(sess=sess, save_path=abs_save_path)
         logger.info('training done.')
 
-    def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, step=0):
+    def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, limit_shape=180, step=0):
+        # limit test_x size
+        idx = np.random.randint(0, test_x.shape[0], size=limit_shape)
+        test_x = test_x[idx]
+        test_y = test_y[idx]
         t_emb = sess.run(emb, feed_dict={"t_x:0": test_x})
         e_emb = sess.run(emb, feed_dict={"t_x:0": enroll_x})
         #emb_file = h5py.File(os.path.join(self.config.save_path, 'log', 'mean_embeddings_%d.h5')%step, 'w')
