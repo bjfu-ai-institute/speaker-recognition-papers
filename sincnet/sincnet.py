@@ -79,8 +79,7 @@ def sinc_layer(x, out_channels, kernel_size, stride, sample_rate, min_low_hz, mi
                          shape=[out_channels, 1, kernel_size])
     #[80, 1, 251] => [251, 1, 80]
     filters = tf.transpose(filters, [2, 1, 0])
-    print(filters.get_shape().as_list())
-    return tf.nn.conv1d(input=x, filters=filters, stride=stride, padding='VALID')
+    return tf.nn.conv1d(x, filters=filters, stride=stride, padding='VALID')
 
 
 class SincNet_ID(model.Model):
@@ -126,17 +125,31 @@ class GE2EwithSincFeature(LSTMP):
         super().__init__(config, lstm_units=lstm_units, layer_num=layer_num, dropout_prob=dropout_prob)
         self.ocs = out_channel_sinc
         self.ks = kernel_size_sinc
+        self.data_shape = [None, self.config.fix_len * self.config.sample_rate,]
 
     def inference(self, x, is_training=True):
+        sr = self.config.sample_rate
+        oc = self.ocs
+        ks  = self.ks
+        fix_len = self.config.fix_len
+        stride = 1
+        def sinc_layer_frame(x):
+            return sinc_layer(x, oc, ks, stride, sr, 30, 50)
+        def sinc_layer_seg(x):
+            return tf.map_fn(sinc_layer_frame, x)        
         with tf.variable_scope("sinc", reuse=tf.AUTO_REUSE):
-            x = sinc_layer(x, kernel_size=self.ks, out_channels=self.ocs,
-                           stride=1, sample_rate=self.config.sample_rate,
-                           min_low_hz=30, min_band_hz=50)
-            x = tf.reduce_sum(x ** 2, axis=1)
+            x = tf.reshape(x, [-1, 10, fix_len * sr//10])
+            x = sinc_layer_seg(x)
+            #x = sinc_layer(x, kernel_size=self.ks, out_channels=self.ocs,
+            #               stride=1, sample_rate=self.config.sample_rate,
+            #               min_low_hz=30, min_band_hz=50)
+            x = tf.reduce_sum(x ** 2, axis=2)
         return super().inference(x)
 
     def summary(self):
-        tf.summary.tensor_summary('low_hz', self.get_tensor("sinc/filter_low_hz"))
-        tf.summary.tensor_summary('band_hz', self.get_tensor("sinc/filter_high_hz"))
+        # TODO: find a way to store and display tensor in tensorboard.
+        # tf.summary.tensor_summary('low_hz', self.get_tensor("sinc/filter_low_hz"))
+        # tf.summary.tensor_summary('band_hz', self.get_tensor("sinc/filter_high_hz"))
         summary_op = super().summary()
         return summary_op
+

@@ -34,6 +34,9 @@ class LSTMP(model.Model):
         self.batch_size = self.config.num_classes_per_batch * self.config.num_classes_per_batch
         self.n_speaker_test = config.n_speaker_test
         self.drop_prob = dropout_prob
+        self.data_shape = [None, 
+                           (self.config.fix_len * self.config.sample_rate) // self.config.hop_length, 
+                           self.config.feature_dims]
 
     @property
     def feature(self):
@@ -52,6 +55,7 @@ class LSTMP(model.Model):
         :param x: input of model. should be tensor or placeholder.
         :param is_training: bool, set dropout while training.
         """
+        x = tf.transpose(x, [1, 0, 2])
         if self.drop_prob > 0:
             x = tf.nn.dropout(x, rate=self.drop_prob)
         with tf.variable_scope('Forward', reuse=tf.AUTO_REUSE):
@@ -70,14 +74,12 @@ class LSTMP(model.Model):
                                                  self.embed_size])
             return loss.generalized_end_to_end_loss(embeddings, w=w, b=b)
 
-
     def summary(self):
         tf.summary.scalar('loss', self.get_tensor("ave_loss"))
         tf.summary.scalar('w', self.get_tensor("loss/loss_w"))
         tf.summary.scalar('b', self.get_tensor("loss/loss_b"))
         summary_op = tf.summary.merge_all()
         return summary_op
-
 
     def train(self, train_data, valid=None):
         """Interface to train model.
@@ -95,7 +97,6 @@ class LSTMP(model.Model):
         for gpu_id in range(self.config.n_gpu):
             with tf.device('/gpu:%d' % gpu_id):
                 x, y = train_data.get_next()
-                x = tf.transpose(x, [1, 0, 2])
                 output = self.inference(x)
                 tower_output.append(output)
                 losses = self.loss(output)
@@ -166,11 +167,9 @@ class LSTMP(model.Model):
 
     def init_validation(self):
         """Get validation operation."""
-        inp = tf.placeholder(dtype=tf.float32, shape=[None,
-                                                      (self.config.fix_len * self.config.sample_rate) // self.config.hop_length,
-                                                      self.config.feature_dims], name='t_x')
+        inp = tf.placeholder(dtype=tf.float32, shape=self.data_shape, name='t_x')
         # score_mat = self._valid(p_test_x, p_enroll_x, p_enroll_y)
-        emb = self.inference(tf.transpose(inp, [1, 0, 2]))
+        emb = self.inference(inp)
         return emb
 
     def predict(self, data, model_dir):

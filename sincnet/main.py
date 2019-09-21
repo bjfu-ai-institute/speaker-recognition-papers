@@ -23,8 +23,7 @@ def read_data(config):
     """
     data_path = os.path.join(config.save_path, 'data')
 
-    keys_to_feature = collections.OrderedDict([('data', tf.FixedLenFeature(shape=[(config.fix_len * config.sample_rate) // config.hop_length,
-                                                                                   config.feature_dims],
+    keys_to_feature = collections.OrderedDict([('data', tf.FixedLenFeature(shape=[(config.fix_len * config.sample_rate)],
                                                                            dtype=tf.float32)),
                                                ('label', tf.FixedLenFeature(shape=[1], dtype=tf.float32))])
 
@@ -89,7 +88,7 @@ def prepare_wav_to_id(model, url_path, config):
             # and we can get speaker number and reset the default number to Preventing default number error.
             n_speaker, n_speaker_test = model.create_url(urls=train, enroll=enroll, test=test)
             config.set_value(n_speaker=n_speaker, n_speaker_test=n_speaker_test)
-            config.save('lstmp.yaml')
+            config.save(FLAGS.conf_path)
 
 
 
