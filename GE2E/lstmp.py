@@ -130,16 +130,16 @@ class LSTMP(model.Model):
                 avg_loss += _loss
                 log_flag += 1
                 
-                if log_flag % 100 == 0 and log_flag != 0:
+                if log_flag % 300 == 0 and log_flag != 0:
                     duration = time.time() - start_time
                     start_time = time.time()
                     logger.info('At %d batch, present batch loss is %.4f, %.2f batches/sec' %
-                                (batch_idx, _loss, 100 * self.config.n_gpu / duration))
+                                (batch_idx, _loss, 300 * self.config.n_gpu / duration))
                 if log_flag % 5000 == 0 and log_flag != 0:
                     test_x, test_y, enroll_x, enroll_y = valid['t_x'], valid['t_y'], valid['e_x'], valid['e_y']
                     acc, tup = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess, step=epoch)
-                    _, emb, label = tup
-                    utils.tensorboard_embedding(self.config.save_path, summary_writer, emb=emb, label=label)
+                    _, emb_arr, label = tup
+                    utils.tensorboard_embedding(self.config.save_path, summary_writer, emb=emb_arr, label=label)
                     logger.info('At %d epoch after %d batch, acc is %.6f'
                                 % (epoch, batch_idx, acc))
                 summary_writer.add_summary(summary_str, epoch * self.config.batch_nums_per_epoch + batch_idx)
@@ -150,11 +150,15 @@ class LSTMP(model.Model):
             saver.save(sess=sess, save_path=abs_save_path)
         logger.info('training done.')
 
-    def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, limit_shape=180, step=0):
+    def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, limit_shape=64, step=0):
         # limit test_x size
         idx = np.random.randint(0, test_x.shape[0], size=limit_shape)
-        test_x = test_x[idx]
+        test_x = test_x.value[idx]
         test_y = test_y[idx]
+        test_y_uni = np.unique(test_y)
+        enroll_x = np.array(list(enroll_x.value[np.where(enroll_y == i)[0]] for i in test_y_uni)).reshape(-1, self.config.sample_rate * self.config.fix_len)
+        enroll_y = np.array(list(enroll_y[np.where(enroll_y == i)[0]] for i in test_y_uni)).reshape(-1,)
+        print(enroll_x.shape)
         t_emb = sess.run(emb, feed_dict={"t_x:0": test_x})
         e_emb = sess.run(emb, feed_dict={"t_x:0": enroll_x})
         #emb_file = h5py.File(os.path.join(self.config.save_path, 'log', 'mean_embeddings_%d.h5')%step, 'w')
@@ -163,6 +167,8 @@ class LSTMP(model.Model):
         #emb_file.create_dataset(name='enroll', data=spkr_embeddings)
         score_mat = np.array([np.reshape(1 - cdist(spkr_embeddings[i].reshape(1, 400), t_emb, metric='cosine'), (-1, ))
                               for i in range(self.n_speaker_test)]).T
+        ind = np.where(np.isnan(score_mat))
+        score_mat[ind] = -1
         print(score_mat)
         score_idx = np.argmax(score_mat, -1)
         #emb_file.create_dataset(name='score_mat', data=score_mat)

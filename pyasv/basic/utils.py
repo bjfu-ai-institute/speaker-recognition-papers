@@ -94,14 +94,14 @@ def tensorboard_embedding(save_path, writer, emb, label):
                                      initializer=tf.constant_initializer(value=emb))
         with tf.Session(graph=g) as sess:
             sess.run(emb_tensor.initializer)
-            saver = tf.train.Saver([emb_tensor.shape])
+            saver = tf.train.Saver([emb_tensor])
             saver.save(sess, os.path.join(save_path, "graph", 'emb.ckpt'))
             with open(os.path.join(save_path, "graph", 'emb_label.tsv'), 'w') as f:
                 for l in label:
                     f.writelines("%d\n"%l)
             config = projector.ProjectorConfig()
             embedding = config.embeddings.add()
-            embedding.tensor_name = emb.name
+            embedding.tensor_name = emb_tensor.name
             embedding.metadata_path = os.path.join(save_path, "graph", 'emb_label.tsv')
             projector.visualize_embeddings(writer, config)
 
