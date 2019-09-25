@@ -51,16 +51,17 @@ def handle_path(config):
     if not os.path.exists(config.save_path):
         os.mkdir(config.save_path)
     for dd in ['log', 'graph', 'model']:
-        if os.path.exists(os.path.join(config.save_path, dd)):
+        if not os.path.exists(os.path.join(config.save_path, dd)):
+            os.mkdir(os.path.join(config.save_path, dd))
+        elif not FLAGS.is_restore:
             try:
                 os.mkdir(os.path.join(config.save_path, backup_name))
             except:
                 pass
-            os.rename(os.path.join(config.save_path, dd),
-                      os.path.join(config.save_path, backup_name, dd))
-            logging.info('Moving %s to backup' % dd)
-        os.mkdir(os.path.join(config.save_path, dd))
-
+            logging.warn("FLAGS.is_restore is False, backup old files. Moving %s to %s"%(dd, backup_name + "/" + dd))
+            os.rename(os.path.join(config.save_path, dd), os.path.join(config.save_path, backup_name, dd))
+            os.mkdir(os.path.join(config.save_path, dd))
+        
 
 def prepare_wav_to_id(model, url_path, config):
     # Get all "$wav_path $spkr" files.
@@ -74,9 +75,9 @@ def prepare_wav_to_id(model, url_path, config):
         elif url[:4] == 'test':
             test = os.path.join(FLAGS.data_url, url)
 
-    # Backup old log, url or model, won't backup if is_restore is true.
-    if FLAGS.is_training and not FLAGS.is_restore:
-        if os.path.exists(url_path) and pyasv.utils.folder_size(url_path) > 0 and not FLAGS.is_restore:
+    # Prepare URL
+    if FLAGS.is_training:
+        if os.path.exists(url_path) and pyasv.utils.folder_size(url_path) > 0 and (not FLAGS.is_restore):
             logging.warning("save_path/url is exist and not empty, using old url file.")
         else:
             if FLAGS.is_restore:
@@ -131,22 +132,20 @@ def run():
     config = initialize()
     data_path = os.path.join(config.save_path, 'data')
     url_path = os.path.join(config.save_path, 'url')
-
+    
     # mkdir or backup
     handle_path(config)
-
+    config.set_project_loggers()
     if FLAGS.is_training:
         model = GE2EwithSincFeature(config, lstm_units=FLAGS.units, layer_num=FLAGS.layer,
                                     dropout_prob=FLAGS.prob, kernel_size_sinc=FLAGS.ks,
-                                    out_channel_sinc=FLAGS.oc)
+                                    out_channel_sinc=FLAGS.oc, frame_size=FLAGS.frame_size)
     elif FLAGS.is_testing:
         model = GE2EwithSincFeature(config, lstm_units=FLAGS.units, layer_num=FLAGS.layer,
                                     dropout_prob=0, kernel_size_sinc=FLAGS.ks,
-                                    out_channel_sinc=FLAGS.oc)
+                                    out_channel_sinc=FLAGS.oc, frame_size=FLAGS.frame_size)
     else:
         raise ValueError("one of is_training and is_testing should be true.")
-    # set log
-    config.set_project_loggers()
 
     # prepare metadata files
     prepare_wav_to_id(model, url_path, config)
@@ -161,7 +160,7 @@ def run():
         data = read_data(config)
         model = GE2EwithSincFeature(config, lstm_units=FLAGS.units, layer_num=FLAGS.layer,
                                     dropout_prob=0, kernel_size_sinc=FLAGS.ks,
-                                    out_channel_sinc=FLAGS.oc)
+                                    out_channel_sinc=FLAGS.oc, frame_size=FLAGS.frame_size)
         model.predict(data, FLAGS.model_dir)
 
 
@@ -178,6 +177,7 @@ if __name__ == '__main__':
                         type=str, default="None")
     parser.add_argument('--prob', default=-1, dest="prob", help="Probability of dropout",
                         type=float, )
+    parser.add_argument('--frame_size', dest="frame_size", type=int, default=480)
     parser.add_argument('--is_training', action='store_true')
     parser.add_argument('--is_testing', action='store_true')
     parser.add_argument('--units', dest='units', default=400)
@@ -192,6 +192,6 @@ if __name__ == '__main__':
     import pyasv
     from sincnet import GE2EwithSincFeature
 
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     pyasv.utils.set_log()
-
     run()

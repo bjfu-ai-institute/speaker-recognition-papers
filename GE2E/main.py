@@ -150,7 +150,7 @@ def run():
 
     if FLAGS.is_testing:
         data = read_data(config)
-        model = lstmp.LSTMP(config, FLAGS.units, FLAGS.layer)
+        model = lstmp.LSTMP(config, FLAGS.units, FLAGS.layer, -1)
         model.predict(data, FLAGS.model_dir)
 
 

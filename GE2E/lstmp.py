@@ -7,6 +7,7 @@ from pyasv import Config
 from pyasv import ops
 from pyasv import utils
 from pyasv import loss
+from pyasv.speech import pad
 import numpy as np
 import h5py
 from scipy.spatial.distance import cdist
@@ -151,29 +152,22 @@ class LSTMP(model.Model):
         logger.info('training done.')
 
     def _validation(self, emb, test_x, test_y, enroll_x, enroll_y, sess, limit_shape=64, step=0):
-        # limit test_x size
         idx = np.random.randint(0, test_x.shape[0], size=limit_shape)
         test_x = test_x.value[idx]
         test_y = test_y[idx]
         test_y_uni = np.unique(test_y)
         enroll_x = np.array(list(enroll_x.value[np.where(enroll_y == i)[0]] for i in test_y_uni)).reshape(-1, self.config.sample_rate * self.config.fix_len)
         enroll_y = np.array(list(enroll_y[np.where(enroll_y == i)[0]] for i in test_y_uni)).reshape(-1,)
-        print(enroll_x.shape)
         t_emb = sess.run(emb, feed_dict={"t_x:0": test_x})
         e_emb = sess.run(emb, feed_dict={"t_x:0": enroll_x})
-        #emb_file = h5py.File(os.path.join(self.config.save_path, 'log', 'mean_embeddings_%d.h5')%step, 'w')
         spkr_embeddings = np.array([np.mean(e_emb[enroll_y.reshape(-1,) == i], 0)
                                     for i in range(self.n_speaker_test)], dtype=np.float32)
-        #emb_file.create_dataset(name='enroll', data=spkr_embeddings)
         score_mat = np.array([np.reshape(1 - cdist(spkr_embeddings[i].reshape(1, 400), t_emb, metric='cosine'), (-1, ))
                               for i in range(self.n_speaker_test)]).T
         ind = np.where(np.isnan(score_mat))
         score_mat[ind] = -1
-        print(score_mat)
         score_idx = np.argmax(score_mat, -1)
-        #emb_file.create_dataset(name='score_mat', data=score_mat)
-        #emb_file.close()
-        return np.sum(score_idx == test_y.reshape(-1,)) / score_idx.shape[0], (score_mat, e_emb, enroll_y)
+        return np.sum(score_idx == test_y.reshape(-1,)) / score_idx.shape[0], (score_mat, e_emb, enroll_y, test_y)
 
     def init_validation(self):
         """Get validation operation."""
@@ -184,12 +178,48 @@ class LSTMP(model.Model):
 
     def predict(self, data, model_dir):
         with tf.Session() as sess:
+            def batched_array(x):
+                l = (x.shape[0] // 64 + 1) * 64
+                x = pad(x, length=l, axis=0, mode='repeat')
+                if len(x.shape) == 2:
+                    x = x.reshape([(x.shape[0] // 64 + 1) if x.shape[0] % 64 != 0 else x.shape[0] // 64, 64, x.shape[1]])
+                else:
+                    x = x.reshape([(x.shape[0] // 64 + 1) if x.shape[0] % 64 != 0 else x.shape[0] // 64, 
+                                   64, x.shape[1], x.shape[2]])          
+                return x
+
             emb = self.init_validation()
             saver = tf.train.Saver()
             saver.restore(sess, model_dir)
             test_x, test_y, enroll_x, enroll_y = data['t_x'], data['t_y'], data['e_x'], data['e_y']
-            acc, score_mat = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess)
+            test_x = batched_array(test_x.value)
+            test_y = test_y.reshape(-1, 1)
+            test_y = batched_array(test_y).reshape(-1,)
+            enroll_x = batched_array(enroll_x)
+            enroll_y = enroll_y.reshape(-1, 1)
+            enroll_y = batched_array(enroll_y)
+
+            # Enroll. 
+            number_of_enrollment = np.zeros(shape=[self.config.n_speaker_test])
+            sum_of_vector = np.zeros(shape=[self.config.n_speaker_test, self.embed_size], dtype=np.float32)
+            for x, y in zip(enroll_x, enroll_y):
+                e_emb = sess.run(emb, feed_dict={"t_x:0": x})
+                for i in range(self.config.n_speaker_test):
+                    number_of_enrollment[i] += np.sum(y == i)
+                    sum_of_vector[i] += np.sum(e_emb[np.where(y == i)[0]], axis=0)
+            
+            score_mat = None
+            for x in test_x:
+                t_emb = sess.run(emb, feed_dict={"t_x:0": x})
+                score_mat_batch = 1 - cdist(t_emb, sum_of_vector, metric='cosine')
+                if score_mat is None:
+                    score_mat = score_mat_batch
+                else:
+                    score_mat = np.concatenate([score_mat, score_mat_batch], axis=0)
+            score_idx = np.argmax(score_mat, -1)
+            acc = np.sum(score_idx == test_y) / score_idx.shape[0]
             eer = utils.calc_eer(score_mat, test_y,
                                  save_path=os.path.join(self.config.save_path, 'graph', 'eer.png'))
             self.logger.info("acc: %.6f \teer: %.6f" % (acc, eer))
             return acc, eer
+

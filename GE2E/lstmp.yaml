@@ -14,7 +14,7 @@ n_threads: 6
 num_classes_per_batch: 16
 num_utt_per_class: 4
 sample_rate: 16000
-save_path: /home/fhq/save/g-test
+save_path: /home/fhq/save/backup/g-test
 slides:
 - 0
 - 0

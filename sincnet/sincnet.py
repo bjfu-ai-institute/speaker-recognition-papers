@@ -121,11 +121,12 @@ class SincNet_ID(model.Model):
 
 
 class GE2EwithSincFeature(LSTMP):
-    def __init__(self, config, dropout_prob, layer_num, lstm_units, out_channel_sinc, kernel_size_sinc):
+    def __init__(self, config, dropout_prob, layer_num, lstm_units, out_channel_sinc, kernel_size_sinc, frame_size):
         super().__init__(config, lstm_units=lstm_units, layer_num=layer_num, dropout_prob=dropout_prob)
         self.ocs = out_channel_sinc
         self.ks = kernel_size_sinc
         self.data_shape = [None, self.config.fix_len * self.config.sample_rate,]
+        self.frame_size = frame_size
 
     def inference(self, x, is_training=True):
         sr = self.config.sample_rate
@@ -138,7 +139,7 @@ class GE2EwithSincFeature(LSTMP):
         def sinc_layer_seg(x):
             return tf.map_fn(sinc_layer_frame, x)        
         with tf.variable_scope("sinc", reuse=tf.AUTO_REUSE):
-            x = tf.reshape(x, [-1, 10, fix_len * sr//10])
+            x = tf.reshape(x, [-1, fix_len * sr//self.frame_size, self.frame_size])
             x = sinc_layer_seg(x)
             #x = sinc_layer(x, kernel_size=self.ks, out_channels=self.ocs,
             #               stride=1, sample_rate=self.config.sample_rate,

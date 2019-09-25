@@ -111,8 +111,8 @@ def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):
         score_matrix = np.array(score_matrix)
     if ys.shape[-1] == 1 and len(ys.shape) > 1:
         ys = ys.reshape(-1,)
-        ys = np.eye(np.max(ys + 1))[ys]
-        ys_con = np.ones_like(ys) - ys
+    ys = np.eye(score_matrix.shape[1])[ys]
+    ys_con = np.ones_like(ys) - ys
     def _get_false_alarm_rate(threshold):
         pos = np.array(score_matrix >= threshold, dtype=np.int32)
         if np.sum(pos) == 0:
@@ -142,7 +142,6 @@ def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):
     # threshold_down = _dichotomy(-1.0, 1.0, _get_false_alarm_rate, 1e-3)
     threshold_up = 1.0
     threshold_down = -1.0
-
     step_size = (threshold_up - threshold_down) /  (dot_num + 1)
     threshold = threshold_up
     best_eer = 1000
@@ -150,6 +149,7 @@ def calc_eer(score_matrix, ys, save_path, plot=True, dot_num=10000):
     if plot:  x_cord, y_cord = [], []
     for _ in range(dot_num):
         threshold -= step_size
+        
         fa_rate = _get_false_alarm_rate(threshold)
         fr_rate = _get_false_reject_rate(threshold)
         if plot:

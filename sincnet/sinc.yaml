@@ -3,7 +3,7 @@ defaults: null
 feature_dims: 64
 fix_len: 3
 hop_length: 512
-lr: 0.0001
+lr: 1.0e-05
 max_step: 100
 model_name: sinc-ge2e
 n_fft: 512
