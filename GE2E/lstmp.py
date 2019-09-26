@@ -139,7 +139,7 @@ class LSTMP(model.Model):
                 if log_flag % 5000 == 0 and log_flag != 0:
                     test_x, test_y, enroll_x, enroll_y = valid['t_x'], valid['t_y'], valid['e_x'], valid['e_y']
                     acc, tup = self._validation(emb, test_x, test_y, enroll_x, enroll_y, sess, step=epoch)
-                    _, emb_arr, label = tup
+                    _, emb_arr, label, _ = tup
                     utils.tensorboard_embedding(self.config.save_path, summary_writer, emb=emb_arr, label=label)
                     logger.info('At %d epoch after %d batch, acc is %.6f'
                                 % (epoch, batch_idx, acc))
