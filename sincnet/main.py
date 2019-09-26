@@ -53,7 +53,7 @@ def handle_path(config):
     for dd in ['log', 'graph', 'model']:
         if not os.path.exists(os.path.join(config.save_path, dd)):
             os.mkdir(os.path.join(config.save_path, dd))
-        elif not FLAGS.is_restore:
+        elif not FLAGS.is_restore and not FLAGS.is_testing:
             try:
                 os.mkdir(os.path.join(config.save_path, backup_name))
             except:
